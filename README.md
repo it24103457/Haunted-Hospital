@@ -41,11 +41,39 @@ You are alone in a decaying hospital. Something hunts by sound, something else s
 
 ```bash
 git lfs install
-git clone https://github.com/<ORG-OR-USERNAME>/<REPO-NAME>.git
-cd <REPO-NAME>
+git clone https://github.com/it24103457/Haunted-Hospital.git
+cd Haunted-Hospital
 git lfs pull
 ```
 
 Open the folder in **Unity Hub** (Add > Add project from disk).
 
 ---
+
+## Project structure
+
+```
+Assets/
+├── Agents/                  ← one folder per agent, owned by that member
+│   ├── Thief/
+│   ├── Hunter/
+│   ├── EnvironmentDirector/
+│   └── ItemSpawnDirector/
+├── Art/                     ← shared, game-ready assets
+│   ├── Models/
+│   ├── Textures/
+│   ├── Materials/
+│   └── Animations/
+├── Audio/
+├── Prefabs/
+├── Scenes/
+│   ├── Main/                ← the hospital level (World Builder)
+│   └── Sandbox/             ← per-member test scenes
+├── Scripts/                 ← shared code (interfaces, registries, events)
+└── Settings/                ← URP render settings
+ArtSource/                   ← raw .blend / .psd files, not imported by Unity
+```
+
+- Commit `.meta` files together with their assets.
+- Move and rename assets inside the Unity editor, not in Explorer.
+- Only edit scenes and prefabs you own; changes to `Scripts/` should be agreed with the team.
