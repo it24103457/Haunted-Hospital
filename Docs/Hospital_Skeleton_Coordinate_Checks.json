@@ -1,0 +1,10 @@
+{
+  "method": "2D geometric clearance and connectivity; NOT a Unity NavMesh bake or play test",
+  "grid_metres": 0.05,
+  "checked_radius_metres": 0.35,
+  "accessible_floor_centres": "pass",
+  "both_sides_of_open_interior_doors": "pass",
+  "unreachable_clear_floor_cells": 0,
+  "floor_overlap_check": "pass (generator)",
+  "opening_boundary_and_room_adjacency_checks": "pass (generator)"
+}
