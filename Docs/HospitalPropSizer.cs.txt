@@ -1,0 +1,102 @@
+/*
+OPTIONAL TEAMMATE TOOL - not installed or executed in the project.
+The world builder is not assigned to write/install this helper. KeyBox remains a reserved envelope, not an approved asset.
+1. In Unity create Assets/Editor if necessary.
+2. Copy only this file's C# contents into Assets/Editor/HospitalPropSizer.cs.
+3. Wait for compilation. This supplied example has not been compiled in your Editor.
+4. In a temporary preparation scene create an identity-transform root named PF_Bed,
+   PF_Desk, etc. Add an identity-rotation child named Visual and put the model inside it.
+5. Rotate the MODEL inside Visual upright, with its front toward local +Z.
+   Keep the imported animation in its closed/rest pose. Disable unused objects.
+6. Select the root. Use Tools > Hospital Props > Fit selected model to planned size.
+7. Inspect the fit, add colliders/markers OUTSIDE Visual, and save your prefab.
+8. PF_ChestStation is assembled from PF_Desk and PF_AnimatedChest, not fitted as one model.
+
+This measures active enabled Renderer bounds, not colliders or visible pixels.
+Exact per-axis fitting can distort a source model. Ctrl+Z reverses the sizing;
+if the result looks wrong, use a smaller proportional fit inside the same envelope
+and recalibrate its surface markers as described in the guide.
+It does not download assets or place anything in the hospital.
+*/
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+
+public static class HospitalPropSizer
+{
+    static readonly Dictionary<string, Vector3> Sizes = new Dictionary<string, Vector3>
+    {
+        { "PF_Bed", new Vector3(1.05f, 1.05f, 2.2f) },
+        { "PF_Desk", new Vector3(1.4f, .76f, .7f) },
+        { "PF_Nightstand", new Vector3(.55f, .65f, .5f) },
+        { "PF_Shelf", new Vector3(1.2f, 1.8f, .45f) },
+        { "PF_DrawerCabinet", new Vector3(.5f, .9f, .6f) },
+        { "PF_AnimatedChest", new Vector3(.65f, .4f, .4f) },
+        { "PF_Toilet", new Vector3(.45f, .8f, .75f) },
+        { "PF_Sink", new Vector3(.6f, .4f, .5f) },
+        { "PF_Stool", new Vector3(.45f, .45f, .45f) },
+        { "PF_Bin", new Vector3(.55f, .8f, .55f) },
+        { "PF_KeyBox", new Vector3(.55f, .45f, .18f) },
+        { "PF_Keypad", new Vector3(.24f, .36f, .06f) },
+        { "PF_ExitKey", new Vector3(.12f, .008f, .04f) }
+    };
+
+    [MenuItem("Tools/Hospital Props/Fit selected model to planned size")]
+    static void Fit()
+    {
+        var root = Selection.activeTransform;
+        if (root == null || EditorUtility.IsPersistent(root) || !root.gameObject.scene.IsValid())
+        {
+            Debug.LogWarning("Select a preparation-scene root, not the source asset.");
+            return;
+        }
+        if (!Sizes.TryGetValue(root.name, out var target))
+        {
+            Debug.LogWarning("Name the root exactly PF_Bed, PF_Desk, PF_Shelf, etc., as listed in this tool.");
+            return;
+        }
+        if (root.position.sqrMagnitude > .000001f ||
+            Quaternion.Angle(root.rotation, Quaternion.identity) > .01f ||
+            (root.lossyScale - Vector3.one).sqrMagnitude > .000001f)
+        {
+            Debug.LogWarning("Prepare the root at WORLD position 0, rotation 0, scale 1 before sizing.");
+            return;
+        }
+        var visual = root.Find("Visual");
+        if (visual == null || Quaternion.Angle(visual.localRotation, Quaternion.identity) > .01f)
+        {
+            Debug.LogWarning("Add a Visual child with rotation 0. Rotate the model under Visual instead.");
+            return;
+        }
+        if (!Measure(visual, out var before) || before.size.x <= .000001f ||
+            before.size.y <= .000001f || before.size.z <= .000001f)
+        {
+            Debug.LogWarning("No nonzero 3D bounds found. Check the model and its renderers.");
+            return;
+        }
+        Undo.RecordObject(visual, "Fit hospital prop visual");
+        visual.localScale = Vector3.Scale(visual.localScale,
+            new Vector3(target.x / before.size.x, target.y / before.size.y, target.z / before.size.z));
+        Measure(visual, out var after);
+        bool centreOrigin = root.name == "PF_KeyBox" || root.name == "PF_Keypad";
+        visual.position += new Vector3(-after.center.x,
+            -(centreOrigin ? after.center.y : after.min.y), -after.center.z);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(visual);
+        EditorSceneManager.MarkSceneDirty(root.gameObject.scene);
+        Debug.Log($"Fitted {root.name} to {target} metres. Check appearance, colliders and marker surface height.", root);
+    }
+
+    static bool Measure(Transform visual, out Bounds bounds)
+    {
+        bounds = new Bounds();
+        bool found = false;
+        foreach (var renderer in visual.GetComponentsInChildren<Renderer>(false))
+        {
+            if (!renderer.enabled) continue;
+            if (!found) { bounds = renderer.bounds; found = true; }
+            else bounds.Encapsulate(renderer.bounds);
+        }
+        return found;
+    }
+}

@@ -313,6 +313,7 @@ GameObject:
   - component: {fileID: 4037593603129922827}
   - component: {fileID: 4075234241511043767}
   - component: {fileID: 3856979517019381696}
+  - component: {fileID: 7263342200675724125}
   m_Layer: 0
   m_Name: PF_WoodBarricade_Standard
   m_TagString: Untagged
@@ -372,6 +373,27 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.1, z: 0}
   m_TimeToStationary: 0.5
+--- !u!65 &7263342200675724125
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5716761999382721728}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.2, y: 2.2, z: 0.3}
+  m_Center: {x: 0, y: 1.1, z: 0}
 --- !u!1 &8566022545706850341
 GameObject:
   m_ObjectHideFlags: 0
