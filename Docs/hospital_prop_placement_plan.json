@@ -1,0 +1,1170 @@
+{
+  "basis": "Saved Assets/Scenes/Main/MainHospital.unity; metre coordinate schedule checked 2026-10-03. Planning dimensions; model fit and surface calibration required.",
+  "types": {
+    "Bed": {
+      "size": [
+        1.05,
+        1.05,
+        2.2
+      ],
+      "marker": [
+        0,
+        0.68,
+        0
+      ],
+      "front": "Foot of bed"
+    },
+    "Desk": {
+      "size": [
+        1.4,
+        0.76,
+        0.7
+      ],
+      "marker": [
+        0,
+        0.78,
+        0
+      ],
+      "front": "Seated/user side"
+    },
+    "Nightstand": {
+      "size": [
+        0.55,
+        0.65,
+        0.5
+      ],
+      "marker": [
+        0,
+        0.67,
+        0
+      ],
+      "front": "Drawer side (kept static)"
+    },
+    "Shelf": {
+      "size": [
+        1.2,
+        1.8,
+        0.45
+      ],
+      "marker": [
+        0,
+        1.02,
+        0.12
+      ],
+      "front": "Open shelf side"
+    },
+    "Toilet": {
+      "size": [
+        0.45,
+        0.8,
+        0.75
+      ],
+      "front": "Bowl/front"
+    },
+    "Sink": {
+      "size": [
+        0.6,
+        0.4,
+        0.5
+      ],
+      "front": "Basin user side"
+    },
+    "Stool": {
+      "size": [
+        0.45,
+        0.45,
+        0.45
+      ],
+      "front": "Arbitrary"
+    },
+    "Bin": {
+      "size": [
+        0.55,
+        0.8,
+        0.55
+      ],
+      "front": "Arbitrary"
+    },
+    "KeyBox": {
+      "size": [
+        0.55,
+        0.45,
+        0.18
+      ],
+      "marker": [
+        0,
+        -0.12,
+        0.01
+      ],
+      "front": "Opening face; CENTER origin",
+      "asset_status": "Unresolved: no free direct-import wall first-aid box with included opening motion verified. Reserved slot only."
+    },
+    "DrawerCabinet": {
+      "size": [
+        0.5,
+        0.9,
+        0.6
+      ],
+      "marker": [
+        0,
+        0.65,
+        0.12
+      ],
+      "front": "Drawer side",
+      "asset_status": "Candidate: creator-listed drawer animation; original download format and Unity preview not verified."
+    },
+    "ChestStation": {
+      "size": [
+        1.4,
+        1.16,
+        0.7
+      ],
+      "marker": [
+        0,
+        0.81,
+        0
+      ],
+      "front": "Archive chest latch side; chest on desk",
+      "asset_status": "NOT_Lonely Animated Old Chest: free Unity asset, creator confirms opening clip; not imported here."
+    }
+  },
+  "props": [
+    {
+      "id": "S01",
+      "type": "Desk",
+      "room": "Nurse Office",
+      "position": [
+        -2,
+        0,
+        13
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S02",
+      "type": "Desk",
+      "room": "Staff room",
+      "position": [
+        13,
+        0,
+        11.5
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S03",
+      "type": "Desk",
+      "room": "Diagnostics",
+      "position": [
+        14.5,
+        0,
+        36
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S04",
+      "type": "Desk",
+      "room": "Staff utility",
+      "position": [
+        2.6,
+        0,
+        40.8
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": "Boards_StaffUtility"
+    },
+    {
+      "id": "S05",
+      "type": "Nightstand",
+      "room": "Post-op",
+      "position": [
+        -10,
+        0,
+        1.25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S06",
+      "type": "Nightstand",
+      "room": "General Ward",
+      "position": [
+        -14,
+        0,
+        12.7
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S07",
+      "type": "Nightstand",
+      "room": "Recovery",
+      "position": [
+        7.8,
+        0,
+        1.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S08",
+      "type": "Nightstand",
+      "room": "Pre-op",
+      "position": [
+        13.8,
+        0,
+        19
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": "Boards_PreOp"
+    },
+    {
+      "id": "S09",
+      "type": "Shelf",
+      "room": "Storage",
+      "position": [
+        14.5,
+        0,
+        16.8
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": "Boards_Storage"
+    },
+    {
+      "id": "S10",
+      "type": "Shelf",
+      "room": "Waste",
+      "position": [
+        14.8,
+        0,
+        4.8
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": "Boards_Waste"
+    },
+    {
+      "id": "S11",
+      "type": "Shelf",
+      "room": "Sterile Core",
+      "position": [
+        14.8,
+        0,
+        29
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S12",
+      "type": "Shelf",
+      "room": "Washroom alcove",
+      "position": [
+        -2.3,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": "Boards_Washroom"
+    },
+    {
+      "id": "S13",
+      "type": "Bed",
+      "room": "Post-op",
+      "position": [
+        -11.5,
+        0,
+        2.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S14",
+      "type": "Bed",
+      "room": "General Ward",
+      "position": [
+        -13.8,
+        0,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "S15",
+      "type": "Bed",
+      "room": "ICU",
+      "position": [
+        7.4,
+        0,
+        39.9
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Supply",
+      "gate": ""
+    },
+    {
+      "id": "C01",
+      "type": "DrawerCabinet",
+      "room": "Nurse Office",
+      "position": [
+        -2,
+        0,
+        15.35
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": ""
+    },
+    {
+      "id": "C02",
+      "type": "DrawerCabinet",
+      "room": "Diagnostics",
+      "position": [
+        10.2,
+        0,
+        37.5
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": ""
+    },
+    {
+      "id": "C03",
+      "type": "DrawerCabinet",
+      "room": "Storage",
+      "position": [
+        10,
+        0,
+        13.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": "Boards_Storage"
+    },
+    {
+      "id": "C04",
+      "type": "DrawerCabinet",
+      "room": "Staff utility",
+      "position": [
+        0.8,
+        0,
+        40.8
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": "Boards_StaffUtility"
+    },
+    {
+      "id": "C05",
+      "type": "ChestStation",
+      "room": "Operating Room",
+      "position": [
+        -13.8,
+        0,
+        34
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": ""
+    },
+    {
+      "id": "C06",
+      "type": "ChestStation",
+      "room": "Anaesthesia",
+      "position": [
+        -14.5,
+        0,
+        20.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": ""
+    },
+    {
+      "id": "C07",
+      "type": "ChestStation",
+      "room": "Pre-op",
+      "position": [
+        14.5,
+        0,
+        22.8
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": "Boards_PreOp"
+    },
+    {
+      "id": "C08",
+      "type": "Desk",
+      "room": "Sterile Core",
+      "position": [
+        11.2,
+        0,
+        30.6
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": ""
+    },
+    {
+      "id": "C09",
+      "type": "Desk",
+      "room": "Recovery",
+      "position": [
+        8.8,
+        0,
+        5.7
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": ""
+    },
+    {
+      "id": "C10",
+      "type": "Desk",
+      "room": "Waste",
+      "position": [
+        12,
+        0,
+        1.3
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Clue",
+      "gate": "Boards_Waste"
+    },
+    {
+      "id": "K01",
+      "type": "KeyBox",
+      "room": "General Ward",
+      "position": [
+        -6.96,
+        1.45,
+        13.7
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Key",
+      "gate": ""
+    },
+    {
+      "id": "K02",
+      "type": "KeyBox",
+      "room": "ICU",
+      "position": [
+        1.96,
+        1.45,
+        34.5
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Key",
+      "gate": ""
+    },
+    {
+      "id": "K03",
+      "type": "KeyBox",
+      "room": "Storage",
+      "position": [
+        15.79,
+        1.45,
+        13.8
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Key",
+      "gate": "Boards_Storage"
+    },
+    {
+      "id": "K04",
+      "type": "KeyBox",
+      "room": "Pre-op",
+      "position": [
+        10.5,
+        1.45,
+        23.79
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "Key",
+      "gate": "Boards_PreOp"
+    },
+    {
+      "id": "P01",
+      "type": "Bed",
+      "room": "Recovery",
+      "position": [
+        6,
+        0,
+        2.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P02",
+      "type": "Bed",
+      "room": "General Ward",
+      "position": [
+        -10.4,
+        0,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P03",
+      "type": "Bed",
+      "room": "Anaesthesia",
+      "position": [
+        -11.5,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P04",
+      "type": "Bed",
+      "room": "Pre-op",
+      "position": [
+        11.5,
+        0,
+        20.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P05",
+      "type": "Bed",
+      "room": "Operating Room",
+      "position": [
+        -10.5,
+        0,
+        31.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P06",
+      "type": "Bed",
+      "room": "ICU",
+      "position": [
+        7.3,
+        0,
+        35.8
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P07",
+      "type": "Bed",
+      "room": "Diagnostics",
+      "position": [
+        12,
+        0,
+        34
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P08",
+      "type": "Toilet",
+      "room": "WC",
+      "position": [
+        -3.5,
+        0,
+        41.2
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P09",
+      "type": "Toilet",
+      "room": "Washroom alcove",
+      "position": [
+        -5.5,
+        0,
+        20.3
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P10",
+      "type": "Sink",
+      "room": "WC",
+      "position": [
+        -4.35,
+        0.65,
+        39.4
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P11",
+      "type": "Sink",
+      "room": "Washroom alcove",
+      "position": [
+        -3.5,
+        0.65,
+        19.65
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P12",
+      "type": "Sink",
+      "room": "Sterile Core",
+      "position": [
+        15.6,
+        0.65,
+        25.2
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P13",
+      "type": "Stool",
+      "room": "Staff room",
+      "position": [
+        14.8,
+        0,
+        9.3
+      ],
+      "rotation": [
+        0,
+        270,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P14",
+      "type": "Stool",
+      "room": "Nurse Office",
+      "position": [
+        -4,
+        0,
+        12
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P15",
+      "type": "Bin",
+      "room": "Waste",
+      "position": [
+        14.8,
+        0,
+        1.3
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P16",
+      "type": "Bin",
+      "room": "Waste",
+      "position": [
+        14.8,
+        0,
+        2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    },
+    {
+      "id": "P17",
+      "type": "Shelf",
+      "room": "Storage",
+      "position": [
+        12.5,
+        0,
+        16.8
+      ],
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pool": "",
+      "gate": ""
+    }
+  ],
+  "doorClearance": {
+    "sideExtra": 0.25,
+    "depthEachSide": 1.3
+  },
+  "spawnRules": {
+    "supply": 15,
+    "clue": 10,
+    "key": 4,
+    "activeSupply": {
+      "Health": 3,
+      "Ammo": 3,
+      "Sanity": 3
+    },
+    "activeClues": 4,
+    "keyAfterCode": 1
+  },
+  "rules": {
+    "world_builder": "Import/place/texture/colliders/markers/preview supplied clips only",
+    "excluded": [
+      "Blender",
+      "animation authoring",
+      "interaction triggers",
+      "spawn/keypad gameplay code"
+    ]
+  }
+}
