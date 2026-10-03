@@ -97,7 +97,7 @@
         0.01
       ],
       "front": "Opening face; CENTER origin",
-      "asset_status": "Unresolved: no free direct-import wall first-aid box with included opening motion verified. Reserved slot only."
+      "asset_status": "RayznGames Emergency MedKit Unity package; manual animation authorized for this box only. Imported lid hierarchy, fit and clips not yet tested. See Hospital_FirstAid_Box_Animation_Guide.md."
     },
     "DrawerCabinet": {
       "size": [
@@ -1159,10 +1159,10 @@
     "keyAfterCode": 1
   },
   "rules": {
-    "world_builder": "Import/place/texture/colliders/markers/preview supplied clips only",
+    "world_builder": "Import/place/texture/colliders/markers/preview supplied clips; author only first-aid box motion per dedicated guide",
     "excluded": [
       "Blender",
-      "animation authoring",
+      "animation authoring for other props",
       "interaction triggers",
       "spawn/keypad gameplay code"
     ]

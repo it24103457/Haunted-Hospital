@@ -1,8 +1,8 @@
 # Hospital gameplay handoff — interaction/spawn developer
 
-The world builder imports and places models, previews existing animation clips, sets colliders and places empty markers. They do not author animation motion, write gameplay scripts or configure interaction triggers. This file is for the teammate implementing gameplay.
+The world builder imports and places models, previews existing animation clips, sets colliders and places empty markers. They author motion only for the first-aid box, following the explicit user exception. They do not write gameplay scripts or configure interaction triggers. This file is for the teammate implementing gameplay.
 
-Assets must already contain the required motion. Do not send animation-authoring or Blender work back to the world builder. Runtime playback, reversing a supplied opening clip where supported, holding the open pose, E-key/raycast logic, pickup logic, random selection and code/key state are your responsibility.
+All other opening assets must already contain the required motion. Do not send additional animation-authoring or Blender work back to the world builder. Runtime playback, reversing a supplied opening clip where supported, holding the open pose, E-key/raycast logic, pickup logic, random selection and code/key state are your responsibility.
 
 ## 13. Random spawning: programmer handoff
 
@@ -97,4 +97,6 @@ Use the prepared paper prefab and its TextMeshPro component. Generate and store 
 
 ## Animation asset status
 
-The Ulf cabinet, Poly Haven tool chest and RayznGames case have been removed from the active animated-prop selection. The proposed drawer replacement has a creator-listed drawer animation but its download format is not yet verified. The NOT_Lonely chest includes opening motion; closing uses reverse playback of that supplied motion. First-aid wall boxes remain unresolved under the free/preanimated/no-Blender requirements. Do not treat reserved K markers as completed interactive cabinets.
+The Ulf cabinet and Poly Haven tool chest remain removed. The proposed drawer replacement has creator-listed animation but its download format is not yet verified. The NOT_Lonely chest includes opening motion; its closing playback is your responsibility. RayznGames Emergency MedKit is reinstated under the user's explicit exception allowing the world builder to animate only this first-aid box in Unity. Its imported hierarchy still needs inspection.
+
+The world builder's [first-aid guide](Hospital_FirstAid_Box_Animation_Guide.md) supplies Closed, Open, OpenIdle and Close clips, with 0.6-second opening/closing motion. The Animator sits on PF_KeyBox and animates only the local Rotation of LidHinge. KeySpawn belongs to the fixed body/root hierarchy. The preview controller starts closed with no interaction transitions. You implement triggering, end-pose holding/state changes, interruptions, key spawning and collection. Test final physics/collision integration yourself. K03 and K04 remain eligible barricaded key locations.

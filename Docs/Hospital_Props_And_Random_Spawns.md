@@ -7,12 +7,12 @@ This is a manual placement guide. No scene, prefab, package or gameplay code was
 
 ## Your rules — this revision supersedes the earlier animation instructions
 
-- **Your role:** import, size and place world assets; apply materials/colliders; add empty spawn markers; preview/apply animation clips already supplied with the asset.
+- **Your role:** import, size and place world assets; apply materials/colliders; add empty spawn markers; preview/apply supplied clips; create the first-aid box animation using [the detailed guide](Hospital_FirstAid_Box_Animation_Guide.md).
 - **Not your role:** interaction triggers, runtime animation control, random spawning, keypad/code/key behavior or gameplay scripts.
-- **No Blender, no conversion/export workflow, no animation creation from scratch.** A rig or separate lid is not enough: the download must contain usable opening motion.
+- **No Blender or conversion/export workflow. First-aid boxes are the sole approved exception to the no-animation-authoring rule.** For other opening props, a rig or separate lid is not enough: the download must contain usable opening motion.
 - Prefer Unity packages/prefabs, then animated FBX. A Sketchfab animation badge alone does not prove the original download is directly usable in Unity.
-- The **Ulf cabinet, Poly Haven tool chest and RayznGames case are removed** from the animated-prop selections.
-- Replacement status: the Unity chest is publisher-confirmed to include opening motion. The drawer cabinet is a candidate pending its downloadable format/Unity preview. A matching free preanimated wall first-aid box has **not been verified**, so K01–K04 are reserved locations, not a completed asset selection.
+- The **Ulf cabinet and Poly Haven tool chest remain removed**. RayznGames Emergency MedKit is reinstated for Unity-only manual animation of the first-aid box.
+- Replacement status: the Unity chest is publisher-confirmed to include opening motion. The drawer cabinet is a candidate pending its downloadable format/Unity preview. The first-aid case now uses the authorized manual-animation workflow; its imported lid hierarchy and fit still need checking.
 
 The static furniture and all S/C/K location IDs remain usable. The new animated assets have not been imported or tested in your Unity project. Do not interpret the coordinate check as verification of their animation files.
 
@@ -59,7 +59,7 @@ Download only the chosen models, not whole demonstration scenes. Free availabili
 | PF_Sink | [Simple Sink — Andrew.Mischenko](https://sketchfab.com/3d-models/simple-sink-73bda35b6e7a499a80427fc1b049b192) | Free downloadable model, CC Attribution. Use the basin as a wall-mounted sink. |
 | PF_Stool | [Folding Wooden Stool — Poly Haven](https://polyhaven.com/a/folding_wooden_stool) | Two static seats; no folding gameplay needed. |
 | PF_Bin | [Metal Trash Can — Poly Haven](https://polyhaven.com/a/metal_trash_can) | Repeat two bins in Waste Disposal. Use one can/body and its lid, not an entire multi-object preview arrangement. |
-| PF_KeyBox | **No approved replacement yet** | The previous case only offered animatable parts. A free wall-mounted first-aid box with verified included opening motion and direct Unity import has not been found. Preserve K01–K04 as empty location reservations. Do not download a rig-only substitute or create its animation. |
+| PF_KeyBox | [Emergency MedKit — RayznGames](https://rayzngames.itch.io/emergency-medkit-3d-model) | Free Unity package, CC BY 4.0. Manually animate this box only: [complete beginner instructions](Hospital_FirstAid_Box_Animation_Guide.md). Creator describes modular mechanical parts; actual imported lid hierarchy still needs inspection. |
 | PF_ElevatorDoors | [Elevator — Low Poly Animated, JeffK](https://sketchfab.com/3d-models/elevator-low-poly-animated-3a9cc99aeb284a4080c03374277231ae) | Free, CC Attribution; creator lists `01_idle` and `02_open`. Includes an elevator box, not just guaranteed separate door leaves. Low-poly, baked-lighting appearance is a visual compromise. Inspect the hierarchy and doorway before using it. |
 | PF_Keypad | [Basic Door KeyPad/CodeLock — AMMediaGames](https://sketchfab.com/3d-models/basic-door-keypadcodelock-free-3ea0ea6305ad47cbb744de5a6eab2b5e) | Free, CC Attribution. A visual keypad, not a working code-entry system. |
 | PF_ExitKey | [Key 9 — plaggy on Fab](https://www.fab.com/listings/f381f02e-1ea9-42b8-bcf8-25ef69a5fa58) | Free; creator describes CC0 and supplies FBX/PBR formats. Use a single key. |
@@ -89,7 +89,7 @@ No health/ammo/sanity briefcase assets are included in this shopping list, as re
 9. Preserve the existing worn texture detail. Use muted off-white/grey metal, faded blue-grey upholstery and dull wood. Start with Base Color white so it does not multiply the supplied texture into darkness. Reduce excessive shine; painted surfaces usually need low metallic response. Avoid bright colour changes per room.
 10. Prepare the first copy outside the playable hospital, then make a prefab. Do not repeat sizing work 46 times.
 
-### Accept only existing animation clips
+### Accept only existing animation clips — except the first-aid box
 
 1. Import the chosen Unity package or animated FBX.
 2. Select the imported model in the Project window. In its Animation settings, enable **Import Animation** if applicable.
@@ -233,7 +233,7 @@ You do not create Open/Close clips, keyframe transforms or repair a rig. Clip pl
 
 Parent: `MainHospital/Props/KeyBoxes`.
 
-**Asset selection unresolved:** reserve these four Empty roots and their mounting envelopes. Do not build/animate a replacement case yourself. The eventual approved asset must include opening motion. The planned behavior remains four visible first-aid boxes with one randomized exit key; implementing that behavior is your teammate’s work.
+Use RayznGames Emergency MedKit and follow [Hospital_FirstAid_Box_Animation_Guide.md](Hospital_FirstAid_Box_Animation_Guide.md) to make one opening/closing prefab in Unity, then place four instances below. This is your only authorized animation-authoring exception. The planned behavior remains four visible first-aid boxes with one randomized exit key; implementing that behavior is your teammate’s work.
 
 | Object name | Room/wall | Centre Position X, Y, Z | Rotation Y | Access |
 |---|---|---|---:|---|
@@ -244,9 +244,9 @@ Parent: `MainHospital/Props/KeyBoxes`.
 
 The fitted box back is 0.02 m in front of the wall surface. K03 sits south of Storage's east window. K04 uses Pre-op's **north wall**, avoiding its east window. These mounting positions are intentional.
 
-The previous RayznGames recommendation is withdrawn for this workflow because its description establishes animatable mechanical parts, not included opening clips. A generic preanimated cabinet relabelled FIRST AID would be a possible design compromise, but it has not been selected as a verified wall-box replacement.
+The RayznGames case is reinstated because you have now chosen to animate the first-aid box yourself. Its listing establishes animatable mechanical parts, not verified included opening clips. Download the Unity package; inspect the lid before following the rigid-hinge workflow.
 
-Keep K01–K04 reserved while that asset is unresolved. Do not calibrate their final interior marker against an imaginary shelf or substitute a static box that cannot open.
+Build and test one PF_KeyBox before duplicating K01–K04. Calibrate the key marker against its actual interior; the scheduled marker coordinates are starting points, not measured shelf positions.
 
 PF_ExitKey remains a static model. Its target dimensions are 0.12 m X × 0.008 m Y × 0.04 m Z, bottom-centre origin; the teammate controls its spawn/pickup. Final placement inside the box waits for the actual approved interior.
 
@@ -409,11 +409,11 @@ Leave all main and side corridors, the entrance, elevator interior and all four 
 
 ## 13. Where your world-builder work stops
 
-Your deliverable is a placed prefab, correct materials/colliders, a calibrated empty marker and an included animation that previews correctly. Hand your teammate the prefab name, animation clip name(s), moving-part names and marker IDs.
+Your deliverable is a placed prefab, correct materials/colliders, a calibrated empty marker and an animation that previews correctly (supplied for other props; authored by you for the first-aid box). Hand your teammate the prefab name, animation clip name(s), moving-part names and marker IDs.
 
 You do **not** implement E-key input, interaction raycasts, animation triggers, opening/closing state machines, random spawning, random digits, keypad validation, key release, inventory, theft logic or win conditions. Those requirements are in [Hospital_Gameplay_Developer_Handoff.md](Hospital_Gameplay_Developer_Handoff.md).
 
-For an asset with just one opening clip, your teammate handles reverse playback and holding the end pose where the asset supports it. You do not create a new closing animation. If the supplied motion cannot perform the needed action, the asset fails the selection rule; do not repair or animate it yourself.
+For other assets with just one opening clip, your teammate handles reverse playback and holding the end pose where the asset supports it. You do not create a new closing animation. If the supplied motion cannot perform the needed action, the asset fails the selection rule; do not repair or animate it yourself.
 
 ## 14. Your visual handoff checklist
 
@@ -424,13 +424,13 @@ For an asset with just one opening clip, your teammate handles reverse playback 
 5. Markers are empty, named consistently and positioned on the actual model surfaces.
 6. Leave colliders on moving parts attached to those parts; your teammate decides how gameplay handles them.
 7. Give the animation and marker references to your teammate. Trigger logic is their task.
-8. Keep unresolved asset slots reserved; do not fill them with a model that requires new animation work.
+8. Keep unresolved asset slots reserved; only the first-aid box is approved for new animation work.
 
 ### What was checked for this document
 
 The companion checker verified: all 40 saved floor positions and sizes; the 46 proposed closed furniture footprints inside their scheduled rooms; no pairwise furniture-footprint overlaps; no intersections with the saved axis-aligned wall cubes; and no furniture in the scheduled doorway clearance rectangles (opening width plus 0.25 m each side, extending 1.3 m on both sides).
 
-The geometry check returned no errors for the reserved closed footprints, including unresolved asset slots. It does **not** certify imported prefab bounds, unsaved scene changes, open-animation sweeps, interaction line of sight, window asset protrusions or navigability with your player/enemy controller. Source model import, animation preview and marker surface calibration remain manual world-building steps; animation creation and conversion are excluded. Key-box asset selection and the drawer download format remain unresolved.
+The geometry check returned no errors for the reserved closed footprints, including unresolved asset slots. It does **not** certify imported prefab bounds, unsaved scene changes, open-animation sweeps, interaction line of sight, window asset protrusions or navigability with your player/enemy controller. Source model import, animation preview and marker surface calibration remain manual world-building steps; conversion remains excluded. First-aid box animation creation is authorized in its separate guide. The imported key-box hierarchy/fit and drawer download format remain unverified.
 
 Companion files: `hospital_prop_placement_plan.json`, `Hospital_Prop_Placement_Map.png`, `Hospital_Prop_Placement_Checks.json`, `check_hospital_prop_plan.py`, and the optional `HospitalPropSizer.cs.txt`.
 
