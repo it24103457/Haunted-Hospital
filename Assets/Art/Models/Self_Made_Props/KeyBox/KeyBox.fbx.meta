@@ -22,6 +22,16 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Hinge
+    second: {fileID: 2100000, guid: 7fa07a12c9ed2ff4d84f1f9593357a14, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Hinges
+    second: {fileID: 2100000, guid: 1fda47f949da8bb4f8d988c12c709478, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Material
     second: {fileID: 2100000, guid: 0942ad263f973ae46b061d4bf9ce1dd2, type: 2}
   materials:
