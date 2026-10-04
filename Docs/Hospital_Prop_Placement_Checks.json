@@ -1,0 +1,6 @@
+{
+  "props": 46,
+  "floor_count": 40,
+  "errors": [],
+  "scope": "Normalized closed footprints, saved floor transforms, axis-aligned saved wall cubes and scheduled door clearance zones. Imported mesh fit, animation, player and NavMesh not tested."
+}
