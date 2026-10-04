@@ -124,10 +124,34 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 54f93297f27e6114aae45f696d7222e1, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c6a6524793b0cc14eadcb88544faa7c2, type: 2}
+    - target: {fileID: -3792964915748310022, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 72e520b093192414cb32b8efc0501cf2, type: 2}
+    - target: {fileID: -3792964915748310022, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c6a6524793b0cc14eadcb88544faa7c2, type: 2}
     - target: {fileID: 919132149155446097, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
       propertyPath: m_Name
       value: SM_OldFridge
       objectReference: {fileID: 0}
+    - target: {fileID: 6304403995573511724, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 72e520b093192414cb32b8efc0501cf2, type: 2}
+    - target: {fileID: 6304403995573511724, guid: 6898137fa560bf44ea5f628b761e21c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c6a6524793b0cc14eadcb88544faa7c2, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
