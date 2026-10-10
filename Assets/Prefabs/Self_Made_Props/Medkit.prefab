@@ -59,6 +59,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e9998226acd72224abc7ff3abb258e3d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2437031083335797787}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e9998226acd72224abc7ff3abb258e3d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3581356228251139047}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e9998226acd72224abc7ff3abb258e3d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4640916392679752977}
   m_SourcePrefab: {fileID: 100100000, guid: e9998226acd72224abc7ff3abb258e3d, type: 3}
 --- !u!1 &2711314149099294332 stripped
 GameObject:
@@ -87,3 +93,43 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3581356228251139047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2711314149099294332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1225c5d0feb0f749861f472ed16edd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupInteractable
+  type: 0
+  amount: 25
+  displayName: 
+  animator: {fileID: 0}
+  animationTrigger: 
+  collectDelay: 0.8
+  destroyOnCollect: 1
+--- !u!65 &4640916392679752977
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2711314149099294332}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.34830073, y: 0.10759305, z: 0.2153303}
+  m_Center: {x: 0.000000014901161, y: -0.0000000037252903, z: -0.0011571124}
