@@ -14,6 +14,6 @@ public interface IPickupReceiver
     // The pickup then stays in the world and is NOT consumed.
     bool CanReceive(PickupType type, int amount);
 
-    // <summary>Apply the item (add health, add ammo, add sanity, set hasExitKey...).</summary>
+    // Apply the item (add health, add ammo, add sanity, set hasExitKey...).
     void Receive(PickupType type, int amount);
 }
