@@ -33,6 +33,7 @@ public class PlayerStats : MonoBehaviour, IPickupReceiver, IDamageable
     public float Sanity { get; private set; }
     public float MaxSanity => maxSanity;
     public int ReserveAmmo { get; private set; }
+    public int MaxReserveAmmo => maxReserveAmmo;
     public bool HasExitKey { get; private set; }
     public bool IsDead { get; private set; }
 
