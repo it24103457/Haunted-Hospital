@@ -9,6 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5816840221075507739}
+  - component: {fileID: 2525523036404326894}
+  - component: {fileID: 7302128163902126109}
   m_Layer: 0
   m_Name: PF_ExitKey
   m_TagString: Untagged
@@ -32,6 +34,43 @@ Transform:
   - {fileID: 7838263226105261233}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2525523036404326894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2646021429721027363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1225c5d0feb0f749861f472ed16edd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupInteractable
+  type: 3
+  amount: 0
+  displayName: 
+  destroyOnCollect: 1
+--- !u!65 &7302128163902126109
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2646021429721027363}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.06424196, y: 0.00842819, z: 0.005490212}
+  m_Center: {x: 0.0005416237, y: 0.0035991222, z: -0.0000000027939677}
 --- !u!1 &6071584162008553152
 GameObject:
   m_ObjectHideFlags: 0
