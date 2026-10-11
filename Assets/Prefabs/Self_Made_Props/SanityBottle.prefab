@@ -59,6 +59,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2f72f9b1264180341b9215c666a4e28d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5093474181673175762}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2f72f9b1264180341b9215c666a4e28d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 533053958881284993}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2f72f9b1264180341b9215c666a4e28d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2288445808483654580}
   m_SourcePrefab: {fileID: 100100000, guid: 2f72f9b1264180341b9215c666a4e28d, type: 3}
 --- !u!1 &8293022161901331268 stripped
 GameObject:
@@ -87,3 +93,40 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &533053958881284993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8293022161901331268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1225c5d0feb0f749861f472ed16edd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupInteractable
+  type: 2
+  amount: 20
+  displayName: 
+  destroyOnCollect: 1
+--- !u!65 &2288445808483654580
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8293022161901331268}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.08354058, y: 0.12773095, z: 0.08354059}
+  m_Center: {x: 0, y: 0.021638941, z: 0}
