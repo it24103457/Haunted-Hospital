@@ -8,10 +8,12 @@ using UnityEditor;
 /*
  * The waypoint graph shared by the Thief and the Hunter. All WaypointNodes are children of this object,
  * which sits at (0,0,0) so the prefab lines up with the level in any scene.
- * Edges are generated in the editor from the baked NavMesh: two nodes are linked when a straight,
+ * Edges are generated in the editor from the baked NavMesh: two Normal nodes are linked when a straight,
  * walkable NavMesh line exists between them.
  * Door and Barricade nodes only link to close nodes (their front and behind nodes), and no edge passes
  * through a doorway without its Door or Barricade node, so every route through one is front -> on -> behind.
+ * Their links skip the NavMesh line check, because the carving obstacles on doors and barricades cut the
+ * opening out of the NavMesh; whether an opening is passable is decided at runtime by the agents.
  */
 public class WaypointGraph : MonoBehaviour
 {
@@ -124,8 +126,9 @@ public class WaypointGraph : MonoBehaviour
     }
 
     /*
-     * Two nodes are linked when they are within range, the edge keeps clear of other doorway nodes,
-     * and the straight line between them is walkable.
+     * Two nodes are linked when they are within range and the edge keeps clear of other doorway nodes.
+     * Links between two Normal nodes also need a straight walkable NavMesh line; links touching a Door or
+     * Barricade node rely on the short special range instead.
      */
     private bool CanLink(WaypointNode a, WaypointNode b, WaypointNode[] all)
     {
@@ -140,6 +143,9 @@ public class WaypointGraph : MonoBehaviour
             if (s == a || s == b || s.Type == WaypointType.Normal) continue;
             if (DistanceToSegment(s.Position, a.Position, b.Position) < doorwayClearance) return false;
         }
+
+        // Door and barricade obstacles carve the opening out of the NavMesh, so a raycast through it always fails.
+        if (special) return true;
 
         return HasClearLine(a.Position, b.Position);
     }
