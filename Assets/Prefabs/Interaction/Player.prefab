@@ -261,7 +261,7 @@ MonoBehaviour:
   startingSanity: 100
   startingReserveAmmo: 40
   maxReserveAmmo: 120
-  logChanges: 1
+  logChanges: 0
 --- !u!1 &5548678712820400776
 GameObject:
   m_ObjectHideFlags: 0
