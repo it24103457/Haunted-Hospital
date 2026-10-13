@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
  * Test-only on-screen panel for the Thief test scene.
  * Shows the player's health, sanity and reserve ammo with a minus and a plus button on either side of each,
  * so the Thief's need-based decisions can be tried against different player states.
+ * Each player stat is shown in the colour of the item that restores it (Medkit pink, Sanity cyan, Ammo yellow),
+ * matching the item labels in the scene.
  * A top row shows the Thief's health in the Thief's own colour, changed with numpad 3 (down) and 6 (up);
  * taking it to 0 kills the Thief as a real hit would.
  * Every button also has a numpad key that works at any time, without a cursor. The player keys follow the
@@ -91,12 +93,16 @@ public class ThiefTestStatsPanel : MonoBehaviour
         string thiefText = thief == null ? "Thief: none in scene"
                          : $"Thief {thief.Health:0}/{thief.MaxHealth:0}{(thief.State == ThiefState.Dead ? " DEAD" : "")}";
         Row(x, y, buttonWidth, valueWidth, rowHeight, "3  -", "+  6", thiefText, ThiefColor, LowerThiefHealth, RaiseThiefHealth);
+        // Each player stat uses the colour of the item that restores it, matching the item labels in the scene.
         Row(x, y + rowHeight, buttonWidth, valueWidth, rowHeight, "7  -", "+  8",
-            $"Health {stats.Health:0}/{stats.MaxHealth:0}{(stats.IsDead ? " DEAD" : "")}", Color.white, LowerHealth, RaiseHealth);
+            $"Health {stats.Health:0}/{stats.MaxHealth:0}{(stats.IsDead ? " DEAD" : "")}",
+            ThiefTestWorldLabels.ItemColor(PickupType.Health), LowerHealth, RaiseHealth);
         Row(x, y + 2 * rowHeight, buttonWidth, valueWidth, rowHeight, "4  -", "+  5",
-            $"Sanity {stats.Sanity:0}/{stats.MaxSanity:0}", Color.white, LowerSanity, RaiseSanity);
+            $"Sanity {stats.Sanity:0}/{stats.MaxSanity:0}",
+            ThiefTestWorldLabels.ItemColor(PickupType.Sanity), LowerSanity, RaiseSanity);
         Row(x, y + 3 * rowHeight, buttonWidth, valueWidth, rowHeight, "1  -", "+  2",
-            $"Ammo {stats.ReserveAmmo}/{stats.MaxReserveAmmo}", Color.white, LowerAmmo, RaiseAmmo);
+            $"Ammo {stats.ReserveAmmo}/{stats.MaxReserveAmmo}",
+            ThiefTestWorldLabels.ItemColor(PickupType.Ammo), LowerAmmo, RaiseAmmo);
     }
 
     // One line of the panel: minus button, value text in the given colour, plus button, each button labelled with its key.
