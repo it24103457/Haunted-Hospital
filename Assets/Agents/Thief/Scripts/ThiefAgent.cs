@@ -344,6 +344,30 @@ public class ThiefAgent : MonoBehaviour
         }
     }
 
+    // Live item tracking
+
+    /*
+     * Every item the Thief could steal right now: an active supply pickup (health, sanity or ammo) that nobody
+     * has claimed. The Thief finds them itself at each decision, so it works with whatever spawner is in the scene.
+     */
+    private List<PickupInteractable> FindStealableItems()
+    {
+        var items = new List<PickupInteractable>();
+
+        foreach (PickupInteractable item in FindObjectsByType<PickupInteractable>(FindObjectsInactive.Exclude))
+            if (IsStealable(item)) items.Add(item);
+
+        return items;
+    }
+
+    // True while an item still exists, is in the world, is unclaimed and is a supply the Thief steals.
+    private static bool IsStealable(PickupInteractable item)
+    {
+        if (item == null || !item.gameObject.activeInHierarchy || item.IsCollected) return false;
+
+        return item.Type == PickupType.Health || item.Type == PickupType.Sanity || item.Type == PickupType.Ammo;
+    }
+
     // Barricade memory
 
     /*
