@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 5804297370232512321}
   - component: {fileID: 8680544274538587895}
   - component: {fileID: 924453430183759091}
+  - component: {fileID: 609242860633814311}
   m_Layer: 0
   m_Name: PF_Thief
   m_TagString: Untagged
@@ -166,7 +167,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -1372625422
   m_Radius: 0.3
-  m_Speed: 3.5
+  m_Speed: 7
   m_Acceleration: 12
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -201,6 +202,20 @@ CapsuleCollider:
   m_Height: 1.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &609242860633814311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7676168184634716972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0fe2b13dba9c2e4b8ccf9b8e72f7ce3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThiefAgent
+  graph: {fileID: 0}
+  player: {fileID: 0}
 --- !u!1 &7972034447856784362
 GameObject:
   m_ObjectHideFlags: 0
