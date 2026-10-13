@@ -3,9 +3,10 @@ using UnityEngine;
 
 /*
  * In-game HUD message for what the Thief does, shown at the top centre of the screen:
- *   "The Thief stole a Medkit!", "The Thief stashed a Medkit", "The Thief dropped a Medkit".
- * Listens to the scene's one ThiefAgent (OnItemStolen, OnItemDelivered, OnItemDropped), tints each message
- * with the item's colour, holds it for a moment and fades it out. A new message replaces the current one.
+ *   "The Thief has appeared!", "The Thief stole a Medkit!", "The Thief stashed a Medkit", "The Thief dropped a Medkit".
+ * Listens to the scene's one ThiefAgent (OnSpawned, OnItemStolen, OnItemDelivered, OnItemDropped), tints item
+ * messages with the item's colour and the appear message with its own colour, holds each for a moment and
+ * fades it out. A new message replaces the current one.
  * Lives on the PF_ThiefMessages prefab (a screen-space Canvas with one TextMeshPro text), separate from PF_Thief.
  * The vertical position slider moves the message up or down the screen without editing the Canvas.
  */
@@ -27,6 +28,8 @@ public class ThiefMessages : MonoBehaviour
     [SerializeField] private Color medkitColor = new Color(1f, 0.45f, 0.75f);
     [SerializeField] private Color sanityColor = new Color(0.3f, 0.85f, 1f);
     [SerializeField] private Color ammoColor = new Color(1f, 0.9f, 0.2f);
+    [Tooltip("Colour of the message shown when the Thief appears.")]
+    [SerializeField] private Color appearColor = new Color(1f, 0.25f, 0.25f);
 
     private ThiefAgent thief;
     private float shownAt = float.NegativeInfinity;
@@ -45,6 +48,7 @@ public class ThiefMessages : MonoBehaviour
             return;
         }
 
+        thief.OnSpawned += ShowAppeared;
         thief.OnItemStolen += ShowStolen;
         thief.OnItemDelivered += ShowDelivered;
         thief.OnItemDropped += ShowDropped;
@@ -54,6 +58,7 @@ public class ThiefMessages : MonoBehaviour
     {
         if (thief == null) return;
 
+        thief.OnSpawned -= ShowAppeared;
         thief.OnItemStolen -= ShowStolen;
         thief.OnItemDelivered -= ShowDelivered;
         thief.OnItemDropped -= ShowDropped;
@@ -82,17 +87,18 @@ public class ThiefMessages : MonoBehaviour
         SetAlpha(alpha);
     }
 
-    private void ShowStolen(PickupInteractable item) => Show($"The Thief stole a {ItemName(item.Type)}!", item.Type);
-    private void ShowDelivered(PickupInteractable item) => Show($"The Thief stashed a {ItemName(item.Type)}", item.Type);
-    private void ShowDropped(PickupInteractable item) => Show($"The Thief dropped a {ItemName(item.Type)}", item.Type);
+    private void ShowAppeared() => Show("The Thief has appeared!", appearColor);
+    private void ShowStolen(PickupInteractable item) => Show($"The Thief stole a {ItemName(item.Type)}!", ItemColor(item.Type));
+    private void ShowDelivered(PickupInteractable item) => Show($"The Thief stashed a {ItemName(item.Type)}", ItemColor(item.Type));
+    private void ShowDropped(PickupInteractable item) => Show($"The Thief dropped a {ItemName(item.Type)}", ItemColor(item.Type));
 
-    // Replaces the current message with a new one in the item's colour and restarts its timer.
-    private void Show(string text, PickupType type)
+    // Replaces the current message with a new one in the given colour and restarts its timer.
+    private void Show(string text, Color color)
     {
         if (messageText == null) return;
 
         messageText.text = text;
-        shownColor = ItemColor(type);
+        shownColor = color;
         shownAt = Time.time;
         SetAlpha(1f);
     }
