@@ -36,7 +36,7 @@ public enum ThiefState
  * with WaitAtDoor during either trip, and Dead until it respawns at a random Thief spawn.
  */
 [RequireComponent(typeof(NavMeshAgent))]
-public class ThiefAgent : MonoBehaviour
+public class ThiefAgent : MonoBehaviour, IDamageable
 {
     [Header("References")]
     [Tooltip("Shared waypoint graph. Found in the scene when left empty.")]
@@ -88,6 +88,15 @@ public class ThiefAgent : MonoBehaviour
     [Tooltip("Seconds the Thief stays at the stash after delivering, before deciding again.")]
     [SerializeField] private float stashPause = 3f;
 
+    [Header("Health and respawn")]
+    [SerializeField] private float maxHealth = 100f;
+    [Tooltip("Seconds between dying and reappearing at a random Thief spawn.")]
+    [SerializeField] private float respawnDelay = 5f;
+    [Tooltip("Name prefix of the Thief spawn points the Thief starts and respawns at.")]
+    [SerializeField] private string thiefSpawnPrefix = "ThiefSpawn";
+    [Tooltip("Visual part hidden while dead. Found as a child named Model when left empty.")]
+    [SerializeField] private Transform model;
+
     // Output contract
 
     // World positions the Thief wants to walk through, in order. Empty while it stands still.
@@ -101,6 +110,9 @@ public class ThiefAgent : MonoBehaviour
 
     // Factor applied to the NavMeshAgent's base speed by whatever moves the Thief.
     public float SpeedMultiplier { get; private set; } = 1f;
+
+    // Current health; the Thief dies at 0 and comes back at full health.
+    public float Health { get; private set; }
 
     // Raised whenever CurrentPath is replaced or cleared, with the new path.
     public event Action<IReadOnlyList<Vector3>> OnPathChanged;
@@ -150,9 +162,12 @@ public class ThiefAgent : MonoBehaviour
     // The player as seen at the most recent decision.
     private PlayerSnapshot LastPlayerSample { get; set; }
 
-    // The item the Thief is heading for, and when the next decision may happen.
+    // The item the Thief is heading for, and when the next decision (or the respawn, while dead) may happen.
     private PickupInteractable targetItem;
     private float nextDecisionTime;
+
+    private readonly List<Transform> thiefSpawns = new List<Transform>();
+    private Collider hitbox;
 
     // True while the Thief is on a trip, including waiting at a door along the way.
     private bool IsTravelling =>
@@ -162,6 +177,9 @@ public class ThiefAgent : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         navFilter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = NavMesh.AllAreas };
+        hitbox = GetComponent<Collider>();
+        if (model == null) model = transform.Find("Model");
+        Health = maxHealth;
 
         if (graph == null) graph = FindAnyObjectByType<WaypointGraph>();
         if (player == null) player = FindAnyObjectByType<PlayerStats>();
@@ -175,6 +193,8 @@ public class ThiefAgent : MonoBehaviour
     {
         FindHunterSpawnNodes();
         FindStashes();
+        FindThiefSpawns();
+        MoveToRandomSpawn();
     }
 
     /*
@@ -203,7 +223,87 @@ public class ThiefAgent : MonoBehaviour
             case ThiefState.Delivering:
                 if (Time.time >= nextDecisionTime) Redecide(0f);
                 break;
+
+            case ThiefState.Dead:
+                if (Time.time >= nextDecisionTime) Respawn();
+                break;
         }
+    }
+
+    // Health, death and respawn
+
+    /*
+     * Damage from any source (player weapon, Hunter) through IDamageable. At 0 health the Thief dies.
+     * Damage while already dead is ignored.
+     */
+    public void TakeDamage(DamageInfo info)
+    {
+        if (State == ThiefState.Dead || info.Amount <= 0f) return;
+
+        Health = Mathf.Max(0f, Health - info.Amount);
+        if (Health <= 0f) Die();
+    }
+
+    /*
+     * Drops any carried item on the floor where the Thief fell (collectable again through Release),
+     * stops, disappears (model hidden, hitbox off) and schedules the respawn.
+     */
+    private void Die()
+    {
+        if (carriedItem != null) carriedItem.Release(FloorBelow(transform.position));
+        carriedItem = null;
+        targetItem = null;
+
+        ClearPath();
+        SetVisible(false);
+        nextDecisionTime = Time.time + respawnDelay;
+        SetState(ThiefState.Dead);
+    }
+
+    /*
+     * Reappears at full health at a random Thief spawn as a fresh Thief: barricade memory is cleared,
+     * then it decides straight away.
+     */
+    private void Respawn()
+    {
+        Health = maxHealth;
+        knownBlocked.Clear();
+        MoveToRandomSpawn();
+        SetVisible(true);
+        Redecide(0f);
+    }
+
+    private void FindThiefSpawns()
+    {
+        thiefSpawns.Clear();
+        foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude))
+            if (t.name.StartsWith(thiefSpawnPrefix)) thiefSpawns.Add(t);
+
+        if (thiefSpawns.Count == 0) Debug.LogWarning($"ThiefAgent '{name}' found no '{thiefSpawnPrefix}' spawn points.", this);
+    }
+
+    // Places the Thief on a random Thief spawn, used at the start of play and on every respawn.
+    private void MoveToRandomSpawn()
+    {
+        if (thiefSpawns.Count == 0) return;
+
+        Vector3 spawn = thiefSpawns[UnityEngine.Random.Range(0, thiefSpawns.Count)].position;
+        Vector3 point = FloorBelow(spawn);
+
+        if (agent.isOnNavMesh || NavMesh.SamplePosition(point, out _, 1f, navFilter)) agent.Warp(point);
+        else transform.position = point;
+    }
+
+    // The NavMesh point under a position, or the position itself when there is no NavMesh nearby.
+    private Vector3 FloorBelow(Vector3 position)
+    {
+        return NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, navFilter) ? hit.position : position;
+    }
+
+    private void SetVisible(bool visible)
+    {
+        if (model != null) model.gameObject.SetActive(visible);
+        if (hitbox != null) hitbox.enabled = visible;
     }
 
     // Steal loop
