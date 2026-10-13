@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /*
@@ -7,7 +8,8 @@ using UnityEngine;
  * doors show Locked, Open (Door.IsOpen, also true while still swinging) or Closed;
  * barricades show Intact or Broken (deactivated).
  * Items are labelled in a colour per type (Medkit pink, Ammo yellow, Sanity cyan), with Claimed or Carried
- * added once someone has taken them. Items come and go, so their list is refreshed a few times a second.
+ * added once someone has taken them, and Dropped once a Thief has let go of a stolen item until it is taken
+ * again. Items come and go, so their list is refreshed a few times a second.
  */
 [RequireComponent(typeof(Camera))]
 public class ThiefTestWorldLabels : MonoBehaviour
@@ -28,6 +30,7 @@ public class ThiefTestWorldLabels : MonoBehaviour
     private Door[] doors;
     private ThiefTestBreakableBarricade[] barricades;
     private PickupInteractable[] items = new PickupInteractable[0];
+    private readonly HashSet<PickupInteractable> dropped = new HashSet<PickupInteractable>();
     private float nextItemRefresh;
     private GUIStyle style;
 
@@ -35,6 +38,23 @@ public class ThiefTestWorldLabels : MonoBehaviour
     {
         view = GetComponent<Camera>();
     }
+
+    private void OnEnable()
+    {
+        PickupInteractable.AnyReleased += MarkDropped;
+        PickupInteractable.AnyStolen += ClearDropped;
+        PickupInteractable.AnyCollected += ClearDropped;
+    }
+
+    private void OnDisable()
+    {
+        PickupInteractable.AnyReleased -= MarkDropped;
+        PickupInteractable.AnyStolen -= ClearDropped;
+        PickupInteractable.AnyCollected -= ClearDropped;
+    }
+
+    private void MarkDropped(PickupInteractable item) => dropped.Add(item);
+    private void ClearDropped(PickupInteractable item) => dropped.Remove(item);
 
     // Start runs after every Awake, so the breakable barricades added by ThiefTestProximityInteractor already exist.
     private void Start()
@@ -87,12 +107,16 @@ public class ThiefTestWorldLabels : MonoBehaviour
         {
             if (item == null) continue;
 
-            string state = item.WasStolen ? "\nCarried" : item.IsCollected ? "\nClaimed" : "";
+            string state = item.WasStolen ? "\nCarried"
+                         : item.IsCollected ? "\nClaimed"
+                         : dropped.Contains(item) ? "\nDropped"
+                         : "";
             DrawLabel(item.transform.position, ItemName(item.Type) + state, ItemColor(item.Type), itemLabelHeight);
         }
     }
 
-    private static string ItemName(PickupType type)
+    // Display name per item type, shared with the other Thief test views.
+    public static string ItemName(PickupType type)
     {
         switch (type)
         {
@@ -103,7 +127,8 @@ public class ThiefTestWorldLabels : MonoBehaviour
         }
     }
 
-    private static Color ItemColor(PickupType type)
+    // Label colour per item type, shared with the other Thief test views.
+    public static Color ItemColor(PickupType type)
     {
         switch (type)
         {

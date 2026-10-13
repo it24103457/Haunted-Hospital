@@ -3,9 +3,10 @@ using UnityEngine;
 
 /*
  * Test-only debug view for the Thief in the Thief test scene.
- * Draws ThiefAgent.CurrentPath as a line from the Thief through every path point, and shows its State
- * (plus "carrying" while it holds an item) above it, as seen through the scene's top-down camera.
- * Reads only the output contract, so it shows exactly what the Agent Controller would receive.
+ * Draws ThiefAgent.CurrentPath as a line from the Thief through every path point, and shows its State above
+ * it, as seen through the scene's top-down camera. While it carries an item the label adds which one
+ * (for example "carrying Medkit"), read from the item held under the Thief's CarrySocket.
+ * The path and state come only from the output contract, so they show exactly what the Agent Controller receives.
  */
 [RequireComponent(typeof(ThiefAgent))]
 public class ThiefTestPathView : MonoBehaviour
@@ -19,6 +20,7 @@ public class ThiefTestPathView : MonoBehaviour
     [SerializeField] private int fontSize = 20;
 
     private ThiefAgent thief;
+    private Transform carrySocket;
     private LineRenderer line;
     private Camera view;
     private GUIStyle style;
@@ -27,8 +29,9 @@ public class ThiefTestPathView : MonoBehaviour
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
+        carrySocket = transform.Find("CarrySocket");
 
-        /* The line lives on its own child so it never interferes with the Thief's colliders or model. */
+        // The line lives on its own child so it never interferes with the Thief's colliders or model.
         GameObject lineObject = new GameObject("PathLine");
         lineObject.transform.SetParent(transform, false);
         line = lineObject.AddComponent<LineRenderer>();
@@ -64,6 +67,13 @@ public class ThiefTestPathView : MonoBehaviour
 
     private Vector3 Lift(Vector3 p) => new Vector3(p.x, lineHeight, p.z);
 
+    // Name of the item held under the CarrySocket, or "item" when it can't be seen there.
+    private string CarriedItemName()
+    {
+        PickupInteractable item = carrySocket != null ? carrySocket.GetComponentInChildren<PickupInteractable>() : null;
+        return item != null ? ThiefTestWorldLabels.ItemName(item.Type) : "item";
+    }
+
     private void OnGUI()
     {
         if (view == null) return;
@@ -76,7 +86,7 @@ public class ThiefTestPathView : MonoBehaviour
         style.fontSize = fontSize;
         style.fontStyle = FontStyle.Bold;
 
-        string text = thief.IsCarrying ? $"{thief.State}\ncarrying" : thief.State.ToString();
+        string text = thief.IsCarrying ? $"{thief.State}\ncarrying {CarriedItemName()}" : thief.State.ToString();
         Rect rect = new Rect(screen.x - 150f, Screen.height - screen.y - 30f, 300f, 60f);
 
         style.normal.textColor = Color.black;
