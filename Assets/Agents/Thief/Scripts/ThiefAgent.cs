@@ -46,6 +46,10 @@ public class ThiefAgent : MonoBehaviour
     [SerializeField] private float arriveDistance = 0.3f;
     [Tooltip("Seconds the Thief waits at a door after opening it, covering the door's swing.")]
     [SerializeField] private float doorOpenWait = 1f;
+    [Tooltip("Minimum clearance from walls and furniture for the spot the Thief stands on beside an item.")]
+    [SerializeField] private float standClearance = 0.4f;
+    [Tooltip("Furthest an item's standing spot may be from the item, measured flat.")]
+    [SerializeField] private float standSearchRadius = 1.5f;
 
     // Output contract
 
@@ -85,6 +89,7 @@ public class ThiefAgent : MonoBehaviour
      * barricade node (a checkpoint). segmentStart is the route index where the next segment begins.
      */
     private readonly List<WaypointNode> route = new List<WaypointNode>();
+    private readonly List<Vector3> finalStretch = new List<Vector3>();
     private int segmentStart;
     private WaypointNode checkpoint;
     private ThiefState tripState;
@@ -128,11 +133,14 @@ public class ThiefAgent : MonoBehaviour
     /*
      * Begins walking the given node route in the given travel state (GoToItem or GoToStash).
      * The route is published one segment at a time, each ending in front of the next doorway or barricade.
+     * Optional extra points (the final stretch) are walked after the last node, for targets off the graph.
      */
-    private void StartTrip(List<WaypointNode> newRoute, ThiefState travelState)
+    private void StartTrip(List<WaypointNode> newRoute, ThiefState travelState, IEnumerable<Vector3> extraPoints = null)
     {
         route.Clear();
         route.AddRange(newRoute);
+        finalStretch.Clear();
+        if (extraPoints != null) finalStretch.AddRange(extraPoints);
         segmentStart = 0;
         tripState = travelState;
         TripArrived = false;
@@ -166,7 +174,70 @@ public class ThiefAgent : MonoBehaviour
         }
 
         segmentStart = i;
+
+        // The last segment carries on past the final node into the final stretch.
+        if (checkpoint == null) points.AddRange(finalStretch);
+
         SetPath(points);
+    }
+
+    // Final stretch
+
+    /*
+     * The closest open floor point beside an item: within standSearchRadius of it (measured flat), at least
+     * standClearance from walls and furniture, and on the item's side of any wall (short, complete NavMesh path
+     * from the floor just below the item). Falls back to the nearest NavMesh point when none qualifies.
+     */
+    private Vector3 FindStandPoint(Vector3 item)
+    {
+        NavMesh.SamplePosition(new Vector3(item.x, 0f, item.z), out NavMeshHit near, 2f, navFilter);
+        var path = new NavMeshPath();
+
+        for (float r = 0.5f; r <= standSearchRadius; r += 0.25f)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                float a = i * Mathf.PI / 6f;
+                Vector3 p = new Vector3(item.x + Mathf.Cos(a) * r, 0f, item.z + Mathf.Sin(a) * r);
+
+                if (!NavMesh.SamplePosition(p, out NavMeshHit hit, 0.1f, navFilter)) continue;
+                if (!NavMesh.FindClosestEdge(hit.position, out NavMeshHit edge, navFilter) || edge.distance < standClearance) continue;
+
+                // A long or broken path means the point is on the other side of a wall.
+                if (!NavMesh.CalculatePath(near.position, hit.position, navFilter, path) ||
+                    path.status != NavMeshPathStatus.PathComplete || PathLength(path) > 3f) continue;
+
+                return hit.position;
+            }
+        }
+
+        return near.position;
+    }
+
+    /*
+     * NavMesh corner points from a graph node to an off-graph target, so the last bit of a trip bends around
+     * furniture. Null when no complete NavMesh path exists, which marks the target as unreachable.
+     */
+    private List<Vector3> FinalStretchTo(WaypointNode fromNode, Vector3 target)
+    {
+        if (!NavMesh.SamplePosition(fromNode.Position, out NavMeshHit start, 1f, navFilter)) return null;
+
+        var path = new NavMeshPath();
+        if (!NavMesh.CalculatePath(start.position, target, navFilter, path) ||
+            path.status != NavMeshPathStatus.PathComplete) return null;
+
+        // The first corner is the node's own position, already the end of the node route.
+        var corners = new List<Vector3>(path.corners);
+        if (corners.Count > 0) corners.RemoveAt(0);
+        return corners;
+    }
+
+    private static float PathLength(NavMeshPath path)
+    {
+        float length = 0f;
+        for (int i = 1; i < path.corners.Length; i++)
+            length += Vector3.Distance(path.corners[i - 1], path.corners[i]);
+        return length;
     }
 
     /*
