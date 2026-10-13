@@ -3,6 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+/*
+ * What the Thief knows about the player at one decision: where the player stood and how much the player
+ * needs each supply, from 0 (stat full) to 1 (stat empty). Taken once per decision, never tracked continuously.
+ */
+public struct PlayerSnapshot
+{
+    public Vector3 Position;
+    public float HealthNeed;
+    public float SanityNeed;
+    public float AmmoNeed;
+}
+
 // The Thief's high-level states, published through ThiefAgent.State for animation and debugging.
 public enum ThiefState
 {
@@ -102,6 +114,9 @@ public class ThiefAgent : MonoBehaviour
 
     // True when a door on the route turned out to be locked, so the route needs replanning.
     private bool TripBlocked { get; set; }
+
+    // The player as seen at the most recent decision.
+    private PlayerSnapshot LastPlayerSample { get; set; }
 
     // True while the Thief is on a trip, including waiting at a door along the way.
     private bool IsTravelling =>
@@ -289,6 +304,44 @@ public class ThiefAgent : MonoBehaviour
         // A broken barricade is walked straight through, and forgotten if it was remembered as intact.
         knownBlocked.Remove(checkpoint);
         PublishNextSegment();
+    }
+
+    // Player stat tracking
+
+    /*
+     * Reads the player's position and stats once and turns each stat into a need:
+     * need = 1 - current / max, so an empty stat is a need of 1 and a full one a need of 0.
+     */
+    private PlayerSnapshot SamplePlayer()
+    {
+        var sample = new PlayerSnapshot();
+        if (player == null) return sample;
+
+        sample.Position = player.transform.position;
+        sample.HealthNeed = Need(player.Health, player.MaxHealth);
+        sample.SanityNeed = Need(player.Sanity, player.MaxSanity);
+        sample.AmmoNeed = Need(player.ReserveAmmo, player.MaxReserveAmmo);
+
+        LastPlayerSample = sample;
+        return sample;
+    }
+
+    private static float Need(float current, float max)
+    {
+        if (max <= 0f) return 0f;
+        return Mathf.Clamp01(1f - current / max);
+    }
+
+    // The player's need for the supply an item gives. Items the Thief doesn't steal (such as keys) have no need.
+    private static float NeedFor(PickupType type, PlayerSnapshot sample)
+    {
+        switch (type)
+        {
+            case PickupType.Health: return sample.HealthNeed;
+            case PickupType.Sanity: return sample.SanityNeed;
+            case PickupType.Ammo: return sample.AmmoNeed;
+            default: return 0f;
+        }
     }
 
     // Barricade memory
