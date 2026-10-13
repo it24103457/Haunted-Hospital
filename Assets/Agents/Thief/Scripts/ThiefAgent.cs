@@ -24,7 +24,8 @@ public enum ThiefState
     GoToStash,
     Delivering,
     WaitAtDoor,
-    Dead
+    Dead,
+    Inactive
 }
 
 /*
@@ -34,6 +35,7 @@ public enum ThiefState
  * scene) turns CurrentPath into movement and applies SpeedMultiplier to the NavMeshAgent's speed.
  * Loop: Deciding -> GoToItem -> Stealing -> GoToStash -> Delivering -> Deciding,
  * with WaitAtDoor during either trip, and Dead until it respawns at a random Thief spawn.
+ * At the start of play it is Inactive (not in the level yet) until firstSpawnDelay has passed.
  */
 [RequireComponent(typeof(NavMeshAgent))]
 public class ThiefAgent : MonoBehaviour, IDamageable
@@ -92,6 +94,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 100f;
     [Tooltip("Seconds between dying and reappearing at a random Thief spawn.")]
     [SerializeField] private float respawnDelay = 5f;
+    [Tooltip("Seconds after play starts before the Thief first appears at a random Thief spawn.")]
+    [SerializeField] private float firstSpawnDelay = 5f;
     [Tooltip("Name prefix of the Thief spawn points the Thief starts and respawns at.")]
     [SerializeField] private string thiefSpawnPrefix = "ThiefSpawn";
     [Tooltip("Visual part hidden while dead. Found as a child named Model when left empty.")]
@@ -102,8 +106,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // World positions the Thief wants to walk through, in order. Empty while it stands still.
     public IReadOnlyList<Vector3> CurrentPath => currentPath;
 
-    // What the Thief is doing right now.
-    public ThiefState State { get; private set; } = ThiefState.Deciding;
+    // What the Thief is doing right now. Inactive until it first appears.
+    public ThiefState State { get; private set; } = ThiefState.Inactive;
 
     // True while a stolen item is held.
     public bool IsCarrying => carriedItem != null;
@@ -130,6 +134,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     // Raised when the Thief drops a carried item on dying, after the item is back in the world.
     public event Action<PickupInteractable> OnItemDropped;
+
+    // Raised each time the Thief appears in the level: its first appearance and every respawn.
+    public event Action OnSpawned;
 
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private PickupInteractable carriedItem = null;
@@ -205,7 +212,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         FindHunterSpawnNodes();
         FindStashes();
         FindThiefSpawns();
-        MoveToRandomSpawn();
+
+        // Hidden and out of play until the first spawn.
+        SetVisible(false);
+        nextDecisionTime = Time.time + firstSpawnDelay;
     }
 
     /*
@@ -236,6 +246,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
                 break;
 
             case ThiefState.Dead:
+            case ThiefState.Inactive:
                 if (Time.time >= nextDecisionTime) Respawn();
                 break;
         }
@@ -249,7 +260,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
      */
     public void TakeDamage(DamageInfo info)
     {
-        if (State == ThiefState.Dead || info.Amount <= 0f) return;
+        if (!IsInPlay || info.Amount <= 0f) return;
 
         Health = Mathf.Max(0f, Health - info.Amount);
         if (Health <= 0f) Die();
@@ -261,7 +272,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
      */
     public void Heal(float amount)
     {
-        if (State == ThiefState.Dead || amount <= 0f) return;
+        if (!IsInPlay || amount <= 0f) return;
 
         Health = Mathf.Min(maxHealth, Health + amount);
     }
@@ -287,8 +298,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * Reappears at full health at a random Thief spawn as a fresh Thief: barricade memory is cleared,
-     * then it decides straight away.
+     * Appears at full health at a random Thief spawn as a fresh Thief, both for its first appearance and
+     * after dying: barricade memory is cleared, it decides straight away, and OnSpawned is raised.
      */
     private void Respawn()
     {
@@ -297,7 +308,11 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         MoveToRandomSpawn();
         SetVisible(true);
         Redecide(0f);
+        OnSpawned?.Invoke();
     }
+
+    // True while the Thief is in the level: not dead and not yet waiting for its first spawn.
+    private bool IsInPlay => State != ThiefState.Dead && State != ThiefState.Inactive;
 
     private void FindThiefSpawns()
     {
