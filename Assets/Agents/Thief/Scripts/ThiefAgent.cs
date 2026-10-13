@@ -50,6 +50,8 @@ public class ThiefAgent : MonoBehaviour
     [SerializeField] private float standClearance = 0.4f;
     [Tooltip("Furthest an item's standing spot may be from the item, measured flat.")]
     [SerializeField] private float standSearchRadius = 1.5f;
+    [Tooltip("Remembered barricades within this distance are looked at again whenever the Thief stops.")]
+    [SerializeField] private float barricadeRecheckDistance = 3f;
 
     // Output contract
 
@@ -257,6 +259,8 @@ public class ThiefAgent : MonoBehaviour
 
         if (!ArrivedAtPathEnd()) return;
 
+        RecheckNearbyBarricades();
+
         if (checkpoint == null)
         {
             TripArrived = true;
@@ -275,8 +279,32 @@ public class ThiefAgent : MonoBehaviour
             return;
         }
 
-        // Barricade checkpoints are walked straight through for now.
+        if (checkpoint.Type == WaypointType.Barricade && checkpoint.IsBarricadeIntact)
+        {
+            knownBlocked.Add(checkpoint);
+            TripBlocked = true;
+            return;
+        }
+
+        // A broken barricade is walked straight through, and forgotten if it was remembered as intact.
+        knownBlocked.Remove(checkpoint);
         PublishNextSegment();
+    }
+
+    // Barricade memory
+
+    /*
+     * Looks again at remembered barricades close to where the Thief has stopped, and forgets any that are
+     * no longer intact, so routes through them open up again. Barricades it can't see stay remembered.
+     */
+    private void RecheckNearbyBarricades()
+    {
+        if (knownBlocked.Count == 0) return;
+
+        knownBlocked.RemoveWhere(node =>
+            node == null ||
+            (!node.IsBarricadeIntact &&
+             Vector3.Distance(node.Position, transform.position) <= barricadeRecheckDistance));
     }
 
     // Opens the door and waits doorOpenWait seconds, even if it was already open, so it has finished swinging.
