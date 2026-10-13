@@ -53,6 +53,17 @@ public class ThiefAgent : MonoBehaviour
     [Tooltip("Name prefix of the Hunter spawn points; each is matched to its nearest graph node.")]
     [SerializeField] private string hunterSpawnPrefix = "HunterSpawn";
 
+    [Header("Item choice")]
+    [Tooltip("Weight of the item being far from the player.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float playerDistanceWeight = 0.5f;
+    [Tooltip("Weight of the player needing the item's supply (low health, sanity or ammo).")]
+    [Range(0f, 1f)]
+    [SerializeField] private float needWeight = 0.3f;
+    [Tooltip("Weight of the item being close to the Thief.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float thiefDistanceWeight = 0.2f;
+
     [Header("Travel")]
     [Tooltip("Horizontal distance to the last path point at which the Thief counts as arrived.")]
     [SerializeField] private float arriveDistance = 0.3f;
@@ -366,6 +377,58 @@ public class ThiefAgent : MonoBehaviour
         if (item == null || !item.gameObject.activeInHierarchy || item.IsCollected) return false;
 
         return item.Type == PickupType.Health || item.Type == PickupType.Sanity || item.Type == PickupType.Ammo;
+    }
+
+    // Weighted item choice
+
+    /*
+     * The best item to steal for this decision, or null when there are none. Each item scores
+     *   playerDistanceWeight * P + needWeight * N + thiefDistanceWeight * T
+     * where P = its distance from the player / the largest such distance among the items (far = 1),
+     *       N = the player's need for its supply (empty stat = 1),
+     *       T = 1 - its distance from the Thief / the largest such distance among the items (near = 1).
+     * Distances are measured flat, since items sit on furniture at different heights. The highest score wins;
+     * on a tie the first item found keeps it.
+     */
+    private PickupInteractable ChooseItem(List<PickupInteractable> items, PlayerSnapshot sample)
+    {
+        if (items.Count == 0) return null;
+
+        float maxPlayerDistance = 0f;
+        float maxThiefDistance = 0f;
+        foreach (PickupInteractable item in items)
+        {
+            maxPlayerDistance = Mathf.Max(maxPlayerDistance, FlatDistance(sample.Position, item.transform.position));
+            maxThiefDistance = Mathf.Max(maxThiefDistance, FlatDistance(transform.position, item.transform.position));
+        }
+
+        PickupInteractable best = null;
+        float bestScore = float.NegativeInfinity;
+
+        foreach (PickupInteractable item in items)
+        {
+            float playerDistance = FlatDistance(sample.Position, item.transform.position);
+            float thiefDistance = FlatDistance(transform.position, item.transform.position);
+
+            float farFromPlayer = maxPlayerDistance > 0f ? playerDistance / maxPlayerDistance : 1f;
+            float closeToThief = maxThiefDistance > 0f ? 1f - thiefDistance / maxThiefDistance : 1f;
+            float need = NeedFor(item.Type, sample);
+
+            float score = playerDistanceWeight * farFromPlayer + needWeight * need + thiefDistanceWeight * closeToThief;
+            if (score <= bestScore) continue;
+
+            bestScore = score;
+            best = item;
+        }
+
+        return best;
+    }
+
+    private static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
     }
 
     // Barricade memory
