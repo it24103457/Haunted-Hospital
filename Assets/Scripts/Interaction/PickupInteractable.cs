@@ -36,24 +36,45 @@ public class PickupInteractable : MonoBehaviour, IInteractable
     // Raised for every pickup. The spawn manager can subscribe once to clear markers.
     public static event Action<PickupInteractable> AnyCollected;
 
+    // Raised on this pickup when a thief marks it stolen, just before it is carried away.
+    public event Action<PickupInteractable> Stolen;
+
+    // Raised for every stolen pickup, so a single listener covers all items.
+    public static event Action<PickupInteractable> AnyStolen;
+
+    // Raised on this pickup when a thief drops it back into the world.
+    public event Action<PickupInteractable> Released;
+
+    // Raised for every released pickup, so a single listener covers all items.
+    public static event Action<PickupInteractable> AnyReleased;
+
     public PickupType Type => type;
     public int Amount => amount;
 
     // True from the moment E is pressed (or a thief claims it), including during the open animation.
     public bool IsCollected { get; private set; }
 
-    private bool warnedNoReceiver;
+    // True from MarkStolen() until the item is released; still true when a stash delivery removes it.
+    public bool WasStolen { get; private set; }
 
-    // Keeps the static event clean if "Enter Play Mode Options" has domain reload turned off.
+    private bool warnedNoReceiver;
+    private Collider[] colliders;
+
+    // Keeps the static events clean if "Enter Play Mode Options" has domain reload turned off.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStatics() => AnyCollected = null;
+    private static void ResetStatics()
+    {
+        AnyCollected = null;
+        AnyStolen = null;
+        AnyReleased = null;
+    }
 
     private void Awake()
     {
         if (animator == null) animator = GetComponentInChildren<Animator>();
         ResetOpenParameter();
 
-        Collider[] colliders = GetComponentsInChildren<Collider>();
+        colliders = GetComponentsInChildren<Collider>();
         bool hasSolid = false;
         foreach (Collider c in colliders)
         {
@@ -119,6 +140,40 @@ public class PickupInteractable : MonoBehaviour, IInteractable
         return true;
     }
 
+    /*
+     * Marks a claimed item as stolen and turns its colliders off, so it can't be targeted while carried.
+     * Has no effect unless TryClaim() already succeeded, and runs once per theft.
+     */
+    public void MarkStolen()
+    {
+        if (!IsCollected || WasStolen) return;
+
+        WasStolen = true;
+        SetCollidersEnabled(false);
+
+        Stolen?.Invoke(this);
+        AnyStolen?.Invoke(this);
+    }
+
+    /*
+     * Drops a stolen item back into the world at the given position, detached from its carrier and upright.
+     * Colliders come back on and the item is collectable again, so the normal E pickup applies.
+     */
+    public void Release(Vector3 position)
+    {
+        if (!WasStolen) return;
+
+        transform.SetParent(null, true);
+        transform.SetPositionAndRotation(position, Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
+
+        SetCollidersEnabled(true);
+        WasStolen = false;
+        IsCollected = false;
+
+        Released?.Invoke(this);
+        AnyReleased?.Invoke(this);
+    }
+
     // Raise the collected events and remove the item from the world. Call after TryClaim().
     public void Remove()
     {
@@ -131,6 +186,13 @@ public class PickupInteractable : MonoBehaviour, IInteractable
     }
 
     // Internals
+
+    // Switches every collider on the item on or off.
+    private void SetCollidersEnabled(bool on)
+    {
+        foreach (Collider c in colliders)
+            if (c != null) c.enabled = on;
+    }
 
     private IEnumerator FinishAfterDelay(IPickupReceiver receiver)
     {
