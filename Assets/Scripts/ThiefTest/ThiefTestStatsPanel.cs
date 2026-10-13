@@ -1,0 +1,110 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+/*
+ * Test-only on-screen panel for the Thief test scene.
+ * Shows the player's health, sanity and reserve ammo with a minus and a plus button on either side of each,
+ * so the Thief's need-based decisions can be tried against different player states.
+ * Every button also has a numpad key that works at any time, without a cursor. The keys follow the panel's
+ * layout from bottom to top: 1/2 ammo (bottom row), 4/5 sanity (middle row), 7/8 health (top row).
+ * Changes go through PlayerStats' own public methods. Health never drops below 1 from the panel,
+ * because PlayerStats can't heal a dead player.
+ * PlayerController locks the mouse on every click, so Tab switches to an edit mode that pauses the
+ * controller and keeps the mouse free for the buttons; Tab again hands control back.
+ */
+[RequireComponent(typeof(PlayerStats))]
+public class ThiefTestStatsPanel : MonoBehaviour
+{
+    [SerializeField] private float healthStep = 10f;
+    [SerializeField] private float sanityStep = 10f;
+    [SerializeField] private int ammoStep = 10;
+
+    private PlayerStats stats;
+    private PlayerController controller;
+    private bool editing;
+    private GUIStyle valueStyle;
+    private GUIStyle buttonStyle;
+
+    private void Awake()
+    {
+        stats = GetComponent<PlayerStats>();
+        controller = GetComponent<PlayerController>();
+    }
+
+    private void Update()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null) return;
+
+        if (keyboard.tabKey.wasPressedThisFrame)
+        {
+            editing = !editing;
+            if (controller != null) controller.enabled = !editing;
+        }
+
+        if (keyboard.numpad7Key.wasPressedThisFrame) LowerHealth();
+        if (keyboard.numpad8Key.wasPressedThisFrame) RaiseHealth();
+        if (keyboard.numpad4Key.wasPressedThisFrame) LowerSanity();
+        if (keyboard.numpad5Key.wasPressedThisFrame) RaiseSanity();
+        if (keyboard.numpad1Key.wasPressedThisFrame) LowerAmmo();
+        if (keyboard.numpad2Key.wasPressedThisFrame) RaiseAmmo();
+    }
+
+    // Re-applied every frame in edit mode, after anything else that may have locked the mouse again.
+    private void LateUpdate()
+    {
+        if (!editing) return;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    private void OnGUI()
+    {
+        if (valueStyle == null) valueStyle = new GUIStyle();
+        valueStyle.alignment = TextAnchor.MiddleCenter;
+        valueStyle.fontSize = 20;
+        valueStyle.fontStyle = FontStyle.Bold;
+        valueStyle.normal.textColor = Color.white;
+
+        if (buttonStyle == null) buttonStyle = new GUIStyle(GUI.skin.button);
+        buttonStyle.fontSize = 18;
+        buttonStyle.fontStyle = FontStyle.Bold;
+
+        const float x = 20f, rowHeight = 40f, buttonWidth = 56f, valueWidth = 230f;
+        float y = Screen.height - 3 * rowHeight - 30f;
+
+        GUI.Box(new Rect(x - 10f, y - 40f, valueWidth + 2 * buttonWidth + 40f, 3 * rowHeight + 50f), GUIContent.none);
+        GUI.Label(new Rect(x, y - 36f, valueWidth + 2 * buttonWidth + 20f, 28f),
+                  editing ? "Editing stats (Tab to play)" : "Numpad keys, or Tab to click", valueStyle);
+
+        Row(x, y, buttonWidth, valueWidth, rowHeight, "7  -", "+  8",
+            $"Health {stats.Health:0}/{stats.MaxHealth:0}{(stats.IsDead ? " DEAD" : "")}", LowerHealth, RaiseHealth);
+        Row(x, y + rowHeight, buttonWidth, valueWidth, rowHeight, "4  -", "+  5",
+            $"Sanity {stats.Sanity:0}/{stats.MaxSanity:0}", LowerSanity, RaiseSanity);
+        Row(x, y + 2 * rowHeight, buttonWidth, valueWidth, rowHeight, "1  -", "+  2",
+            $"Ammo {stats.ReserveAmmo}/{stats.MaxReserveAmmo}", LowerAmmo, RaiseAmmo);
+    }
+
+    // One line of the panel: minus button, value text, plus button, each button labelled with its key.
+    private void Row(float x, float y, float buttonWidth, float valueWidth, float height, string minusLabel,
+                     string plusLabel, string text, System.Action minus, System.Action plus)
+    {
+        if (GUI.Button(new Rect(x, y, buttonWidth, height - 6f), minusLabel, buttonStyle)) minus();
+        GUI.Label(new Rect(x + buttonWidth + 10f, y, valueWidth, height - 6f), text, valueStyle);
+        if (GUI.Button(new Rect(x + buttonWidth + valueWidth + 20f, y, buttonWidth, height - 6f), plusLabel, buttonStyle)) plus();
+    }
+
+    // Damage by one step, stopping at 1 health so the player stays alive and can still be healed.
+    private void LowerHealth()
+    {
+        float amount = Mathf.Min(healthStep, stats.Health - 1f);
+        if (amount > 0f) stats.TakeDamage(new DamageInfo(amount, gameObject));
+    }
+
+    private void RaiseHealth() => stats.Heal(healthStep);
+    private void LowerSanity() => stats.DrainSanity(sanityStep);
+    private void RaiseSanity() => stats.AddSanity(sanityStep);
+    private void LowerAmmo() => stats.TryUseAmmo(Mathf.Min(ammoStep, stats.ReserveAmmo));
+    private void RaiseAmmo() => stats.AddAmmo(ammoStep);
+}

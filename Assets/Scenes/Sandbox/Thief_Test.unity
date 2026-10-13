@@ -80313,6 +80313,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4871408159299711671, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2023644993}
+    - targetCorrespondingSourceObject: {fileID: 4871408159299711671, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2023644994}
   m_SourcePrefab: {fileID: 100100000, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
 --- !u!4 &2023644988 stripped
 Transform:
@@ -80335,6 +80338,21 @@ MonoBehaviour:
   interactMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &2023644994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339018972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1f91f952dd3daa49ba0e9ed368190f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThiefTestStatsPanel
+  healthStep: 10
+  sanityStep: 10
+  ammoStep: 10
 --- !u!1 &2023706992
 GameObject:
   m_ObjectHideFlags: 0
