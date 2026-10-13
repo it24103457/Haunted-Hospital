@@ -41,6 +41,12 @@ public class ThiefAgent : MonoBehaviour
     [Tooltip("Name prefix of the Hunter spawn points; each is matched to its nearest graph node.")]
     [SerializeField] private string hunterSpawnPrefix = "HunterSpawn";
 
+    [Header("Travel")]
+    [Tooltip("Horizontal distance to the last path point at which the Thief counts as arrived.")]
+    [SerializeField] private float arriveDistance = 0.3f;
+    [Tooltip("Seconds the Thief waits at a door after opening it, covering the door's swing.")]
+    [SerializeField] private float doorOpenWait = 1f;
+
     // Output contract
 
     // World positions the Thief wants to walk through, in order. Empty while it stands still.
@@ -74,6 +80,26 @@ public class ThiefAgent : MonoBehaviour
     // Barricade nodes this Thief has found intact. Planning treats every other barricade as passable.
     private readonly HashSet<WaypointNode> knownBlocked = new HashSet<WaypointNode>();
 
+    /*
+     * The current trip: the planned node route, split into segments that end in front of each doorway or
+     * barricade node (a checkpoint). segmentStart is the route index where the next segment begins.
+     */
+    private readonly List<WaypointNode> route = new List<WaypointNode>();
+    private int segmentStart;
+    private WaypointNode checkpoint;
+    private ThiefState tripState;
+    private float doorReadyTime;
+
+    // True once the Thief stands at the end of its trip.
+    private bool TripArrived { get; set; }
+
+    // True when a door on the route turned out to be locked, so the route needs replanning.
+    private bool TripBlocked { get; set; }
+
+    // True while the Thief is on a trip, including waiting at a door along the way.
+    private bool IsTravelling =>
+        State == ThiefState.GoToItem || State == ThiefState.GoToStash || State == ThiefState.WaitAtDoor;
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -90,6 +116,121 @@ public class ThiefAgent : MonoBehaviour
     private void Start()
     {
         FindHunterSpawnNodes();
+    }
+
+    private void Update()
+    {
+        if (IsTravelling) TickTrip();
+    }
+
+    // Trips and door checkpoints
+
+    /*
+     * Begins walking the given node route in the given travel state (GoToItem or GoToStash).
+     * The route is published one segment at a time, each ending in front of the next doorway or barricade.
+     */
+    private void StartTrip(List<WaypointNode> newRoute, ThiefState travelState)
+    {
+        route.Clear();
+        route.AddRange(newRoute);
+        segmentStart = 0;
+        tripState = travelState;
+        TripArrived = false;
+        TripBlocked = false;
+
+        SetState(travelState);
+        PublishNextSegment();
+    }
+
+    /*
+     * Publishes route nodes from segmentStart onward, stopping at the node just before the next doorway or
+     * barricade node. That node becomes the checkpoint, and the following segment starts on it.
+     */
+    private void PublishNextSegment()
+    {
+        var points = new List<Vector3>();
+        checkpoint = null;
+
+        int i = segmentStart;
+        for (; i < route.Count; i++)
+        {
+            points.Add(route[i].Position);
+
+            bool nextIsCheckpoint = i + 1 < route.Count && route[i + 1].Type != WaypointType.Normal;
+            if (nextIsCheckpoint)
+            {
+                checkpoint = route[i + 1];
+                i++;
+                break;
+            }
+        }
+
+        segmentStart = i;
+        SetPath(points);
+    }
+
+    /*
+     * Runs every frame during a trip. On reaching the end of a segment it either finishes the trip,
+     * opens and waits at a door, or carries on past a barricade. After the door wait it resumes the trip.
+     */
+    private void TickTrip()
+    {
+        if (State == ThiefState.WaitAtDoor)
+        {
+            if (!DoorReady(checkpoint.Door)) return;
+
+            SetState(tripState);
+            PublishNextSegment();
+            return;
+        }
+
+        if (!ArrivedAtPathEnd()) return;
+
+        if (checkpoint == null)
+        {
+            TripArrived = true;
+            return;
+        }
+
+        if (checkpoint.Type == WaypointType.Door && checkpoint.Door != null)
+        {
+            if (checkpoint.Door.IsLocked)
+            {
+                TripBlocked = true;
+                return;
+            }
+
+            BeginOpening(checkpoint.Door);
+            return;
+        }
+
+        // Barricade checkpoints are walked straight through for now.
+        PublishNextSegment();
+    }
+
+    // Opens the door and waits doorOpenWait seconds, even if it was already open, so it has finished swinging.
+    private void BeginOpening(Door door)
+    {
+        door.Open();
+        doorReadyTime = Time.time + doorOpenWait;
+        SetState(ThiefState.WaitAtDoor);
+    }
+
+    // True once the door is passable and the wait has passed. The only place that decides when to walk on.
+    private bool DoorReady(Door door)
+    {
+        if (door == null) return true;
+        return door.IsOpen && Time.time >= doorReadyTime;
+    }
+
+    // True when the Thief stands within arriveDistance of the last point of its published path.
+    private bool ArrivedAtPathEnd()
+    {
+        if (currentPath.Count == 0) return false;
+
+        Vector3 offset = currentPath[currentPath.Count - 1] - transform.position;
+        offset.y = 0f;
+        return offset.magnitude <= arriveDistance;
     }
 
     // Path costs
