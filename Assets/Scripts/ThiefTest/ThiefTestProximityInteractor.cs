@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 /*
@@ -26,6 +27,20 @@ public class ThiefTestProximityInteractor : MonoBehaviour
         playerInteractor = GetComponent<PlayerInteractor>();
         interactAction = new InputAction("TestInteract", InputActionType.Button, "<Keyboard>/e");
         interactAction.AddBinding("<Gamepad>/buttonWest");
+
+        MakeBarricadesBreakable();
+    }
+
+    // Every NavMeshObstacle that isn't part of a door is a barricade, and gets the test break interaction.
+    private static void MakeBarricadesBreakable()
+    {
+        foreach (NavMeshObstacle obstacle in FindObjectsByType<NavMeshObstacle>(FindObjectsInactive.Exclude))
+        {
+            if (obstacle.GetComponentInParent<Door>() != null) continue;
+            if (obstacle.GetComponent<ThiefTestBreakableBarricade>() != null) continue;
+
+            obstacle.gameObject.AddComponent<ThiefTestBreakableBarricade>();
+        }
     }
 
     private void OnEnable()
