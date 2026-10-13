@@ -120,6 +120,15 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // Raised whenever State changes, with the new state.
     public event Action<ThiefState> OnStateChanged;
 
+    // Raised when the Thief takes an item, with the item (its Type says what it was).
+    public event Action<PickupInteractable> OnItemStolen;
+
+    // Raised when the Thief hands an item over at a stash, just before the item is removed.
+    public event Action<PickupInteractable> OnItemDelivered;
+
+    // Raised when the Thief drops a carried item on dying, after the item is back in the world.
+    public event Action<PickupInteractable> OnItemDropped;
+
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private PickupInteractable carriedItem = null;
     private NavMeshAgent agent;
@@ -250,7 +259,11 @@ public class ThiefAgent : MonoBehaviour, IDamageable
      */
     private void Die()
     {
-        if (carriedItem != null) carriedItem.Release(FloorBelow(transform.position));
+        if (carriedItem != null)
+        {
+            carriedItem.Release(FloorBelow(transform.position));
+            OnItemDropped?.Invoke(carriedItem);
+        }
         carriedItem = null;
         targetItem = null;
 
@@ -426,6 +439,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         item.MarkStolen();
         carriedItem = item;
+        OnItemStolen?.Invoke(item);
 
         if (!GoToStash()) Redecide(retryDelay);
     }
@@ -433,7 +447,11 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // Hands the carried item over at the stash (it counts as collected) and pauses before deciding again.
     private void Deliver()
     {
-        if (carriedItem != null) carriedItem.Remove();
+        if (carriedItem != null)
+        {
+            OnItemDelivered?.Invoke(carriedItem);
+            carriedItem.Remove();
+        }
         carriedItem = null;
 
         ClearPath();
