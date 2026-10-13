@@ -64,6 +64,10 @@ public class ThiefAgent : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float thiefDistanceWeight = 0.2f;
 
+    [Header("Stashes")]
+    [Tooltip("Name of the drop point objects inside each Thief stash; each is matched to its nearest graph node.")]
+    [SerializeField] private string dropPointName = "DropPoint";
+
     [Header("Travel")]
     [Tooltip("Horizontal distance to the last path point at which the Thief counts as arrived.")]
     [SerializeField] private float arriveDistance = 0.3f;
@@ -102,6 +106,15 @@ public class ThiefAgent : MonoBehaviour
 
     // NavMesh queries use the Thief's own agent type, the one the hospital NavMesh is baked for.
     private NavMeshQueryFilter navFilter;
+
+    // A stash the Thief can deliver to: the drop point in the scene and the graph node standing on it.
+    private struct Stash
+    {
+        public Transform DropPoint;
+        public WaypointNode Node;
+    }
+
+    private readonly List<Stash> stashes = new List<Stash>();
 
     // Graph nodes at the Hunter spawn points, whose edges get the discount.
     private readonly HashSet<WaypointNode> hunterSpawnNodes = new HashSet<WaypointNode>();
@@ -149,6 +162,7 @@ public class ThiefAgent : MonoBehaviour
     private void Start()
     {
         FindHunterSpawnNodes();
+        FindStashes();
     }
 
     private void Update()
@@ -429,6 +443,46 @@ public class ThiefAgent : MonoBehaviour
         a.y = 0f;
         b.y = 0f;
         return Vector3.Distance(a, b);
+    }
+
+    // Stash choice
+
+    // Matches every stash drop point in the scene to its nearest graph node (the WP_Target_Stash node beside it).
+    private void FindStashes()
+    {
+        stashes.Clear();
+        if (graph == null) return;
+
+        foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude))
+        {
+            if (t.name != dropPointName) continue;
+
+            WaypointNode node = graph.GetNearestNode(t.position);
+            if (node != null) stashes.Add(new Stash { DropPoint = t, Node = node });
+        }
+
+        if (stashes.Count == 0) Debug.LogWarning($"ThiefAgent '{name}' found no '{dropPointName}' stash drop points.", this);
+    }
+
+    /*
+     * The stash whose drop point is nearest the Thief in a straight line, measured flat. Distance from the
+     * player and the player's stats play no part here. Returns false when the scene has no stashes.
+     */
+    private bool ChooseStash(out Stash nearest)
+    {
+        nearest = default;
+        float bestDistance = float.MaxValue;
+
+        foreach (Stash stash in stashes)
+        {
+            float distance = FlatDistance(transform.position, stash.DropPoint.position);
+            if (distance >= bestDistance) continue;
+
+            bestDistance = distance;
+            nearest = stash;
+        }
+
+        return stashes.Count > 0;
     }
 
     // Barricade memory
