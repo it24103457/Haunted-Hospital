@@ -80,6 +80,14 @@ public class ThiefAgent : MonoBehaviour
     [Tooltip("Remembered barricades within this distance are looked at again whenever the Thief stops.")]
     [SerializeField] private float barricadeRecheckDistance = 3f;
 
+    [Header("Steal loop")]
+    [Tooltip("Furthest an item may be from the Thief, measured flat, for it to be stolen.")]
+    [SerializeField] private float stealRadius = 2f;
+    [Tooltip("Seconds before looking again when there is nothing to steal or no route to anything.")]
+    [SerializeField] private float retryDelay = 1f;
+    [Tooltip("Seconds the Thief stays at the stash after delivering, before deciding again.")]
+    [SerializeField] private float stashPause = 3f;
+
     // Output contract
 
     // World positions the Thief wants to walk through, in order. Empty while it stands still.
@@ -142,6 +150,10 @@ public class ThiefAgent : MonoBehaviour
     // The player as seen at the most recent decision.
     private PlayerSnapshot LastPlayerSample { get; set; }
 
+    // The item the Thief is heading for, and when the next decision may happen.
+    private PickupInteractable targetItem;
+    private float nextDecisionTime;
+
     // True while the Thief is on a trip, including waiting at a door along the way.
     private bool IsTravelling =>
         State == ThiefState.GoToItem || State == ThiefState.GoToStash || State == ThiefState.WaitAtDoor;
@@ -165,9 +177,177 @@ public class ThiefAgent : MonoBehaviour
         FindStashes();
     }
 
+    /*
+     * The steal loop: Deciding -> GoToItem -> Stealing -> GoToStash -> Delivering -> Deciding.
+     * Deciding waits for nextDecisionTime, trips run TickTrip until they arrive or need a new decision,
+     * Stealing takes the item, and Delivering is the pause at the stash.
+     */
     private void Update()
     {
-        if (IsTravelling) TickTrip();
+        switch (State)
+        {
+            case ThiefState.Deciding:
+                if (Time.time >= nextDecisionTime) Decide();
+                break;
+
+            case ThiefState.GoToItem:
+            case ThiefState.GoToStash:
+            case ThiefState.WaitAtDoor:
+                Travel();
+                break;
+
+            case ThiefState.Stealing:
+                Steal();
+                break;
+
+            case ThiefState.Delivering:
+                if (Time.time >= nextDecisionTime) Redecide(0f);
+                break;
+        }
+    }
+
+    // Steal loop
+
+    /*
+     * Chooses what to do next. Carrying an item, it heads for a stash; otherwise it samples the player once,
+     * picks the best stealable item it can actually reach, and heads for it. With nothing reachable it
+     * looks again after retryDelay.
+     */
+    private void Decide()
+    {
+        if (IsCarrying)
+        {
+            if (!GoToStash()) Redecide(retryDelay);
+            return;
+        }
+
+        PlayerSnapshot sample = SamplePlayer();
+        List<PickupInteractable> items = FindStealableItems();
+
+        // Unreachable items are dropped from this decision's list and the next best is tried.
+        while (items.Count > 0)
+        {
+            PickupInteractable item = ChooseItem(items, sample);
+            if (GoToItem(item)) return;
+
+            items.Remove(item);
+        }
+
+        Redecide(retryDelay);
+    }
+
+    /*
+     * Plans the trip to an item: A* from the node nearest the Thief to the node nearest the item's standing
+     * spot, then the final stretch to that spot. Returns false when either part has no route.
+     */
+    private bool GoToItem(PickupInteractable item)
+    {
+        Vector3 stand = FindStandPoint(item.transform.position);
+
+        List<WaypointNode> itemRoute = PlanRoute(graph.GetNearestNode(transform.position), graph.GetNearestNode(stand));
+        if (itemRoute.Count == 0) return false;
+
+        List<Vector3> stretch = FinalStretchTo(itemRoute[itemRoute.Count - 1], stand);
+        if (stretch == null) return false;
+
+        targetItem = item;
+        StartTrip(itemRoute, ThiefState.GoToItem, stretch);
+        return true;
+    }
+
+    /*
+     * Plans the trip to a stash: the nearest stash in a straight line first, then the others by distance if
+     * the nearer ones have no route. The trip ends on the stash's graph node. Returns false when none is reachable.
+     */
+    private bool GoToStash()
+    {
+        if (!ChooseStash(out Stash nearest)) return false;
+
+        var candidates = new List<Stash>(stashes);
+        candidates.Remove(nearest);
+        candidates.Sort((a, b) => FlatDistance(transform.position, a.DropPoint.position)
+                                  .CompareTo(FlatDistance(transform.position, b.DropPoint.position)));
+        candidates.Insert(0, nearest);
+
+        WaypointNode start = graph.GetNearestNode(transform.position);
+        foreach (Stash stash in candidates)
+        {
+            List<WaypointNode> stashRoute = PlanRoute(start, stash.Node);
+            if (stashRoute.Count == 0) continue;
+
+            StartTrip(stashRoute, ThiefState.GoToStash);
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+     * Runs a trip and watches for reasons to decide again: the target item being taken by someone else,
+     * or the route being blocked (a locked door or an intact barricade). On arrival it steals or delivers.
+     */
+    private void Travel()
+    {
+        if (tripState == ThiefState.GoToItem && !IsStealable(targetItem))
+        {
+            Redecide(0f);
+            return;
+        }
+
+        TickTrip();
+
+        if (TripBlocked)
+        {
+            Redecide(0f);
+            return;
+        }
+
+        if (!TripArrived) return;
+
+        if (tripState == ThiefState.GoToItem) SetState(ThiefState.Stealing);
+        else Deliver();
+    }
+
+    /*
+     * Takes the target item if it is still free and within stealRadius (measured flat): claims it, marks it
+     * stolen and holds it, then heads for a stash. Anything else sends the Thief back to deciding.
+     */
+    private void Steal()
+    {
+        PickupInteractable item = targetItem;
+        targetItem = null;
+
+        bool inReach = IsStealable(item) && FlatDistance(transform.position, item.transform.position) <= stealRadius;
+        if (!inReach || !item.TryClaim())
+        {
+            Redecide(0f);
+            return;
+        }
+
+        item.MarkStolen();
+        carriedItem = item;
+
+        if (!GoToStash()) Redecide(retryDelay);
+    }
+
+    // Hands the carried item over at the stash (it counts as collected) and pauses before deciding again.
+    private void Deliver()
+    {
+        if (carriedItem != null) carriedItem.Remove();
+        carriedItem = null;
+
+        ClearPath();
+        nextDecisionTime = Time.time + stashPause;
+        SetState(ThiefState.Delivering);
+    }
+
+    // Stops where it is and returns to deciding after the given delay.
+    private void Redecide(float delay)
+    {
+        targetItem = null;
+        ClearPath();
+        nextDecisionTime = Time.time + delay;
+        SetState(ThiefState.Deciding);
     }
 
     // Trips and door checkpoints
