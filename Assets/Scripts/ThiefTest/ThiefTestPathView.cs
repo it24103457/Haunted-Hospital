@@ -58,7 +58,7 @@ public class ThiefTestPathView : MonoBehaviour
         if (path.Count > 0)
         {
             points.Add(Lift(transform.position));
-            foreach (Vector3 p in path) points.Add(Lift(p));
+            for (int i = FirstPointAhead(path); i < path.Count; i++) points.Add(Lift(path[i]));
         }
 
         line.positionCount = points.Count;
@@ -66,6 +66,35 @@ public class ThiefTestPathView : MonoBehaviour
     }
 
     private Vector3 Lift(Vector3 p) => new Vector3(p.x, lineHeight, p.z);
+
+    /*
+     * Index of the first path point still ahead of the Thief. A published path keeps the points the Thief has
+     * already walked past, so the line starts at the end of the path piece the Thief is currently closest to,
+     * measured flat, instead of drawing back to points behind it.
+     */
+    private int FirstPointAhead(IReadOnlyList<Vector3> path)
+    {
+        if (path.Count < 2) return 0;
+
+        Vector2 here = new Vector2(transform.position.x, transform.position.z);
+        int bestIndex = 0;
+        float bestDistance = float.MaxValue;
+
+        for (int i = 0; i < path.Count - 1; i++)
+        {
+            Vector2 a = new Vector2(path[i].x, path[i].z);
+            Vector2 b = new Vector2(path[i + 1].x, path[i + 1].z);
+            Vector2 ab = b - a;
+            float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(here - a, ab) / ab.sqrMagnitude) : 0f;
+            float distance = Vector2.Distance(here, a + t * ab);
+
+            if (distance >= bestDistance) continue;
+            bestDistance = distance;
+            bestIndex = i + 1;
+        }
+
+        return bestIndex;
+    }
 
     // Name of the item held under the CarrySocket, or "item" when it can't be seen there.
     private string CarriedItemName()
