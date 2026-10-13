@@ -114,6 +114,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // Current health; the Thief dies at 0 and comes back at full health.
     public float Health { get; private set; }
 
+    public float MaxHealth => maxHealth;
+
     // Raised whenever CurrentPath is replaced or cleared, with the new path.
     public event Action<IReadOnlyList<Vector3>> OnPathChanged;
 
@@ -251,6 +253,17 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         Health = Mathf.Max(0f, Health - info.Amount);
         if (Health <= 0f) Die();
+    }
+
+    /*
+     * Restores health up to MaxHealth; ignored while dead. Nothing in the game heals the Thief,
+     * so this is only used by test tools.
+     */
+    public void Heal(float amount)
+    {
+        if (State == ThiefState.Dead || amount <= 0f) return;
+
+        Health = Mathf.Min(maxHealth, Health + amount);
     }
 
     /*
