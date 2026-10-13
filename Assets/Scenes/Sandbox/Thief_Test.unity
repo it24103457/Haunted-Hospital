@@ -27149,7 +27149,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThiefTestWorldLabels
   labelHeight: 2.5
+  itemLabelHeight: 1
   fontSize: 18
+  itemRefreshInterval: 0.25
 --- !u!1001 &711735215
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -75778,6 +75780,58 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1903728266}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1907979302
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1907979304}
+  - component: {fileID: 1907979303}
+  m_Layer: 0
+  m_Name: ThiefTestSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1907979303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907979302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afb95139f8c2d0b40a5ebd567801ffad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThiefTestSpawner
+  itemPrefabs:
+  - {fileID: 2711314149099294332, guid: 17f77a6e8d8c3864285f4b386b34af6a, type: 3}
+  - {fileID: 8833454276559079142, guid: 47fc1573ff18e6f469ae63ca649c470d, type: 3}
+  - {fileID: 8293022161901331268, guid: e7e210edb8d09474f9049da27a1b743e, type: 3}
+  markerPrefix: SP_S
+  targetCount: 6
+  respawnDelay: 10
+  stolenRespawnDelay: 20
+--- !u!4 &1907979304
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907979302}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1908034019
 GameObject:
   m_ObjectHideFlags: 0
@@ -85365,3 +85419,4 @@ SceneRoots:
   - {fileID: 1939707926}
   - {fileID: 706067226}
   - {fileID: 1555436025}
+  - {fileID: 1907979304}
