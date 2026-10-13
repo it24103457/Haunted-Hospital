@@ -130,6 +130,12 @@ public class ThiefAgent : MonoBehaviour
      */
     private float MinCostPerMetre => Mathf.Min(1f, hunterSpawnDiscount);
 
+    // The cheapest route between two nodes under this Thief's cost rules; empty when none exists.
+    private List<WaypointNode> PlanRoute(WaypointNode from, WaypointNode to)
+    {
+        return ThiefPathfinder.FindPath(from, to, EdgeCost, MinCostPerMetre);
+    }
+
     private void FindHunterSpawnNodes()
     {
         hunterSpawnNodes.Clear();
