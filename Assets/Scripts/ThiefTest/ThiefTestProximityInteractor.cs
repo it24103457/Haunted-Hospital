@@ -94,19 +94,16 @@ public class ThiefTestProximityInteractor : MonoBehaviour
     {
         if (current == null) return;
 
-        if (promptStyle == null)
-        {
-            promptStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 28,
-                fontStyle = FontStyle.Bold
-            };
-            promptStyle.normal.textColor = Color.yellow;
-        }
+        if (promptStyle == null) promptStyle = new GUIStyle();
+
+        // Set on every draw, so other test overlays that style their own text can't change the prompt's look.
+        promptStyle.alignment = TextAnchor.MiddleCenter;
+        promptStyle.fontSize = 34;
+        promptStyle.fontStyle = FontStyle.Bold;
+        promptStyle.normal.textColor = Color.yellow;
 
         // The object's name is shown with its prompt, so it's clear which of two nearby doors will react.
         string label = current is Component component ? $"{component.name}: {current.GetPrompt()}" : current.GetPrompt();
-        GUI.Label(new Rect(0f, 20f, Screen.width, 50f), label, promptStyle);
+        GUI.Label(new Rect(0f, 20f, Screen.width, 60f), label, promptStyle);
     }
 }
