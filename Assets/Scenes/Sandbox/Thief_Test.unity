@@ -4810,6 +4810,25 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 107861791}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &107989977 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7676168184634716972, guid: 863d5e74693443644be91d149b92c1cc, type: 3}
+  m_PrefabInstance: {fileID: 1555436025}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &107989981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107989977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b867a2d701e0fa24695229c184307203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThiefTestCarryVisual
+  carrySocket: {fileID: 0}
+  claimDistance: 3
 --- !u!1 &112155075
 GameObject:
   m_ObjectHideFlags: 0
@@ -60909,7 +60928,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7676168184634716972, guid: 863d5e74693443644be91d149b92c1cc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 107989981}
   m_SourcePrefab: {fileID: 100100000, guid: 863d5e74693443644be91d149b92c1cc, type: 3}
 --- !u!1 &1557266715
 GameObject:
