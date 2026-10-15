@@ -35,7 +35,7 @@ public enum ThiefState
  * scene) turns CurrentPath into movement and applies SpeedMultiplier to the NavMeshAgent's speed.
  * Loop: Deciding -> GoToItem -> Stealing -> GoToStash -> Delivering -> Deciding,
  * with WaitAtDoor during either trip, and Dead until it respawns at a random Thief spawn.
- * At the start of play it is Inactive (not in the level yet) until firstSpawnDelay has passed.
+ * At the start of play it is Inactive (not in the level yet) for a random firstSpawnDelayMin-Max.
  */
 [RequireComponent(typeof(NavMeshAgent))]
 public class ThiefAgent : MonoBehaviour, IDamageable
@@ -96,8 +96,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [SerializeField] private float deathRespawnDelayMin = 30f;
     [Tooltip("Longest time, in seconds, between being killed and reappearing at a random Thief spawn.")]
     [SerializeField] private float deathRespawnDelayMax = 45f;
-    [Tooltip("Seconds after play starts before the Thief first appears at a random Thief spawn.")]
-    [SerializeField] private float firstSpawnDelay = 20f;
+    [Tooltip("Shortest time, in seconds, after play starts before the Thief first appears at a random Thief spawn.")]
+    [SerializeField] private float firstSpawnDelayMin = 20f;
+    [Tooltip("Longest time, in seconds, after play starts before the Thief first appears at a random Thief spawn.")]
+    [SerializeField] private float firstSpawnDelayMax = 30f;
     [Tooltip("Name prefix of the Thief spawn points the Thief starts and respawns at.")]
     [SerializeField] private string thiefSpawnPrefix = "ThiefSpawn";
     [Tooltip("Visual part hidden while dead. Found as a child named Model when left empty.")]
@@ -220,7 +222,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         // Hidden and out of play until the first spawn.
         SetVisible(false);
-        nextDecisionTime = Time.time + firstSpawnDelay;
+        nextDecisionTime = Time.time + RandomDelay(firstSpawnDelayMin, firstSpawnDelayMax);
     }
 
     /*
