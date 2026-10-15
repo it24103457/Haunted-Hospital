@@ -25,7 +25,8 @@ public enum ThiefState
     Delivering,
     WaitAtDoor,
     Dead,
-    Inactive
+    Inactive,
+    Vanished
 }
 
 /*
@@ -33,9 +34,11 @@ public enum ThiefState
  * It decides on a target, plans routes over the shared waypoint graph and publishes them through the
  * output contract below. It never moves itself: the Agent Controller (or the test mover in the Thief test
  * scene) turns CurrentPath into movement and applies SpeedMultiplier to the NavMeshAgent's speed.
- * Loop: Deciding -> GoToItem -> Stealing -> GoToStash -> Delivering -> Deciding,
+ * Loop: Deciding -> GoToItem -> Stealing -> GoToStash -> Delivering -> Vanished -> (reappears) Deciding,
  * with WaitAtDoor during either trip, and Dead until it respawns at a random Thief spawn.
- * At the start of play it is Inactive (not in the level yet) until firstSpawnDelay has passed.
+ * After each delivery it vanishes for a random vanishRespawnDelayMin-Max, keeping what it has learned;
+ * only being killed wipes its memory.
+ * At the start of play it is Inactive (not in the level yet) for a random firstSpawnDelayMin-Max.
  */
 [RequireComponent(typeof(NavMeshAgent))]
 public class ThiefAgent : MonoBehaviour, IDamageable
@@ -87,15 +90,25 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [SerializeField] private float stealRadius = 2f;
     [Tooltip("Seconds before looking again when there is nothing to steal or no route to anything.")]
     [SerializeField] private float retryDelay = 1f;
-    [Tooltip("Seconds the Thief stays at the stash after delivering, before deciding again.")]
+    [Tooltip("Seconds the Thief stays at the stash after delivering, before it vanishes.")]
     [SerializeField] private float stashPause = 3f;
 
     [Header("Health and respawn")]
     [SerializeField] private float maxHealth = 100f;
-    [Tooltip("Seconds between dying and reappearing at a random Thief spawn.")]
-    [SerializeField] private float respawnDelay = 5f;
-    [Tooltip("Seconds after play starts before the Thief first appears at a random Thief spawn.")]
-    [SerializeField] private float firstSpawnDelay = 5f;
+    [Tooltip("Shortest time, in seconds, between being killed and reappearing at a random Thief spawn.")]
+    [SerializeField] private float deathRespawnDelayMin = 30f;
+    [Tooltip("Longest time, in seconds, between being killed and reappearing at a random Thief spawn.")]
+    [SerializeField] private float deathRespawnDelayMax = 45f;
+    [Tooltip("Shortest time, in seconds, after play starts before the Thief first appears at a random Thief spawn.")]
+    [SerializeField] private float firstSpawnDelayMin = 20f;
+    [Tooltip("Longest time, in seconds, after play starts before the Thief first appears at a random Thief spawn.")]
+    [SerializeField] private float firstSpawnDelayMax = 30f;
+    [Tooltip("Shortest time, in seconds, between vanishing after a stash delivery and reappearing at a random Thief spawn.")]
+    [SerializeField] private float vanishRespawnDelayMin = 24f;
+    [Tooltip("Longest time, in seconds, between vanishing after a stash delivery and reappearing at a random Thief spawn.")]
+    [SerializeField] private float vanishRespawnDelayMax = 45f;
+    [Tooltip("Comes back at full health after vanishing. Off: damage carries over until the Thief is killed.")]
+    [SerializeField] private bool restoreHealthAfterVanish = true;
     [Tooltip("Name prefix of the Thief spawn points the Thief starts and respawns at.")]
     [SerializeField] private string thiefSpawnPrefix = "ThiefSpawn";
     [Tooltip("Visual part hidden while dead. Found as a child named Model when left empty.")]
@@ -108,6 +121,12 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     // What the Thief is doing right now. Inactive until it first appears.
     public ThiefState State { get; private set; } = ThiefState.Inactive;
+
+    // True unless the Thief is dead (it is alive while waiting to appear and while vanished).
+    public bool IsAlive => State != ThiefState.Dead;
+
+    // True while the Thief is in the level: not dead, not vanished and not yet waiting for its first spawn.
+    public bool IsInPlay => IsAlive && State != ThiefState.Inactive && State != ThiefState.Vanished;
 
     // True while a stolen item is held.
     public bool IsCarrying => carriedItem != null;
@@ -137,6 +156,12 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     // Raised each time the Thief appears in the level: its first appearance and every respawn.
     public event Action OnSpawned;
+
+    // Raised when the Thief is killed, after it has dropped any carried item.
+    public event Action OnDied;
+
+    // Raised when the Thief vanishes after a stash delivery.
+    public event Action OnVanished;
 
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private PickupInteractable carriedItem = null;
@@ -215,7 +240,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         // Hidden and out of play until the first spawn.
         SetVisible(false);
-        nextDecisionTime = Time.time + firstSpawnDelay;
+        nextDecisionTime = Time.time + RandomDelay(firstSpawnDelayMin, firstSpawnDelayMax);
     }
 
     /*
@@ -242,12 +267,16 @@ public class ThiefAgent : MonoBehaviour, IDamageable
                 break;
 
             case ThiefState.Delivering:
-                if (Time.time >= nextDecisionTime) Redecide(0f);
+                if (Time.time >= nextDecisionTime) Vanish();
+                break;
+
+            case ThiefState.Vanished:
+                if (Time.time >= nextDecisionTime) Appear(restoreHealthAfterVanish);
                 break;
 
             case ThiefState.Dead:
             case ThiefState.Inactive:
-                if (Time.time >= nextDecisionTime) Respawn();
+                if (Time.time >= nextDecisionTime) Appear(true);
                 break;
         }
     }
@@ -278,8 +307,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * Drops any carried item on the floor where the Thief fell (collectable again through Release),
-     * stops, disappears (model hidden, hitbox off) and schedules the respawn.
+     * Killed: drops any carried item on the floor where the Thief fell (collectable again through Release),
+     * forgets everything it learned (barricade memory), stops, disappears (model hidden, hitbox off) and comes
+     * back after a random time between deathRespawnDelayMin and deathRespawnDelayMax. Raises OnDied.
      */
     private void Die()
     {
@@ -290,29 +320,49 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         }
         carriedItem = null;
         targetItem = null;
+        knownBlocked.Clear();
 
         ClearPath();
         SetVisible(false);
-        nextDecisionTime = Time.time + respawnDelay;
+        nextDecisionTime = Time.time + RandomDelay(deathRespawnDelayMin, deathRespawnDelayMax);
         SetState(ThiefState.Dead);
+        OnDied?.Invoke();
     }
 
     /*
-     * Appears at full health at a random Thief spawn as a fresh Thief, both for its first appearance and
-     * after dying: barricade memory is cleared, it decides straight away, and OnSpawned is raised.
+     * Brings the Thief into the level at a random Thief spawn: its first appearance and every return.
+     * With restoreHealth it comes back at full health. It decides straight away and raises OnSpawned.
+     * Barricade memory is untouched here; only dying clears it.
      */
-    private void Respawn()
+    private void Appear(bool restoreHealth)
     {
-        Health = maxHealth;
-        knownBlocked.Clear();
+        if (restoreHealth) Health = maxHealth;
         MoveToRandomSpawn();
         SetVisible(true);
         Redecide(0f);
         OnSpawned?.Invoke();
     }
 
-    // True while the Thief is in the level: not dead and not yet waiting for its first spawn.
-    private bool IsInPlay => State != ThiefState.Dead && State != ThiefState.Inactive;
+    // A random time between the two ends of a delay range; works whichever end is set larger.
+    private static float RandomDelay(float min, float max)
+    {
+        return UnityEngine.Random.Range(Mathf.Min(min, max), Mathf.Max(min, max));
+    }
+
+    /*
+     * After a stash delivery: disappears (model hidden, hitbox off) for a random time between
+     * vanishRespawnDelayMin and vanishRespawnDelayMax, then reappears at a random Thief spawn.
+     * Unlike dying, it keeps its barricade memory. Raises OnVanished.
+     */
+    private void Vanish()
+    {
+        targetItem = null;
+        ClearPath();
+        SetVisible(false);
+        nextDecisionTime = Time.time + RandomDelay(vanishRespawnDelayMin, vanishRespawnDelayMax);
+        SetState(ThiefState.Vanished);
+        OnVanished?.Invoke();
+    }
 
     private void FindThiefSpawns()
     {
@@ -472,7 +522,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         if (!GoToStash()) Redecide(retryDelay);
     }
 
-    // Hands the carried item over at the stash (it counts as collected) and pauses before deciding again.
+    // Hands the carried item over at the stash (it counts as collected) and pauses there before vanishing.
     private void Deliver()
     {
         if (carriedItem != null)
