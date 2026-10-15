@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxPitch = 85f;
 
     [Header("Body")]
-    [SerializeField] private float standRadius = 0.5f;
+    [SerializeField] private float standRadius = 0.4f;
     [SerializeField] private float crouchRadius = 0.3f;
 
     [Header("Crouch")]
