@@ -92,10 +92,12 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     [Header("Health and respawn")]
     [SerializeField] private float maxHealth = 100f;
-    [Tooltip("Seconds between dying and reappearing at a random Thief spawn.")]
-    [SerializeField] private float respawnDelay = 5f;
+    [Tooltip("Shortest time, in seconds, between being killed and reappearing at a random Thief spawn.")]
+    [SerializeField] private float deathRespawnDelayMin = 30f;
+    [Tooltip("Longest time, in seconds, between being killed and reappearing at a random Thief spawn.")]
+    [SerializeField] private float deathRespawnDelayMax = 45f;
     [Tooltip("Seconds after play starts before the Thief first appears at a random Thief spawn.")]
-    [SerializeField] private float firstSpawnDelay = 5f;
+    [SerializeField] private float firstSpawnDelay = 20f;
     [Tooltip("Name prefix of the Thief spawn points the Thief starts and respawns at.")]
     [SerializeField] private string thiefSpawnPrefix = "ThiefSpawn";
     [Tooltip("Visual part hidden while dead. Found as a child named Model when left empty.")]
@@ -137,6 +139,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     // Raised each time the Thief appears in the level: its first appearance and every respawn.
     public event Action OnSpawned;
+
+    // Raised when the Thief is killed, after it has dropped any carried item.
+    public event Action OnDied;
 
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private PickupInteractable carriedItem = null;
@@ -247,7 +252,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
             case ThiefState.Dead:
             case ThiefState.Inactive:
-                if (Time.time >= nextDecisionTime) Respawn();
+                if (Time.time >= nextDecisionTime) Appear(true);
                 break;
         }
     }
@@ -278,8 +283,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * Drops any carried item on the floor where the Thief fell (collectable again through Release),
-     * stops, disappears (model hidden, hitbox off) and schedules the respawn.
+     * Killed: drops any carried item on the floor where the Thief fell (collectable again through Release),
+     * forgets everything it learned (barricade memory), stops, disappears (model hidden, hitbox off) and comes
+     * back after a random time between deathRespawnDelayMin and deathRespawnDelayMax. Raises OnDied.
      */
     private void Die()
     {
@@ -290,25 +296,33 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         }
         carriedItem = null;
         targetItem = null;
+        knownBlocked.Clear();
 
         ClearPath();
         SetVisible(false);
-        nextDecisionTime = Time.time + respawnDelay;
+        nextDecisionTime = Time.time + RandomDelay(deathRespawnDelayMin, deathRespawnDelayMax);
         SetState(ThiefState.Dead);
+        OnDied?.Invoke();
     }
 
     /*
-     * Appears at full health at a random Thief spawn as a fresh Thief, both for its first appearance and
-     * after dying: barricade memory is cleared, it decides straight away, and OnSpawned is raised.
+     * Brings the Thief into the level at a random Thief spawn: its first appearance and every return.
+     * With restoreHealth it comes back at full health. It decides straight away and raises OnSpawned.
+     * Barricade memory is untouched here; only dying clears it.
      */
-    private void Respawn()
+    private void Appear(bool restoreHealth)
     {
-        Health = maxHealth;
-        knownBlocked.Clear();
+        if (restoreHealth) Health = maxHealth;
         MoveToRandomSpawn();
         SetVisible(true);
         Redecide(0f);
         OnSpawned?.Invoke();
+    }
+
+    // A random time between the two ends of a delay range; works whichever end is set larger.
+    private static float RandomDelay(float min, float max)
+    {
+        return UnityEngine.Random.Range(Mathf.Min(min, max), Mathf.Max(min, max));
     }
 
     // True while the Thief is in the level: not dead and not yet waiting for its first spawn.
