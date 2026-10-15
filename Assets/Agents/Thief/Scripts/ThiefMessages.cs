@@ -14,13 +14,14 @@ public enum ThiefMessageStyle
 
 /*
  * In-game HUD messages for what the Thief does. Listens to the scene's one ThiefAgent
- * (OnSpawned, OnItemStolen, OnItemDelivered, OnItemDropped) and shows a short message for each.
+ * (OnSpawned, OnVanished, OnItemStolen, OnItemDelivered, OnItemDropped) and shows a short message for each.
  *
  * Subtitle style (default, used in the game): a quiet list in the top-right corner, newest at the bottom,
- *   "Thief appeared", "Thief stole Medkit", "Thief stashed Medkit", "Thief dropped Medkit".
+ *   "Thief appeared", "Thief vanished", "Thief stole Medkit", "Thief stashed Medkit", "Thief dropped Medkit".
  *   Text is pale with a soft top-to-bottom gradient, the item name in its own colour, and a faint dark strip
  *   behind each line. Each line holds, then fades on its own; the oldest drops off past maxLines.
- * Banner style (test scene copy): "The Thief has appeared!", "The Thief stole a Medkit!" and so on, large and
+ * Banner style (test scene copy): "The Thief has appeared!", "The Thief has vanished", "The Thief stole a Medkit!"
+ *   and so on, large and
  *   bold at the top centre, tinted with the item's colour; a new message replaces the current one.
  *   The vertical position slider moves it up or down the screen.
  *
@@ -66,6 +67,8 @@ public class ThiefMessages : MonoBehaviour
     [SerializeField] private Color ammoColor = new Color(1f, 0.9f, 0.2f);
     [Tooltip("Colour used when the Thief appears.")]
     [SerializeField] private Color appearColor = new Color(1f, 0.25f, 0.25f);
+    [Tooltip("Colour used when the Thief vanishes.")]
+    [SerializeField] private Color vanishColor = new Color(0.65f, 0.6f, 0.75f);
 
     // One subtitle line: its wording before and after the coloured word, the coloured word, and when it appeared.
     private struct Line
@@ -98,6 +101,7 @@ public class ThiefMessages : MonoBehaviour
         }
 
         thief.OnSpawned += ShowAppeared;
+        thief.OnVanished += ShowVanished;
         thief.OnItemStolen += ShowStolen;
         thief.OnItemDelivered += ShowDelivered;
         thief.OnItemDropped += ShowDropped;
@@ -108,6 +112,7 @@ public class ThiefMessages : MonoBehaviour
         if (thief == null) return;
 
         thief.OnSpawned -= ShowAppeared;
+        thief.OnVanished -= ShowVanished;
         thief.OnItemStolen -= ShowStolen;
         thief.OnItemDelivered -= ShowDelivered;
         thief.OnItemDropped -= ShowDropped;
@@ -139,6 +144,12 @@ public class ThiefMessages : MonoBehaviour
     {
         if (style == ThiefMessageStyle.Subtitle) AddLine("Thief ", "appeared", "", appearColor);
         else ShowBanner("The Thief has appeared!", appearColor);
+    }
+
+    private void ShowVanished()
+    {
+        if (style == ThiefMessageStyle.Subtitle) AddLine("Thief ", "vanished", "", vanishColor);
+        else ShowBanner("The Thief has vanished", vanishColor);
     }
 
     private void ShowStolen(PickupInteractable item) => ShowItem("stole", "The Thief stole a {0}!", item);
