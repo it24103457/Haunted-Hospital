@@ -91,7 +91,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
                   editing ? "Editing stats (Tab to play)" : "Numpad keys, or Tab to click", valueStyle);
 
         string thiefText = thief == null ? "Thief: none in scene"
-                         : $"Thief {thief.Health:0}/{thief.MaxHealth:0}{(thief.State == ThiefState.Dead ? " DEAD" : "")}";
+                         : $"Thief {thief.Health:0}/{thief.MaxHealth:0}{(thief.IsAlive ? "" : " DEAD")}";
         Row(x, y, buttonWidth, valueWidth, rowHeight, "3  -", "+  6", thiefText, ThiefColor, LowerThiefHealth, RaiseThiefHealth);
         // Each player stat uses the colour of the item that restores it, matching the item labels in the scene.
         Row(x, y + rowHeight, buttonWidth, valueWidth, rowHeight, "7  -", "+  8",

@@ -122,6 +122,12 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // What the Thief is doing right now. Inactive until it first appears.
     public ThiefState State { get; private set; } = ThiefState.Inactive;
 
+    // True unless the Thief is dead (it is alive while waiting to appear and while vanished).
+    public bool IsAlive => State != ThiefState.Dead;
+
+    // True while the Thief is in the level: not dead, not vanished and not yet waiting for its first spawn.
+    public bool IsInPlay => IsAlive && State != ThiefState.Inactive && State != ThiefState.Vanished;
+
     // True while a stolen item is held.
     public bool IsCarrying => carriedItem != null;
 
@@ -357,9 +363,6 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         SetState(ThiefState.Vanished);
         OnVanished?.Invoke();
     }
-
-    // True while the Thief is in the level: not dead, not vanished and not yet waiting for its first spawn.
-    private bool IsInPlay => State != ThiefState.Dead && State != ThiefState.Inactive && State != ThiefState.Vanished;
 
     private void FindThiefSpawns()
     {
