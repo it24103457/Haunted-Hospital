@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 namespace HauntedHospital.EnvironmentAI
@@ -8,6 +9,10 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private PlayerStats playerStats;
         [SerializeField] private Transform directorLightsRoot;
         [SerializeField] private Transform essentialLightsRoot;
+
+        // IT24103447 - Added DirectorSettings reference for event catalogue configuration.
+        [Header("Director configuration")]
+        [SerializeField] private DirectorSettings settings;
 
         private void Start()
         {
@@ -88,6 +93,28 @@ namespace HauntedHospital.EnvironmentAI
                 valid = false;
             }
 
+            // IT24103447 - Validate that DirectorSettings is assigned
+            // and that its event definitions pass catalogue validation.
+            if (settings == null)
+            {
+                Debug.LogError(
+                    "[Environment Director] Director Settings is not assigned.",
+                    this);
+
+                valid = false;
+            }
+            else if (!settings.TryValidate(out var settingsErrors))
+            {
+                foreach (string error in settingsErrors)
+                {
+                    Debug.LogError(
+                        $"[Environment Director] {error}",
+                        this);
+                }
+
+                valid = false;
+            }
+
             if (!valid)
             {
                 Debug.LogWarning(
@@ -98,11 +125,15 @@ namespace HauntedHospital.EnvironmentAI
                 return;
             }
 
+            // IT24103447 - Include event count and DirectorSettings
+            // asset name in the successful setup validation message.
             Debug.Log(
                 "[Environment Director] Setup ready. " +
                 $"Player: {playerStats.gameObject.name}. " +
                 $"Director lights: {directorCount}. " +
-                $"Essential lights: {essentialCount}.",
+                $"Essential lights: {essentialCount}. " +
+                $"Event definitions: {settings.Events.Count}. " +
+                $"Settings: {settings.name}.",
                 this);
         }
 

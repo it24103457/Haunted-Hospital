@@ -23649,6 +23649,7 @@ MonoBehaviour:
   playerStats: {fileID: 936268510}
   directorLightsRoot: {fileID: 777421387}
   essentialLightsRoot: {fileID: 781570378}
+  settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d06cabcc063347488cef266de78ddfd, type: 3}
+  m_Name: DirectorSettings_Hospital
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorSettings
+  events:
+  - {fileID: 11400000, guid: 278e6baf2ea39154d9de561a280b3d12, type: 2}
+  - {fileID: 11400000, guid: bf0fa79128192834295bd33d56adfd2b, type: 2}
+  - {fileID: 11400000, guid: afd46608e55c63147a2e10ddb52ac9f9, type: 2}
+  - {fileID: 11400000, guid: e665c887f7707cd4295d38007aed4ce5, type: 2}
+  - {fileID: 11400000, guid: 25dbe38b96f14bc4d9a6cb85782a2232, type: 2}
+  - {fileID: 11400000, guid: 5a6e3958898ba5c468e8b8ef69b109b1, type: 2}
+  - {fileID: 11400000, guid: c7979e0c863f071409c432e644fbd4c0, type: 2}
+  - {fileID: 11400000, guid: ec442086d4cf0c94cb689b4d519ebe2f, type: 2}
+  minimumTimeBetweenEvents: 12
+  damageRecoverySeconds: 10
+  gunfireRecoverySeconds: 6
+  restDuration: 5
+  planningDepth: 3
+  expansionBudget: 64
+  enableDebugLogging: 1

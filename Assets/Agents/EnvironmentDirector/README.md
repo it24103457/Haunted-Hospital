@@ -22,7 +22,6 @@ hospital-specific prefab, not replacement of the MainHospital scene.
 | Distant apparition | Figure appears briefly in a visible corridor/doorway | One reusable character model |
 | Light-pulse apparition | Same figure revealed during a controlled light pulse | Character model and local light executor |
 | Hospital announcement | Distorted spatial announcement from a loudspeaker | Existing speaker and spoken audio |
-| Door slam | Close a suitable nearby open door through its interaction API | Systems Engineer agreement; occupancy/state checks |
 | Rest | Deliberately do nothing and allow recovery | Always available |
 
 The model and its animation are deferred until the observation, planning and other
@@ -63,7 +62,7 @@ the Local Search lecture.
 | --- | --- |
 | Performance | Suitable pressure, variety, recovery, valid effects and bounded planning cost |
 | Environment | Hospital rooms, player, existing lights/props and teammate systems |
-| Actuators | Director lights, spatial audio, apparition visibility and approved door API |
+| Actuators | Director lights, spatial audio and apparition visibility |
 | Sensors | PlayerStats, player location, room zones, own history and optional gameplay signals |
 
 ## Integration boundaries
@@ -72,8 +71,6 @@ the Local Search lecture.
 - Only one Director event runs at a time. Restore original values on completion or cancellation.
 - Strong effects are suppressed during confirmed chase/critical interaction when those
   signals are supplied; missing optional signals are reported, not invented.
-- Door slam must use the door owner's supported API, avoid occupied openings, preserve
-  navigation state and not directly edit door/obstacle internals.
 - Director audio is not automatically a Hunter sound event. Coordinate that separately.
 - Do not modify Thief scripts, original test scenes, item-spawning logic or waypoint costs.
 - Optional Thief-event subscriptions do not make the Thief a required dependency.
@@ -111,7 +108,7 @@ approximate; do not split working changes merely to reach twenty commits.
 15. Phone-ring and whisper/knock executors with spatial audio.
 16. Loudspeaker announcement executor with supplied speech.
 17. Shared animated apparition executor supporting distant and light-pulse variants.
-18. Approved door-slam executor with occupancy and interaction-state protection.
+18. Gameplay interruption handling for keypad entry, recent gunfire, Hunter danger, player death and victory.
 19. Interruption cleanup and final prefab integration with available teammate signals.
 20. Focused integrated verification, runtime measurements and viva documentation.
 
@@ -125,3 +122,29 @@ check installation in MainHospital and operation alongside the other agents.
 Record planning duration/expanded nodes and one explainable decision trace. Do not
 claim improved human fear based only on the internal tension score. Twenty recent
 commits do not substitute for the assignment's continuous-effort expectation.
+
+## Event catalogue and settings
+
+DirectorSettings_Hospital references eight event definitions:
+LightFlicker, LocalBlackout, PhoneRing, Whisper, Knock,
+HospitalAnnouncement, DistantApparition and LightPulseApparition.
+
+Rest is a built-in planner action and does not require an event asset.
+Both apparition definitions remain unavailable for selection until
+their model and executors are ready.
+
+Event definitions contain configuration only. Runtime cooldowns,
+execution state and event history belong to the running Director.
+
+Durations and cooldowns use seconds. Predicted tension increases use
+the Director's internal 0–1 tension scale and do not directly change
+player health or sanity.
+
+Event cooldowns start after completion or cancellation. The global
+interval starts after the previous effect has restored its changes.
+Only one Director effect may run at a time.
+
+Validate Director Settings checks the catalogue. Validate Director
+Setup also checks scene references and the assigned settings.
+
+Door slamming is outside the current scope.
