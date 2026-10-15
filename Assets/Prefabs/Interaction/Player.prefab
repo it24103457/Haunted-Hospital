@@ -376,8 +376,39 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3315510531998219823, guid: fe58879a9c62b2f45be049ee13ba4e54, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 795136440466293072}
   m_SourcePrefab: {fileID: 100100000, guid: fe58879a9c62b2f45be049ee13ba4e54, type: 3}
+--- !u!1 &1530767927577846743 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3315510531998219823, guid: fe58879a9c62b2f45be049ee13ba4e54, type: 3}
+  m_PrefabInstance: {fileID: 4268689049298361848}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &795136440466293072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530767927577846743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0ef62a8ae7e96e4baea9ac9f594eecc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponViewAnimation
+  weapon: {fileID: 2493747791160392726}
+  playerController: {fileID: 3592133768723604519}
+  recoilDistance: 0.1
+  recoilAngle: 5
+  recoilRecoverySpeed: 8
+  reloadLowerAmount: 0.18
+  reloadSmoothSpeed: 8
+  swayAmount: 0.025
+  swaySmooth: 8
+  bobAmplitude: 0.018
+  bobFrequency: 8
 --- !u!4 &2194856094778980717 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2686643398242313365, guid: fe58879a9c62b2f45be049ee13ba4e54, type: 3}
