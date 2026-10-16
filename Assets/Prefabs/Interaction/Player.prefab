@@ -152,6 +152,7 @@ GameObject:
   - component: {fileID: 8957107219473162173}
   - component: {fileID: 4176077712344651588}
   - component: {fileID: 2493747791160392726}
+  - component: {fileID: 6671535720121805456}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -289,6 +290,19 @@ MonoBehaviour:
     m_Bits: 4294967295
   showDebugReadout: 1
   logHits: 0
+--- !u!114 &6671535720121805456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4871408159299711671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8d2d251d7d0d6c48b84acdc7f91ff96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerNoiseEmitter
+  gunshotLoudness: 40
 --- !u!1 &5548678712820400776
 GameObject:
   m_ObjectHideFlags: 0
