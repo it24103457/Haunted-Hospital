@@ -199,3 +199,36 @@ These bindings currently refer to objects in the test scene. Do not save this ro
 as a supposedly self-contained prefab and expect external scene references to survive.
 Runtime binding for the final prefab is still a later integration milestone. MainHospital
 has not been overwritten with the test scene.
+
+## Milestone 4: live player observations
+
+DirectorObservation is attached to EnvironmentDirector in EnvironmentDirector_Test.
+It reads PlayerStats, the player Transform, DirectorRoomTracker and DirectorSettings_Hospital.
+The interval is 0.1 seconds of game time. Current returns a value snapshot with IsValid;
+consumers must reject invalid or stale snapshots before making decisions.
+
+The snapshot exposes health and sanity (raw, maximum and 0–1 fractions), reserve ammo,
+life state, exit-key possession, position, confirmed room, time in that room and damage
+recovery. Having the key does not mean victory. Reserve ammo changes do not mean gunfire.
+HunterDanger, RecentGunfire, KeypadInteraction and Victory remain Unavailable until their
+adapters are implemented. Unavailable is distinct from a confirmed inactive signal.
+
+Damage uses PlayerStats.Damaged and death uses PlayerStats.Died. Before the first observed
+hit, HasReceivedDamage is false and SecondsSinceDamage is -1. Recovery uses the configured
+DamageRecoverySeconds. Disabling observation removes its subscriptions and invalidates
+Current; re-enabling starts a fresh observation session and does not invent missed damage.
+The room timer resets only on a confirmed room change. It is not a scare waiting gate.
+Event history and the global event pacing timer belong to later milestones.
+
+To check this milestone:
+
+1. Enter Play mode and select EnvironmentDirector. Expand the observation Snapshot.
+2. Compare its health, sanity and reserve ammo with PlayerStats.
+3. Walk between rooms and watch Room Id and Time In Room.
+4. On PlayerStats, use the component menu Debug: Take 30 damage. Health should fall and
+   Damage Recovery Active should become true, then expire after the configured duration.
+5. Use Debug: Drain 30 sanity and Debug: Use 10 ammo and check the corresponding readings.
+6. Stop Play mode. Runtime tests do not change the player's saved starting values.
+
+The Inspector snapshot is a diagnostic display, overwritten on refresh. Editing it cannot
+change PlayerStats. No new colliders, scare effects or player-control logic are introduced.

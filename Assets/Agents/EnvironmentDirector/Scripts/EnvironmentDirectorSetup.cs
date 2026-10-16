@@ -125,6 +125,13 @@ namespace HauntedHospital.EnvironmentAI
                 valid = false;
             }
 
+            var observation = GetComponent<DirectorObservation>();
+            if (observation != null && !observation.TryValidate(out var observationError))
+            {
+                Debug.LogError($"[Environment Director] {observationError}", this);
+                valid = false;
+            }
+
             if (!valid)
             {
                 Debug.LogWarning(

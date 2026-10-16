@@ -21,6 +21,7 @@ namespace HauntedHospital.EnvironmentAI
         private bool initialized;
 
         public DirectorRoomZone CurrentRoom => currentRoom;
+        public Transform Player => player;
         public string CurrentRoomId => currentRoomId;
         public event Action<DirectorRoomZone, DirectorRoomZone> RoomChanged;
 
