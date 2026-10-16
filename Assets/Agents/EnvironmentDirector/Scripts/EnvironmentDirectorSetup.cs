@@ -115,6 +115,16 @@ namespace HauntedHospital.EnvironmentAI
                 valid = false;
             }
 
+            // Spatial support is installed in the Director test scene first.
+            // Scenes without it retain the existing setup validation.
+            var spatial = GetComponent<DirectorSpatialRegistry>();
+            if (spatial != null && !spatial.TryValidate(out var spatialErrors))
+            {
+                foreach (string error in spatialErrors)
+                    Debug.LogError($"[Environment Director] {error}", this);
+                valid = false;
+            }
+
             if (!valid)
             {
                 Debug.LogWarning(

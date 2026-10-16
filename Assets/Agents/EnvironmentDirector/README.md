@@ -148,3 +148,54 @@ Validate Director Settings checks the catalogue. Validate Director
 Setup also checks scene references and the assigned settings.
 
 Door slamming is outside the current scope.
+
+## Milestone 3: room detection and event targets
+
+The saved EnvironmentDirector_Test scene now has RoomZones and EventAnchors under
+EnvironmentDirector, with DirectorSpatialRegistry and DirectorRoomTracker on that root.
+This milestone observes location and registers targets; it does not play scares yet.
+
+The 40 floor pieces form 33 logical zones. Operating, ICU, Sterile Core,
+Operating Approach and the entrance/main corridor combine their adjoining floor pieces.
+Volumes extend from Y=-0.25 to Y=3.25 and use the existing floor footprints.
+They do not add physics colliders or change the NavMesh.
+
+| Anchor group | Count | Purpose |
+| --- | ---: | --- |
+| Lighting | 28 | Explicit references to existing Director lights only |
+| Phones | 11 | References to existing wall phones |
+| Speakers | 8 | References to existing loudspeakers |
+| Audio | 56 | One whisper and one knock position per lit zone |
+| Apparitions | 8 | Disabled positions reserved for later model integration |
+
+Elevator, NorthServiceAlcove, OperatingServiceShaft, StairFootprint and
+ElevatorServiceStrip remain detectable but have no event anchors inside them.
+Apparition positions were checked against a reference body footprint, not the final
+model. Check model bounds, sight lines and player distance when enabling that milestone.
+
+### Inspect and test
+
+1. Open EnvironmentDirector_Test, outside Play mode.
+2. Select EnvironmentDirector. Check the Registry root references and the Tracker's
+   Player, Registry and Settings references in the Inspector.
+3. Open the Director Spatial Registry component menu and choose Validate Spatial Setup.
+   The expected successful result is 33 zones and 111 anchors.
+4. Expand RoomZones and select a zone. With Gizmos enabled, its volumes appear.
+   Only selected zones/anchors draw gizmos to avoid covering the entire hospital.
+5. Enter Play mode and walk between rooms. Current Room Id on the Tracker and
+   Console messages report confirmed room changes when debug logging is enabled.
+6. Room detection samples every 0.1 seconds and requires a new room to persist for
+   0.15 seconds. Standing at a shared edge keeps the current room where possible.
+   Leaving all zones reports outside after the confirmation delay.
+7. Stop Play mode before changing authored data. If adding or removing zones or
+   anchors, choose Rebuild Spatial Registry, then Validate Spatial Setup.
+
+The registry checks duplicate IDs, missing or cross-scene references and accidental
+Essential-light targeting. GetAnchors filters by room, target type and availability;
+SupportsEvent distinguishes whispers from knocks. Cooldowns, visibility, distance,
+danger suppression and event execution belong to later milestones.
+
+These bindings currently refer to objects in the test scene. Do not save this root
+as a supposedly self-contained prefab and expect external scene references to survive.
+Runtime binding for the final prefab is still a later integration milestone. MainHospital
+has not been overwritten with the test scene.
