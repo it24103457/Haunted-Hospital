@@ -43,6 +43,12 @@ public class PlayerWeapon : MonoBehaviour
     public event Action ReloadStarted;
     public event Action ReloadFinished;
 
+    // Raised when the trigger is pulled with an empty magazine (the "click").
+    public event Action DryFired;
+
+    // Raised when a shot hits something: hit point, surface normal, and whether the target took damage.
+    public event Action<Vector3, Vector3, bool> ShotHit;
+
     private InputAction fireAction;
     private InputAction reloadAction;
 
@@ -113,6 +119,7 @@ public class PlayerWeapon : MonoBehaviour
 
         if (Magazine <= 0)
         {
+            DryFired?.Invoke();
             StartReload(); // empty: reload instead of firing
             return;
         }
@@ -144,6 +151,8 @@ public class PlayerWeapon : MonoBehaviour
             Debug.Log($"[PlayerWeapon] Shot hit '{hit.collider.name}'" +
                       (target != null ? " (damageable)" : " (not damageable)"), this);
         }
+
+        ShotHit?.Invoke(hit.point, hit.normal, target != null);
 
         if (target == null) return;
 
