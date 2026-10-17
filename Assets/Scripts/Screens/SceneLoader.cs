@@ -35,4 +35,29 @@ public static class SceneLoader
         Debug.LogError("SceneLoader: " + scenePath + " is not in Build Settings, so it cannot be loaded.");
 #endif
     }
+
+    /*
+     * Loads a scene in the background, so the current scene keeps running (for example a loading animation) until it is ready.
+     * Follows the same rules as Load. Returns null if the scene cannot be loaded.
+     */
+    public static AsyncOperation LoadAsync(string scenePath)
+    {
+        if (string.IsNullOrEmpty(scenePath))
+        {
+            Debug.LogWarning("SceneLoader: no scene was set to load.");
+            return null;
+        }
+
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+
+        if (SceneUtility.GetBuildIndexByScenePath(scenePath) >= 0) return SceneManager.LoadSceneAsync(scenePath);
+
+#if UNITY_EDITOR
+        return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
+#else
+        Debug.LogError("SceneLoader: " + scenePath + " is not in Build Settings, so it cannot be loaded.");
+        return null;
+#endif
+    }
 }

@@ -11,7 +11,9 @@ using UnityEngine.UI;
  * while a blur (a Depth of Field volume) eases off along the Blur curve, the camera bobs with heavy breathing that slowly calms,
  * and the panting sound loops in. Once the eyes are open the camera turns to look at the gun, holds,
  * and the screen fades to black, as if the gun has been picked up, before the game scene loads.
- * Space, Esc or a click skips straight to that last fade. All timing runs on real time.
+ * Space, Esc or a click skips straight to that last fade. A small "SPACE Skip" hint shows in the corner for a few seconds
+ * as the eyes start to open. Once the screen is black, "Loading" with cycling dots shows in the centre while the game scene
+ * loads in the background. All timing runs on real time.
  * The lying and gun-look camera positions are two marker objects in the scene, so they can be moved in the Scene view.
  */
 public class WakeUpIntro : MonoBehaviour
@@ -31,6 +33,15 @@ public class WakeUpIntro : MonoBehaviour
     [SerializeField] private RectTransform eyelidBottom;
     [Tooltip("Height of each eyelid when fully closed, in canvas units (the canvas is 1080 tall); a little over half so the soft edges overlap.")]
     [SerializeField] private float closedEyelidHeight = 660f;
+    [SerializeField] private CanvasGroup skipHint;
+    [SerializeField] private TMPro.TMP_Text loadingText;
+
+    [Header("Skip hint and loading (seconds)")]
+    [SerializeField, Min(0f)] private float skipHintShown = 4f;
+    [SerializeField, Min(0.01f)] private float skipHintFade = 0.4f;
+    [SerializeField, Min(0.05f)] private float loadingDotInterval = 0.4f;
+    [Tooltip("Shortest time Loading stays on screen, so a fast load does not just flash it.")]
+    [SerializeField, Min(0f)] private float minimumLoadingTime = 1f;
 
     [Header("Timing (seconds)")]
     [SerializeField, Min(0.01f)] private float fadeOut = 1.5f;
@@ -68,6 +79,8 @@ public class WakeUpIntro : MonoBehaviour
         fade.gameObject.SetActive(false);
         eyelidTop.gameObject.SetActive(false);
         eyelidBottom.gameObject.SetActive(false);
+        if (skipHint != null) skipHint.gameObject.SetActive(false);
+        if (loadingText != null) loadingText.gameObject.SetActive(false);
         if (blurVolume != null) blurVolume.weight = 0f;
     }
 
@@ -120,6 +133,7 @@ public class WakeUpIntro : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(blackHold);
         fade.alpha = 0f;
+        StartCoroutine(ShowSkipHint());
 
         float openTime = eyeOpenness.keys[eyeOpenness.length - 1].time;
         for (float t = 0f; t < openTime; t += Time.unscaledDeltaTime)
@@ -164,9 +178,25 @@ public class WakeUpIntro : MonoBehaviour
         yield return FinishAndLoad();
     }
 
-    // Fades to black, fades the sounds out, then loads the game scene.
+    // Fades the skip hint in, keeps it up for a few seconds, then fades it out.
+    private IEnumerator ShowSkipHint()
+    {
+        if (skipHint == null) yield break;
+
+        skipHint.gameObject.SetActive(true);
+        yield return FadeGroup(skipHint, 0f, 1f, skipHintFade);
+        yield return new WaitForSecondsRealtime(skipHintShown);
+        yield return FadeGroup(skipHint, 1f, 0f, skipHintFade);
+        skipHint.gameObject.SetActive(false);
+    }
+
+    // Fades to black and fades the sounds out, then shows Loading while the game scene loads in the background.
     private IEnumerator FinishAndLoad()
     {
+        // From here on, skip presses are ignored, so the scene is never loaded twice.
+        bool breathing = onFloor && !skipping;
+        skipping = true;
+        if (skipHint != null) skipHint.gameObject.SetActive(false);
         fade.gameObject.SetActive(true);
         float startAlpha = fade.alpha;
         var sources = FindObjectsByType<AudioSource>();
@@ -178,14 +208,45 @@ public class WakeUpIntro : MonoBehaviour
             float k = t / finalFade;
             fade.alpha = Mathf.Lerp(startAlpha, 1f, k);
             for (int i = 0; i < sources.Length; i++) if (sources[i] != null) sources[i].volume = startVolumes[i] * (1f - k);
-            if (onFloor && !skipping) Breathe(1f);
+            if (breathing) Breathe(1f);
             yield return null;
         }
 
         fade.alpha = 1f;
         foreach (var s in sources) if (s != null) s.Stop();
         Cursor.visible = true;
-        SceneLoader.Load(scenePath);
+
+        AsyncOperation load = SceneLoader.LoadAsync(scenePath);
+        if (load == null) yield break;
+
+        // The new scene only takes over once the shortest loading time has passed, so Loading never just flashes.
+        load.allowSceneActivation = false;
+        if (loadingText != null) loadingText.gameObject.SetActive(true);
+
+        float elapsed = 0f;
+        while (load.progress < 0.9f || elapsed < minimumLoadingTime)
+        {
+            SetLoadingDots(elapsed);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        load.allowSceneActivation = true;
+        while (!load.isDone)
+        {
+            SetLoadingDots(elapsed);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+    }
+
+    // Cycles "Loading", "Loading.", "Loading..", "Loading..."; the unused dots are drawn invisible so the word never shifts.
+    private void SetLoadingDots(float elapsed)
+    {
+        if (loadingText == null) return;
+
+        int dots = (int)(elapsed / loadingDotInterval) % 4;
+        loadingText.text = "Loading" + new string('.', dots) + "<alpha=#00>" + new string('.', 3 - dots);
     }
 
     // Moves the camera with breathing: fast and deep at first (progress 0), slow and shallow at the end (progress 1).
