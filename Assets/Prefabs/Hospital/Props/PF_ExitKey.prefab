@@ -49,6 +49,9 @@ MonoBehaviour:
   type: 3
   amount: 0
   displayName: 
+  animator: {fileID: 0}
+  animationTrigger: 
+  collectDelay: 0.8
   destroyOnCollect: 1
 --- !u!65 &7302128163902126109
 BoxCollider:
@@ -69,7 +72,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.06424196, y: 0.00842819, z: 0.005490212}
+  m_Size: {x: 0.12, y: 0.06, z: 0.06}
   m_Center: {x: 0.0005416237, y: 0.0035991222, z: -0.0000000027939677}
 --- !u!1 &6071584162008553152
 GameObject:

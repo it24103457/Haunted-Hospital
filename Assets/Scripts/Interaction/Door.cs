@@ -28,6 +28,7 @@ public class Door : MonoBehaviour, IInteractable
     private Quaternion closedLocalRotation;
     private float currentAngle;
     private bool isOpen;
+    private bool passable; // true while the NavMeshObstacle is off (door opening, open or closing)
 
     private void Awake()
     {
@@ -68,6 +69,23 @@ public class Door : MonoBehaviour, IInteractable
     // Call this from a key/lever/pickup later.
     public void Unlock() => isLocked = false;
 
+    // Public API for the AI agents (Thief / Hunter).
+
+    // True once the door is passable.
+    public bool IsOpen => passable;
+
+    // True while the door can't be opened.
+    public bool IsLocked => isLocked;
+
+    // Opens the door.
+    public void Open()
+    {
+        if (leaf == null || isLocked || isOpen) return;
+
+        isOpen = true;
+        SetObstacle(false);
+    }
+
     private void FixedUpdate()
     {
         float target = isOpen ? openAngle : 0f;
@@ -100,6 +118,8 @@ public class Door : MonoBehaviour, IInteractable
 
     private void SetObstacle(bool blocked)
     {
+        passable = !blocked;
+
         if (obstacle != null && obstacle.enabled != blocked)
             obstacle.enabled = blocked;
     }

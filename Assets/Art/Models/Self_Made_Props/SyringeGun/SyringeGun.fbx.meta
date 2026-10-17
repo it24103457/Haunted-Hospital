@@ -27,6 +27,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Needle
+    second: {fileID: 2100000, guid: a8112f875821db349aad39662e3d1320, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Stripes
     second: {fileID: 2100000, guid: adc54c449a9a54740801dad20e002ea2, type: 2}
   - first:
