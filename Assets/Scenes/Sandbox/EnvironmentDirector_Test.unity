@@ -26305,6 +26305,7 @@ GameObject:
   - component: {fileID: 593751876}
   - component: {fileID: 593751878}
   - component: {fileID: 593751879}
+  - component: {fileID: 593751880}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26820,6 +26821,50 @@ MonoBehaviour:
   targetUsed: 0
   bestCandidateIndex: -1
   candidates: []
+--- !u!114 &593751880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26aa4cdae1a54af7bdc05cf94475c6d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorPlannerPreview
+  directorSettings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  tensionSettings: {fileID: 11400000, guid: 812fd4cc88937984a972f1959fb83e7e, type: 2}
+  scoringSettings: {fileID: 11400000, guid: db22902675160934bb134e8b93131528, type: 2}
+  prediction: {fileID: 593751878}
+  desiredTension: {fileID: 593751875}
+  eligibility: {fileID: 593751876}
+  eventMemory: {fileID: 593751872}
+  manualDesiredTension: 0.55
+  manualVulnerability: 0.2
+  manualEventPressure: 0.4
+  manualDamageRecoveryRemaining: 0
+  manualQuietSeconds: 20
+  manualGlobalCooldown: 0
+  manualEvents: []
+  manualCooldowns: []
+  status: No plan requested
+  recommendedFirstAction: 
+  plan:
+    valid: 0
+    manualOnly: 0
+    reachedHorizon: 0
+    stopReason: 
+    sampledAt: 0
+    desiredTension: 0
+    expandedNodes: 0
+    generatedNodes: 0
+    maximumDepthReached: 0
+    candidateCount: 0
+    finalScore: 0
+    steps: []
+    expansionTrace: []
+  liveCandidates: []
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0

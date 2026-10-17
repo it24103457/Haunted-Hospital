@@ -578,3 +578,133 @@ Manual setup fallback if Editor installation has not completed:
    DirectorTensionSettings_Hospital assets to Director Settings and Tension Settings.
 4. Drag the EnvironmentDirector GameObject into Prediction, Desired Tension, Eligibility
    and Event Memory so Unity binds its corresponding components. Save the test scene.
+
+## Milestone 11 - bounded Greedy Best-First Search
+
+Added DirectorSearchPlan.cs (actions, steps, results and trace), DirectorGreedyPlanner.cs
+(pure bounded search), and DirectorPlannerPreview.cs (manual/live search previews and
+BuildLivePlan entry point). No Editor helper, extra settings asset or event executor is
+added. DirectorSettings_Hospital supplies Planning Depth (3) and Expansion Budget (64).
+
+Search contract:
+- Captures desired tension once per search. Location, visibility and available targets are
+  frozen at capture; it does not predict where the player or Hunter will move.
+- Rest is always a candidate. Live event targets must pass current safety/spatial checks.
+- CollectPlanningCandidates defers ONLY event/global cooldown and damage recovery checks
+  to copied-state prediction. It does not bypass missing safety signals, reservations,
+  active effects, disabled anchors, visibility, distance or player life-state checks.
+  Ordinary Evaluate/CollectCandidates retain their original immediate-execution policy.
+- A branch contains its own state and history. Each hypothetical delivered event adds a
+  record only to that branch. Sibling branches and real Event Memory are untouched.
+- Frontier nodes are expanded in ascending heuristic priority (ties by generation order).
+  Priority = endpoint target difference + endpoint overshoot + accumulated repetition
+  penalties from the branch. Rest does not erase earlier repetition penalties.
+- This is greedy best-first h-ordering, not A* g+h and not an optimality guarantee.
+- Full-depth nodes are terminal candidates. Return the lowest-scoring discovered full-depth
+  plan; if the budget stops search before any full-depth plan exists, return the best
+  discovered partial plan and mark Reached Horizon false. Terminal nodes are not expanded.
+- Expanded Nodes counts root/nonterminal successor generation. Generated Nodes includes
+  the root and successful scored successors. Maximum Depth Reached never exceeds depth.
+- Safety caps: 8192 generated nodes (including root), 256 candidate actions including Rest,
+  depth 1..5 and expansion budget at most 4096. Oversized inputs are rejected. The expansion
+  trace keeps the first 256 expansions. Defaults are far below these caps.
+- The chosen sequence is a recommendation from a snapshot, never execution permission.
+  Only its FIRST action should later be considered. Revalidate before execution and replan
+  after it finishes; do not blindly run the remaining steps. Executor readiness remains
+  a later requirement. A manualOnly plan must never be handed to the runtime executor.
+
+Two preview modes:
+- Manual Search: synthetic anchor IDs manual_<eventId>, manual room and explicit numeric
+  state. It does not read safety signals, fake observations or enable anything in gameplay.
+  Empty Manual Events means Rest only. Disabled/invalid catalogue events stay unusable.
+- Live Search: fresh living player snapshot, valid desired tension, current anchors and real
+  history. Missing safety signals lead to a Rest-only candidate pool. Live Candidates shows
+  the reason for each rejected pair. Manual fields have no effect on live planning.
+
+Setup if not already attached:
+1. Open EnvironmentDirector_Test outside Play mode and select EnvironmentDirector.
+2. Add Component > Director Planner Preview.
+3. Assign DirectorSettings_Hospital, DirectorTensionSettings_Hospital and
+   DirectorScoringSettings_Hospital to their corresponding settings fields.
+4. Assign existing Director Prediction Preview, Director Desired Tension, Director Event
+   Eligibility and Director Event Memory components from the same EnvironmentDirector.
+5. In Manual Events, add enabled catalogue event assets to explore (for example light_flicker).
+6. Save the test scene. No new asset needs to be downloaded or authored.
+
+Detailed manual tests - left to the user, not run during implementation:
+
+A. Deterministic Rest-only search, outside Play mode
+1. Select EnvironmentDirector > Director Planner Preview. Use vulnerability .2, event
+   pressure .4, damage recovery 0, quiet 20, global cooldown 0, desired tension .55 and
+   empty Manual Cooldowns. Set Manual Events size to 0.
+2. With unchanged default settings (depth 3, budget 64, Rest 5 sec, decay .02/sec), choose
+   the component menu > Preview Manual Search (synthetic targets, no effects).
+3. Expand Plan: Valid and Manual Only should be checked; Reached Horizon checked;
+   Recommended First Action Rest; Candidate Count 1; Expanded Nodes 3; Generated Nodes 4;
+   Maximum Depth Reached 3; stop reason Frontier exhausted within depth limit.
+4. Expand Steps (3 elements). Their estimated pressures should be .40, .30 and .20;
+   elapsed times 5, 10, 15; quiet times 25, 30, 35. Vulnerability stays .2. Event pressure
+   should be .30, .20, .10. Final Score should be approximately .35 with desired .55.
+5. Expand Expansion Trace: Root depth0, Rest depth1, Rest depth2. These rows show the nodes
+   that generated successors; the terminal Rest depth3 is in Steps, not the trace.
+
+B. Event branches and predictable future cooldowns
+1. Add one enabled event asset from the existing catalogue to Manual Events (e.g. the
+   light_flicker definition). Use desired tension 1, event pressure 0, vulnerability 0,
+   damage 0 and Manual Global Cooldown 8. Keep depth3 and RestDuration5.
+2. Run manual search. Any event in the plan must come AFTER two Rest steps (8 -> 3 -> 0).
+   Depending on the event's increase/duration, the chosen plan may remain Rest if it
+   cannot improve pressure. To get a useful example, select an enabled event whose
+   PredictedTensionIncrease exceeds decayRate * Duration.
+3. If selected, the third step is that event. Its final global cooldown must be the full
+   MinimumTimeBetweenEvents (12 by default); its own cooldown is the full event Cooldown.
+4. Add Manual Cooldowns entry with that exact Event ID and Remaining=100. Refresh: with
+   depth3 it cannot occur because the horizon is too short; all three steps should be Rest.
+5. Clear the manual cooldown entry. Set global=0 and damage recovery=8: an event must again
+   wait through two Rest steps. Restore damage=0, global=0 after checking.
+6. Add several enabled event assets. Refresh: Candidate Count increases; each plan step
+   displays its action, predicted state, local score and full branch score. Manual anchors
+   are deliberately synthetic and have no scene-object reference.
+
+C. Depth, budget and deterministic behaviour
+1. DUPLICATE DirectorSettings_Hospital for experiments, temporarily assign the duplicate
+   to Director Planner Preview only. Keep its event catalogue intact.
+2. Set depth1 and budget64. Refresh: Maximum Depth Reached=1 and chosen Steps has one entry.
+3. Set depth3 and budget3 (budget cannot be smaller than depth in current settings). With
+   several manual events, Expanded Nodes must be <=3. If no terminal node was reached,
+   Reached Horizon is unchecked and the reason identifies a partial plan. This is valid
+   bounded behaviour, not a test failure. Generated Nodes can exceed Expanded Nodes.
+4. With unchanged manual inputs, refresh twice: the plan and counters should match exactly.
+5. Restore the ORIGINAL DirectorSettings_Hospital reference when done. Do not edit shared
+   gameplay settings just to manufacture a test result.
+
+D. Repetition within a branch (optional focused manual test)
+1. Duplicate Director Settings and ONE enabled event definition. In the duplicate catalogue
+   replace that event with its duplicate; use that same duplicate in Manual Events.
+2. In these temporary assets only, set event cooldown=0 and minimum global spacing=0 so
+   repeated actions are reachable within depth3. Choose a target/initial pressure that
+   gives positive predicted benefit from repeated events.
+3. If the chosen plan repeats the event, later steps should have Event Repetition Penalty
+   .15 and Anchor Repetition Penalty .10 at an immediate repeat with default scoring.
+   After a Rest the evidence decays with time. Branch Score retains earlier repetition
+   penalties even when the last action is Rest. The search may avoid repeating because
+   the penalty makes another sequence better; that is expected.
+4. Restore the original settings and event references. Never disable real cooldowns just
+   to make the final game trigger more events.
+
+E. Live integration preview, without playing effects
+1. Enter Play mode and wait one second for observation/inference. Select the component menu
+   > Preview Live Search (Play mode, no effects).
+2. Plan.Manual Only must be unchecked. With current unavailable safety signals, first action
+   should be Rest, and Live Candidates should explain the blocked event/anchor pairs.
+3. Changing the manual inputs must not change a live plan for otherwise identical live
+   inputs. Time naturally advances, so compare behaviour rather than expecting live
+   numerical values to stay identical across clicks.
+4. Disable Director Desired Tension and refresh: the plan becomes invalid with a missing or
+   stale desired-tension reason, and recommended action is None. Re-enable afterward.
+5. Move rooms and refresh. Once safety integration exists, targets are rebuilt for the
+   new location; an old recommended anchor is never authorization to execute.
+6. Previewing must not play audio, alter lights, add real history, reset quiet time, start
+   a real cooldown, or reserve a target. Stop Play mode after testing.
+
+Suggested commit: feat(director): plan event sequences with bounded greedy best-first search

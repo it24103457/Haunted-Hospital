@@ -25,6 +25,14 @@ namespace HauntedHospital.EnvironmentAI
 
         // Rest means wait/do nothing. It never reserves a target or changes pressure.
         public void CollectCandidates(List<DirectorEligibilityResult> results, bool includeRejected = false)
+            => Collect(results, includeRejected, false);
+
+        // Planning keeps safety/spatial checks, but the predictor advances cooldowns and
+        // damage recovery on copied state. This method is never execution permission.
+        public void CollectPlanningCandidates(List<DirectorEligibilityResult> results, bool includeRejected = false)
+            => Collect(results, includeRejected, true);
+
+        private void Collect(List<DirectorEligibilityResult> results, bool includeRejected, bool planning)
         {
             results.Clear();
             results.Add(new DirectorEligibilityResult { eligible = true, reason = "Rest: no effect" });
@@ -37,7 +45,7 @@ namespace HauntedHospital.EnvironmentAI
                 {
                     if (anchor == null || !anchor.SupportsEvent(definition)) continue;
                     found = true;
-                    var result = Evaluate(definition, anchor);
+                    var result = EvaluateInternal(definition, anchor, null, planning);
                     if (includeRejected || result.eligible) results.Add(result);
                 }
                 if (!found && includeRejected) results.Add(new DirectorEligibilityResult
@@ -48,16 +56,20 @@ namespace HauntedHospital.EnvironmentAI
         // Call again immediately before starting an effect. A previous preview is not permission.
         public DirectorEligibilityResult Evaluate(DirectorEventDefinition definition,
             DirectorEventAnchor anchor, string reservationToken = null)
+            => EvaluateInternal(definition, anchor, reservationToken, false);
+
+        private DirectorEligibilityResult EvaluateInternal(DirectorEventDefinition definition,
+            DirectorEventAnchor anchor, string reservationToken, bool planning)
         {
             var result = new DirectorEligibilityResult { definition = definition, anchor = anchor };
-            result.reason = RejectionReason(definition, anchor, reservationToken, out result.distance);
+            result.reason = RejectionReason(definition, anchor, reservationToken, planning, out result.distance);
             result.eligible = result.reason == null;
-            if (result.eligible) result.reason = "Eligible (executor/assets readiness still required)";
+            if (result.eligible) result.reason = planning ? "Planning candidate; simulated timing and live revalidation required" : "Eligible (executor/assets readiness still required)";
             return result;
         }
 
         private string RejectionReason(DirectorEventDefinition definition, DirectorEventAnchor anchor,
-            string reservationToken, out float distance)
+            string reservationToken, bool planning, out float distance)
         {
             distance = 0f;
             if (!Application.isPlaying || !isActiveAndEnabled) return "Requires active component in Play mode";
@@ -94,11 +106,11 @@ namespace HauntedHospital.EnvironmentAI
                 anchor.Room != roomTracker.CurrentRoom) return "Lighting must target the player's current room";
             if (!eventMemory.IsReady) return "Event memory unavailable";
             if (eventMemory.EventActive) return "Another event is active";
-            if (!eventMemory.GlobalIntervalReady) return "Global event spacing";
-            if (eventMemory.CooldownRemaining(definition.EventId) > 0f) return "Event type cooldown";
+            if (!planning && !eventMemory.GlobalIntervalReady) return "Global event spacing";
+            if (!planning && eventMemory.CooldownRemaining(definition.EventId) > 0f) return "Event type cooldown";
             if (reservations.IsReserved && !reservations.Owns(anchor, reservationToken))
                 return "A target is already reserved";
-            if (state.DamageRecoveryActive) return "Damage recovery";
+            if (!planning && state.DamageRecoveryActive) return "Damage recovery";
             if (state.Victory != DirectorSignalState.Inactive) return "Victory state active or unavailable";
             if (definition.BlockDuringKeypadEntry && state.KeypadInteraction != DirectorSignalState.Inactive)
                 return "Keypad state active or unavailable";
