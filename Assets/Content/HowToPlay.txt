@@ -1,0 +1,72 @@
+# How to Play pages, read by the How to Play screen in the main menu.
+#
+# Each page starts with a line "=== Title". The pages appear in the order they are written here.
+# An optional "model: Name" line right under the title shows that model on the page. The name must match
+# one of the entries in the Models list on the HowToPlay object (in the MainMenu scene).
+# Everything after that is the page text. Blank lines become paragraph breaks.
+# A page with no text shows "More information coming soon."
+# Lines starting with # are notes like these and are never shown in the game.
+
+=== Controls
+WASD to move, mouse to look around.
+Hold Shift to sprint, C to crouch, Space to jump.
+
+E to interact: open doors, pick things up, read notes, use the keypad.
+Left mouse to shoot, R to reload.
+
+Esc to pause.
+
+=== Medkit
+model: Medkit
+Restores some of your health. Walk up to it and press E to open it.
+
+Supplies are scarce. Grab them before something else does.
+
+=== Ammo Box
+model: AmmoBox
+Refills your reserve ammo. Press R to reload from it once your magazine runs low.
+
+=== Sanity Bottle
+model: SanityBottle
+The hospital wears on your mind. These pills steady your sanity when it starts to slip.
+
+=== Clue Notes
+model: CluePaper
+Notes with single digits are scattered around the hospital. Each one gives you one number of the keypad code.
+
+Your notes so far are shown at the top of the screen.
+
+=== Keypad
+model: Keypad
+Enter the four-digit code from the notes to power the elevator. Type the digits and press Enter, or click the keys.
+
+=== Exit Key
+model: ExitKey
+Locked away in one of the key boxes. You will need it for the elevator's key switch.
+
+=== Key Box
+model: KeyBox
+Glass-fronted boxes on the walls. One of them holds the exit key.
+
+=== Elevator Key Switch
+model: KeySwitch
+Your way out. With the power on and the exit key in hand, turn the key to escape.
+
+=== The Thief
+model: Thief
+Something else is in here, and it wants your supplies. It sneaks to medkits, ammo and pills, carries them off to its stash and vanishes, only to return later.
+
+Shoot it to make it drop what it is carrying. It goes for what you need most, so do not leave supplies lying around.
+
+=== Thief Stashes
+model: StashBag
+Bags and baskets where the Thief hides what it takes. Once an item reaches a stash, it is gone.
+
+=== Barricades
+model: Barricade
+Some doorways are boarded up. Shoot the planks off one at a time to get through.
+
+Breaking the last plank is loud. Something may come to see what made the noise.
+
+=== The Hunter
+model: Hunter

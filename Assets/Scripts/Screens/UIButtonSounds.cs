@@ -13,12 +13,14 @@ public class UIButtonSounds : MonoBehaviour
     [SerializeField] private AudioClip click;
     [SerializeField] private AudioClip hover;
     [SerializeField, Range(0f, 1f)] private float volume = 0.8f;
+    [Tooltip("Buttons that play their own sound when clicked (e.g. page turns), so they only get the hover sound.")]
+    [SerializeField] private Button[] noClickSound;
 
     private void Awake()
     {
         foreach (Button button in GetComponentsInChildren<Button>(true))
         {
-            button.onClick.AddListener(() => Play(click));
+            if (noClickSound == null || System.Array.IndexOf(noClickSound, button) < 0) button.onClick.AddListener(() => Play(click));
             if (hover != null) button.gameObject.AddComponent<HoverRelay>().Init(this, button);
         }
     }
