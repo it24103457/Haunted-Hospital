@@ -274,3 +274,62 @@ Manual verification (left to the user):
 
 This milestone was installed without running Play-mode or manual-preview tests, at the
 user's request. The preview fields are diagnostic values and never feed the live output.
+
+## Milestone 7: zero-order Sugeno desired tension
+
+DirectorDesiredTension on EnvironmentDirector reads the existing Fuzzifier. The
+DirectorSugenoRules_Hospital asset holds exactly 27 combinations of pressure,
+vulnerability and quiet-duration categories. Low/Medium/High for quiet duration mean
+Short/Medium/Long. Current estimated pressure is distinct from this desired target.
+
+DirectorSugenoInference is pure calculation code for reuse in future prediction.
+Rule activation is the product of the three antecedent memberships. Each consequent
+is a constant. Desired tension = sum(activation * consequent) / sum(activation).
+Only contributing rules appear in the explanation list; each exposes its categories,
+activation, constant output and weighted contribution. The default product/partition
+configuration gives a total activation of approximately 1 for valid inputs.
+
+The default targets are initial pacing choices, not measured human fear:
+
+| Pressure | Vulnerability | Short | Medium quiet | Long |
+| --- | --- | ---: | ---: | ---: |
+| Low | Low | .25 | .50 | .70 |
+| Low | Medium | .20 | .35 | .45 |
+| Low | High | .10 | .15 | .20 |
+| Medium | Low | .20 | .35 | .45 |
+| Medium | Medium | .15 | .25 | .30 |
+| Medium | High | .08 | .10 | .12 |
+| High | Low | .10 | .15 | .20 |
+| High | Medium | .08 | .10 | .12 |
+| High | High | .05 | .06 | .08 |
+
+Validation requires 27 unique combinations and finite outputs within 0–1. Missing
+input blocks normal output. Invalid rules or zero meaningful activation return an
+explicit invalid result with a diagnostic fallback (default .15). The planner must
+check IsValid and SampledAt; a fallback is not permission to execute a scare. Life-state
+and stale-observation checks flow through the refreshed Fuzzifier. Teammate safety
+signals remain future eligibility dependencies. No events are executed by inference.
+
+Manual tests for the user (not run during installation):
+1. Select EnvironmentDirector > Director Desired Tension. Confirm Fuzzifier, Rules and
+   Preview Fuzzy Settings references are assigned.
+2. Outside Play mode, set manual preview inputs and choose the component menu
+   Preview Desired Tension From Manual Inputs. This affects only preview output.
+3. With default assets, expected outputs are:
+   - Pressure .1, vulnerability .1, quiet 0 seconds: .25.
+   - Pressure .1, vulnerability .1, quiet 30 seconds: .50.
+   - Pressure .1, vulnerability .1, quiet 60 seconds: .70.
+   - Pressure .8, vulnerability .8, quiet 60 seconds: .08.
+   - Pressure .4, vulnerability .2, quiet 45 seconds: approximately .466667,
+     with four contributing rules and total activation approximately 1.
+4. Select the rule asset and use Validate Sugeno Rules to check coverage. To exercise
+   invalid coverage, duplicate the asset, remove a rule from the duplicate and temporarily
+   assign it to a preview: Preview Valid must be false. Reassign the original afterward.
+5. In Play mode, Output Valid should become true with a living observed player. Wait,
+   use existing damage/sanity debug actions and inspect desired tension and contributions.
+6. Disable Director Observation: live inference should become invalid. Re-enable it to
+   recover. Room changes must not reset quiet time. Stop Play mode after testing.
+
+Manual preview uses the assigned Preview Fuzzy Settings asset; keep it the same as the
+Fuzzifier's asset when comparing live and preview calculations. No test result is claimed
+by this setup; runtime and preview verification are left to the user.
