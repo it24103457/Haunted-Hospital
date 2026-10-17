@@ -38364,6 +38364,7 @@ GameObject:
   - component: {fileID: 1623252609}
   - component: {fileID: 1623252608}
   - component: {fileID: 1623252613}
+  - component: {fileID: 1623252614}
   m_Layer: 0
   m_Name: MenuUI
   m_TagString: Untagged
@@ -38492,6 +38493,18 @@ MonoBehaviour:
   noClickSound:
   - {fileID: 1574052478}
   - {fileID: 1739081050}
+--- !u!114 &1623252614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623252607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5711020675d8c0a45ad7785e7f4dd184, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeselectAfterClick
 --- !u!1 &1627182906
 GameObject:
   m_ObjectHideFlags: 0

@@ -377,6 +377,7 @@ GameObject:
   - component: {fileID: 5522866345371348136}
   - component: {fileID: 7304998584803161449}
   - component: {fileID: 3988107336709291129}
+  - component: {fileID: 695040597333226500}
   m_Layer: 0
   m_Name: PF_GameUI
   m_TagString: Untagged
@@ -528,6 +529,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
   panel: {fileID: 2523108899221645064}
   deathScreen: {fileID: 7304998584803161449}
+--- !u!114 &695040597333226500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1956618726812749134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5711020675d8c0a45ad7785e7f4dd184, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeselectAfterClick
 --- !u!1 &1993781757931554406
 GameObject:
   m_ObjectHideFlags: 0
