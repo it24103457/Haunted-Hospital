@@ -5,7 +5,8 @@ using UnityEditor;
 #endif
 
 /*
- * Runs the start menu: Play loads the game scene, How to Play swaps to the guide panel, Quit closes the game.
+ * Runs the start menu: Play starts the wake-up intro (which loads the game scene when it ends) or, with no intro assigned,
+ * loads the game scene straight away. How to Play swaps to the guide panel, Quit closes the game.
  * The cursor is freed and game time and audio run normally whenever the menu starts, since the player may arrive
  * here from a paused or finished game.
  * The game scene is picked as a scene asset in the Inspector; its path is stored alongside it so a built game can load it.
@@ -21,6 +22,8 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private GameObject mainPanel;
     [SerializeField] private GameObject howToPlayPanel;
     [SerializeField] private Button howToPlayButton;
+    [Tooltip("Optional wake-up intro played before the game scene loads. Leave empty to load the game straight away.")]
+    [SerializeField] private WakeUpIntro intro;
 
     private void Start()
     {
@@ -39,7 +42,8 @@ public class MainMenu : MonoBehaviour
         // In the Editor the path is read fresh from the scene asset, so moving or renaming the game scene never breaks Play.
         if (gameScene != null) gameScenePath = AssetDatabase.GetAssetPath(gameScene);
 #endif
-        SceneLoader.Load(gameScenePath);
+        if (intro != null) intro.Begin(gameScenePath);
+        else SceneLoader.Load(gameScenePath);
     }
 
     public void OpenHowToPlay()
