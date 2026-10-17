@@ -232,3 +232,45 @@ To check this milestone:
 
 The Inspector snapshot is a diagnostic display, overwritten on refresh. Editing it cannot
 change PlayerStats. No new colliders, scare effects or player-control logic are introduced.
+
+## Milestone 6: fuzzy input memberships
+
+DirectorFuzzifier reads DirectorTensionEstimator and DirectorEventMemory, using
+DirectorFuzzySettings_Hospital. It exposes three degrees per input, all between 0 and 1.
+These are membership strengths, not probabilities. Desired tension and Sugeno rules
+belong to milestone 7; this component does not select or execute events.
+
+DirectorFuzzyMembership is pure calculation code. Shared X/Y/Z knots define a left
+shoulder, a triangular middle and a right shoulder. This guarantees continuous coverage
+without gaps for valid settings. X is where full Low ends, Y is the Medium peak, and Z
+is where full High begins. The shoulders saturate beyond the outer knots.
+
+Defaults:
+- Pressure: (0.2, 0.5, 0.8), domain 0–1.
+- Vulnerability: (0.2, 0.5, 0.8), domain 0–1.
+- Quiet duration: (10, 30, 60), in game seconds; Low/Medium/High mean Short/Medium/Long.
+
+The component refreshes every 0.1 game seconds. It refreshes the estimator first so
+the existing observation-age checks apply. Missing/disabled sources, invalid settings,
+non-finite inputs and player death invalidate live output. Consumers must check IsValid
+and SampledAt. Unknown teammate signals remain a separate integration concern.
+
+Manual verification (left to the user):
+1. Select EnvironmentDirector in EnvironmentDirector_Test and find Director Fuzzifier.
+2. Confirm Estimator, Event Memory and Settings are assigned.
+3. Outside Play mode, set Preview Pressure=0.4, Preview Vulnerability=0.2 and
+   Preview Quiet Seconds=45. Use the component menu Preview Memberships From Manual Inputs.
+4. Expand the Preview outputs: pressure approximately (0.3333,0.6667,0), vulnerability
+   (1,0,0), quiet (0,0.5,0.5). Preview is separate from live decision inputs.
+5. Check pressure preview at 0, 0.2, 0.5, 0.8 and 1: respectively (1,0,0), (1,0,0),
+   (0,1,0), (0,0,1), (0,0,1). Quiet at 0/10 is Short=1, 30 Medium=1, 60/120 Long=1.
+6. Enter Play mode. Output Valid should become true for a living player with valid sources.
+   Damage/sanity debug actions should change the live inputs. Small changes inside a
+   shoulder plateau can legitimately leave the memberships unchanged.
+7. Walk between rooms: global quiet time must keep increasing. Simulate a delivered event
+   using Event Memory's debug menu: quiet time resets and event pressure increases.
+8. Disable Director Observation: live output should become invalid on refresh. Re-enable
+   it: output should recover. Stop Play mode when finished.
+
+This milestone was installed without running Play-mode or manual-preview tests, at the
+user's request. The preview fields are diagnostic values and never feed the live output.
