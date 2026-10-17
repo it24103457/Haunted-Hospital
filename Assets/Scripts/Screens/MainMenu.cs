@@ -35,6 +35,10 @@ public class MainMenu : MonoBehaviour
 
     public void Play()
     {
+#if UNITY_EDITOR
+        // In the Editor the path is read fresh from the scene asset, so moving or renaming the game scene never breaks Play.
+        if (gameScene != null) gameScenePath = AssetDatabase.GetAssetPath(gameScene);
+#endif
         SceneLoader.Load(gameScenePath);
     }
 
