@@ -26296,6 +26296,9 @@ GameObject:
   - component: {fileID: 593751868}
   - component: {fileID: 593751870}
   - component: {fileID: 593751869}
+  - component: {fileID: 593751871}
+  - component: {fileID: 593751872}
+  - component: {fileID: 593751873}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26348,7 +26351,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6612163940500c345b0e90a695163c04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorRoomTracker
-  player: {fileID: 989714372}
+  player: {fileID: 936268515}
   registry: {fileID: 593751870}
   settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
   sampleInterval: 0.1
@@ -26371,6 +26374,104 @@ MonoBehaviour:
   eventAnchorsRoot: {fileID: 995207998}
   directorLightsRoot: {fileID: 777421387}
   essentialLightsRoot: {fileID: 781570378}
+--- !u!114 &593751871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 401f1aeaca7713c428051eccb40c5432, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorObservation
+  playerStats: {fileID: 936268510}
+  playerTransform: {fileID: 936268515}
+  roomTracker: {fileID: 593751869}
+  settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  observationInterval: 0.1
+  referencesValid: 0
+  validationMessage: Waiting for Play mode
+  snapshot:
+    valid: 0
+    sampledAt: 0
+    health: 0
+    maxHealth: 0
+    healthFraction: 0
+    sanity: 0
+    maxSanity: 0
+    sanityFraction: 0
+    reserveAmmo: 0
+    maxReserveAmmo: 0
+    alive: 0
+    hasExitKey: 0
+    playerPosition: {x: 0, y: 0, z: 0}
+    roomId: 
+    timeInRoom: 0
+    hasReceivedDamage: 0
+    secondsSinceDamage: 0
+    damageRecoveryActive: 0
+    hunterDanger: 0
+    recentGunfire: 0
+    keypadInteraction: 0
+    victory: 0
+--- !u!114 &593751872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8176db3602e57814c884f70a059c74d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventMemory
+  directorSettings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  tensionSettings: {fileID: 11400000, guid: 812fd4cc88937984a972f1959fb83e7e, type: 2}
+  eventPressure: 0
+  quietSeconds: 0
+  secondsSinceEventEnded: 0
+  hasEndedEvent: 0
+  eventActive: 0
+  activeEvent:
+    eventId: 
+    eventType: 0
+    anchorId: 
+    roomId: 
+    startedAt: 0
+    endedAt: 0
+    outcome: 0
+    effectDelivered: 0
+    debugRecord: 0
+  history: []
+--- !u!114 &593751873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 377a2681c73a223409e93db6c2def2df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorTensionEstimator
+  observation: {fileID: 593751871}
+  eventMemory: {fileID: 593751872}
+  directorSettings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  tensionSettings: {fileID: 11400000, guid: 812fd4cc88937984a972f1959fb83e7e, type: 2}
+  updateInterval: 0.1
+  estimateValid: 0
+  playerAlive: 0
+  status: Waiting for Play mode
+  vulnerability: 0
+  vulnerabilityPressure: 0
+  recentDamagePressure: 0
+  recentEventPressure: 0
+  estimatedPressure: 0
+  quietSeconds: 0
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0
@@ -39422,6 +39523,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5dfbb9ee48df31442af3b0d9a751045c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+--- !u!4 &936268515 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8786350797952261194, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
+  m_PrefabInstance: {fileID: 2023644987}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &938990431
 GameObject:
   m_ObjectHideFlags: 0
@@ -88097,6 +88203,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4176077712344651588, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
+      propertyPath: logChanges
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4871408159299711671, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
       propertyPath: m_Name
       value: Player

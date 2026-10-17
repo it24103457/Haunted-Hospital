@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 501cf2edcb3bcc044a4a492db569ea20, type: 3}
+  m_Name: DirectorTensionSettings_Hospital
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorTensionSettings
+  healthWeight: 0.6
+  sanityWeight: 0.4
+  vulnerabilityContribution: 0.5
+  maximumDamageContribution: 0.25
+  maximumEventPressure: 1
+  eventPressureDecayPerSecond: 0.02
+  historyCapacity: 20
+  maximumObservationAge: 0.5
