@@ -27,6 +27,16 @@ public class UIButtonSounds : MonoBehaviour
 
     private void Play(AudioClip clip)
     {
+        PlayClip(clip, volume);
+    }
+
+    /*
+     * Plays a screen sound from its own short-lived object, shared by the buttons and the death and win screens.
+     * The object survives scene loads and ignores the game's audio pause, and removes itself on real time,
+     * so the sound is heard in full even while the game is paused or a new scene is loading.
+     */
+    public static void PlayClip(AudioClip clip, float clipVolume)
+    {
         if (clip == null) return;
 
         var go = new GameObject("UISound");
@@ -34,8 +44,21 @@ public class UIButtonSounds : MonoBehaviour
         var source = go.AddComponent<AudioSource>();
         source.ignoreListenerPause = true;
         source.spatialBlend = 0f;
-        source.PlayOneShot(clip, volume);
-        Destroy(go, clip.length + 0.1f);
+        source.PlayOneShot(clip, clipVolume);
+        go.AddComponent<RemoveAfterRealtime>().seconds = clip.length + 0.1f;
+    }
+
+    // Removes its object after a number of real seconds, so sounds played while the game is paused are still cleaned up.
+    private class RemoveAfterRealtime : MonoBehaviour
+    {
+        public float seconds;
+        private float elapsed;
+
+        private void Update()
+        {
+            elapsed += Time.unscaledDeltaTime;
+            if (elapsed >= seconds) Destroy(gameObject);
+        }
     }
 
     // Forwards the pointer entering a button to the hover sound, only while that button can be clicked.

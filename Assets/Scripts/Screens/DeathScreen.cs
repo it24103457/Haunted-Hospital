@@ -4,7 +4,7 @@ using UnityEngine;
 /*
  * Shows the death screen when the player dies: "YOU DIED" with Restart and Main Menu.
  * On death the player's controls are frozen and the mouse is freed straight away (through PlayerControlLock),
- * then after a short pause the screen fades in. Once it is fully shown, game time and game audio stop,
+ * then after a short pause the screen fades in and its sound plays. Once it is fully shown, game time and game audio stop,
  * so nothing keeps moving or making noise behind it. Button sounds still play, since they ignore the audio pause.
  * The fade runs on real time, so it is not affected by the game clock.
  * The objectives HUD (notes line and messages) is drawn with OnGUI, which always appears on top of any Canvas,
@@ -16,6 +16,9 @@ public class DeathScreen : MonoBehaviour
     [Tooltip("Seconds between dying and the screen starting to appear, so the moment of death registers first.")]
     [SerializeField, Min(0f)] private float delay = 0.8f;
     [SerializeField, Min(0.01f)] private float fadeTime = 1.2f;
+    [Tooltip("Played as the screen starts to appear. Keeps playing after the game's audio stops.")]
+    [SerializeField] private AudioClip sound;
+    [SerializeField, Range(0f, 1f)] private float soundVolume = 0.9f;
 
     private PlayerStats player;
 
@@ -53,6 +56,7 @@ public class DeathScreen : MonoBehaviour
         yield return new WaitForSecondsRealtime(delay);
 
         if (ObjectiveHud.Instance != null) ObjectiveHud.Instance.enabled = false;
+        UIButtonSounds.PlayClip(sound, soundVolume);
 
         for (float t = 0f; t < fadeTime; t += Time.unscaledDeltaTime)
         {

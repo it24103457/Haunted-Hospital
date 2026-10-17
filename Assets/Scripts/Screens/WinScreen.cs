@@ -6,7 +6,7 @@ using UnityEngine.Video;
 /*
  * Shows the win screen when the escape is completed (ObjectiveState.HasWon): "YOU ESCAPED" with Play Again and Main Menu.
  * The moment the game is won, the objectives HUD is switched off, so its own OnGUI win screen never appears, not even for a frame.
- * The screen then fades to black, plays the optional cutscene if one is assigned, and fades the title and buttons in over the black.
+ * The screen then fades to black, plays the optional cutscene if one is assigned, and fades the title and buttons in over the black as its sound plays.
  * The backdrop opacity is a setting: fully opaque by default, so the game world never shows through after the escape or a cutscene.
  * Once the buttons appear, game time and game audio stop and the mouse is freed. All fades run on real time.
  */
@@ -22,6 +22,11 @@ public class WinScreen : MonoBehaviour
     [SerializeField, Min(0f)] private float delay = 0.5f;
     [SerializeField, Min(0.01f)] private float fadeToBlack = 1.5f;
     [SerializeField, Min(0.01f)] private float contentFade = 1.2f;
+
+    [Header("Sound")]
+    [Tooltip("Played as the title starts to appear over the black. Keeps playing after the game's audio stops.")]
+    [SerializeField] private AudioClip sound;
+    [SerializeField, Range(0f, 1f)] private float soundVolume = 0.9f;
 
     [Header("Optional cutscene")]
     [Tooltip("Played full screen after the fade to black and before the title appears. Leave empty for no cutscene.")]
@@ -77,6 +82,7 @@ public class WinScreen : MonoBehaviour
 
         if (cutscene != null) yield return PlayCutscene();
 
+        UIButtonSounds.PlayClip(sound, soundVolume);
         yield return Fade(content, contentFade);
         SetGroup(content, 1f, true);
         SetGroup(panel, 1f, true);

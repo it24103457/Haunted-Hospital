@@ -838,6 +838,8 @@ MonoBehaviour:
   panel: {fileID: 1644695872982244162}
   delay: 0.8
   fadeTime: 1.2
+  sound: {fileID: 8300000, guid: 80b9003bc67c45e40a82bf61c95e369a, type: 3}
+  soundVolume: 0.9
 --- !u!114 &3988107336709291129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -883,6 +885,8 @@ MonoBehaviour:
   delay: 0.5
   fadeToBlack: 1.5
   contentFade: 1.2
+  sound: {fileID: 8300000, guid: 78fd52ca99938164d861f2051c6a6bac, type: 3}
+  soundVolume: 0.9
   cutscene: {fileID: 0}
 --- !u!1 &1993781757931554406
 GameObject:
