@@ -24645,7 +24645,7 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0}
   - name: StashBag
     prefab: {fileID: 919132149155446097, guid: b7ef899e15317604eb6ae20fbb019bcc, type: 3}
-    rotation: {x: 0, y: 0, z: 0}
+    rotation: {x: -90, y: 0, z: 0}
   - name: StashBasket
     prefab: {fileID: 919132149155446097, guid: 54a9ae5312ea7fd47851196696a81148, type: 3}
     rotation: {x: 0, y: 0, z: 0}
