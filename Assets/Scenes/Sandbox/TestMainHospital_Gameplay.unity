@@ -2134,7 +2134,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectiveState
   totalClues: 4
-  logChanges: 1
+  logChanges: 0
 --- !u!4 &40663415
 Transform:
   m_ObjectHideFlags: 0
@@ -28261,7 +28261,7 @@ GameObject:
   - component: {fileID: 731821436}
   - component: {fileID: 731821437}
   m_Layer: 0
-  m_Name: MainHospital
+  m_Name: G01_Keypad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
