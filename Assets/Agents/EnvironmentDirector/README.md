@@ -423,3 +423,79 @@ Manual checks for the user - not run during implementation:
 
 Suggested commit message: feat(director): filter event candidates with safety checks,
 cooldowns and target reservations
+
+## Milestone 9 - future-state prediction
+
+Added DirectorPlanningState.cs (detached state and copied cooldowns),
+DirectorStatePredictor.cs (pure event/Rest transitions), and DirectorPredictionPreview.cs
+(Inspector preview and live snapshot capture). Event Memory exposes PlanningEventPressure,
+a read-only projection that does not advance or change its stored pressure. No Editor
+helper, new asset, model, audio clip, executor or automatic preview loop is required.
+
+Prediction model:
+- Vulnerability remains fixed within a short planning branch. No future damage, healing,
+  movement or resource pickup is invented.
+- An event is assumed delivered at its start and cleaned up at the end of Duration.
+- E_next = max(0, min(MaximumEventPressure, E + eventIncrease) - decayRate * duration).
+  Rest has zero increase and uses RestDuration.
+- DamageRemaining_next = max(0, DamageRemaining - duration).
+- Pressure_next = clamp01(vulnerability * VulnerabilityContribution +
+  MaximumDamageContribution * DamageRemaining_next / DamageRecoverySeconds + E_next).
+  The damage term is zero when recovery duration is zero.
+- Quiet time increases by RestDuration during Rest. For an event it resets on assumed
+  delivery, so its value at the end is that event's Duration.
+- Existing cooldowns decrease as simulated time advances. On predicted event completion,
+  that event receives its full Cooldown and global spacing receives MinimumTimeBetweenEvents.
+- An event cannot be predicted while its cooldown, global spacing or damage recovery is
+  positive; predict Rest transitions first. Disabled or invalid events are rejected.
+- State transitions create new states, including independent cooldown arrays. Branches
+  cannot modify their parent or siblings. Live timers, reservations and history are untouched.
+
+Limits: predicted success is a modelling assumption, not authorization to run a scare.
+The preview intentionally operates on catalogue events without requiring spatial eligibility
+or teammate signals; it may therefore predict a mathematical outcome for an event that
+commit 8 currently blocks. Future search must separately apply eligibility, recheck the
+player/anchor at execution, and handle cancellation. Current room, camera visibility,
+hunter movement and future safety signals are not predicted here. Desired tension is
+not recalculated by this component; scoring and search are the next milestones.
+
+Setup if the component is not already attached:
+1. Open EnvironmentDirector_Test outside Play mode.
+2. Select EnvironmentDirector; Add Component > Director Prediction Preview.
+3. Assign DirectorSettings_Hospital to Director Settings and
+   DirectorTensionSettings_Hospital to Tension Settings from the Settings folder.
+4. Drag EnvironmentDirector into Observation and Event Memory to use its existing components.
+5. Save the test scene. No Editor setup menu is needed for this milestone.
+
+Manual checks (left to the user; not executed during implementation):
+1. Select EnvironmentDirector > Director Prediction Preview. Open its component menu and
+   choose Preview Predictions From Manual Inputs. This can run outside Play mode.
+2. With default settings and inputs vulnerability .2, event pressure .4, damage recovery 0,
+   quiet 20, global cooldown 0 and an empty manual cooldown list, Starting State pressure
+   should be .50. Rest (5 seconds, .02 decay/second) should predict event pressure .30,
+   total pressure .40, quiet 25 and elapsed 5.
+3. Inspect any enabled event definition's Duration and Predicted Tension Increase. Using
+   those exact values, calculate max(0, min(1, .4 + increase) - .02 * duration), then add
+   .10 vulnerability pressure and clamp to 0..1. Compare its prediction row. Quiet should
+   equal Duration, global cooldown should be 12 and that event's cooldown should equal
+   the definition's full Cooldown, assuming the unchanged default settings.
+4. Set Manual Damage Recovery Remaining to 5 and preview. Starting pressure should be
+   .625; Rest should end at .40 as the 5 seconds of damage recovery expire. Event rows
+   should be blocked until recovery is zero. Restore the input to 0.
+5. Set Manual Global Cooldown to 8: events must be blocked and Rest should predict 3
+   seconds remaining. Restore to 0. Add one Manual Cooldowns entry with an actual Event ID
+   and remaining 20: its event must be blocked, and Rest should reduce it to 15. Clear the
+   manual list afterward. These inputs do not alter real cooldowns.
+6. Use event pressure 1 and a long Rest/large decay in a DUPLICATE settings asset if you
+   want boundary checks; pressure must remain bounded and vulnerability must not decay.
+   Restore the original settings reference afterward.
+7. In Play mode, use Preview Predictions From Live State after observation initializes.
+   Starting State should reflect current vulnerability, pressure and timers. Missing
+   victory/keypad/hunter signals do not block this mathematical preview. They continue
+   to block actual eligibility. No light, audio or real event should start.
+8. Repeated previews must not add history entries or event pressure, reset quiet time,
+   start cooldowns or reserve targets. Natural live time decay still proceeds in Play mode.
+9. Disable Observation and refresh the live preview: it should reject missing/stale input.
+   Stop Play mode after testing. Preview output refreshes only when you invoke its menu.
+
+Suggested commit: feat(director): predict event outcomes and rest transitions for planning

@@ -26303,6 +26303,7 @@ GameObject:
   - component: {fileID: 593751875}
   - component: {fileID: 593751877}
   - component: {fileID: 593751876}
+  - component: {fileID: 593751878}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26628,6 +26629,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorTargetReservations
   reservedAnchor: {fileID: 0}
   expiresAt: 0
+--- !u!114 &593751878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94add5e6418b4a2396f933d765a32986, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorPredictionPreview
+  directorSettings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  tensionSettings: {fileID: 11400000, guid: 812fd4cc88937984a972f1959fb83e7e, type: 2}
+  observation: {fileID: 593751871}
+  eventMemory: {fileID: 593751872}
+  manualVulnerability: 0.2
+  manualEventPressure: 0.4
+  manualDamageRecoveryRemaining: 0
+  manualQuietSeconds: 20
+  manualGlobalCooldown: 0
+  manualCooldowns: []
+  status: Choose a preview from the component menu
+  startingState:
+    elapsedSeconds: 0
+    vulnerability: 0
+    eventPressure: 0
+    damageRecoveryRemaining: 0
+    quietSeconds: 0
+    globalCooldownRemaining: 0
+    estimatedPressure: 0
+    cooldowns: []
+  predictions: []
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0

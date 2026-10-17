@@ -84,6 +84,12 @@ namespace HauntedHospital.EnvironmentAI
 
         public bool EventActive => eventActive;
 
+        // Read-only projection for planning; unlike EventPressure this does not advance memory.
+        public float PlanningEventPressure => IsReady
+            ? Mathf.Clamp(eventPressure - tensionSettings.EventPressureDecayPerSecond *
+                Mathf.Max(0f, Time.time - lastPressureUpdate), 0f, tensionSettings.MaximumEventPressure)
+            : 0f;
+
         public IReadOnlyList<DirectorEventRecord> History =>
             historyView ?? (historyView = history.AsReadOnly());
 
