@@ -26301,6 +26301,8 @@ GameObject:
   - component: {fileID: 593751873}
   - component: {fileID: 593751874}
   - component: {fileID: 593751875}
+  - component: {fileID: 593751877}
+  - component: {fileID: 593751876}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26547,15 +26549,85 @@ MonoBehaviour:
   totalActivation: 0
   weightedSum: 0
   contributingRules: []
-  previewPressure: 0.4
-  previewVulnerability: 0.2
-  previewQuietSeconds: 45
-  previewValid: 0
-  previewStatus: Use the component menu to calculate
-  previewDesiredTension: 0
-  previewTotalActivation: 0
-  previewWeightedSum: 0
-  previewContributions: []
+  previewPressure: 0
+  previewVulnerability: 0
+  previewQuietSeconds: 0
+  previewValid: 1
+  previewStatus: Ready
+  previewDesiredTension: 0.46666667
+  previewTotalActivation: 1
+  previewWeightedSum: 0.46666667
+  previewContributions:
+  - ruleId: P0_V0_Q1
+    pressure: 0
+    vulnerability: 0
+    quietDuration: 1
+    activation: 0.16666666
+    ruleOutput: 0.5
+    weightedOutput: 0.08333333
+  - ruleId: P0_V0_Q2
+    pressure: 0
+    vulnerability: 0
+    quietDuration: 2
+    activation: 0.16666666
+    ruleOutput: 0.7
+    weightedOutput: 0.11666666
+  - ruleId: P1_V0_Q1
+    pressure: 1
+    vulnerability: 0
+    quietDuration: 1
+    activation: 0.33333334
+    ruleOutput: 0.35
+    weightedOutput: 0.11666667
+  - ruleId: P1_V0_Q2
+    pressure: 1
+    vulnerability: 0
+    quietDuration: 2
+    activation: 0.33333334
+    ruleOutput: 0.45
+    weightedOutput: 0.15
+--- !u!114 &593751876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d56132631bd3d4142b3f0c56da4d424e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventEligibility
+  settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  observation: {fileID: 593751871}
+  roomTracker: {fileID: 593751869}
+  registry: {fileID: 593751870}
+  eventMemory: {fileID: 593751872}
+  reservations: {fileID: 593751877}
+  directorLightsRoot: {fileID: 777421387}
+  essentialLightsRoot: {fileID: 781570378}
+  playerCamera: {fileID: 1653349141}
+  maximumObservationAge: 0.5
+  visibilityMask:
+    serializedVersion: 2
+    m_Bits: 51
+  apparitionEyeHeight: 1
+  eligibleEventCount: 0
+  preview: []
+--- !u!114 &593751877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13ce3f492e61f4043bf57f529daef88e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorTargetReservations
+  reservedAnchor: {fileID: 0}
+  expiresAt: 0
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0
@@ -72067,6 +72139,11 @@ Transform:
   - {fileID: 277530736}
   m_Father: {fileID: 87463870}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &1653349141 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 1750971852232761293, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
+  m_PrefabInstance: {fileID: 2023644987}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1654757244
 GameObject:
   m_ObjectHideFlags: 0

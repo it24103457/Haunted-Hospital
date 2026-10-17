@@ -333,3 +333,93 @@ Manual tests for the user (not run during installation):
 Manual preview uses the assigned Preview Fuzzy Settings asset; keep it the same as the
 Fuzzifier's asset when comparing live and preview calculations. No test result is claimed
 by this setup; runtime and preview verification are left to the user.
+
+## Milestone 8 - event eligibility, cooldowns and reservations
+
+DirectorEventEligibility produces event/anchor candidates with a readable rejection
+reason. Rest is always included as a no-effect fallback. It does not execute scares,
+load audio, choose the best event, or replace the later search planner.
+
+New files: DirectorEligibilityResult.cs, DirectorEventEligibility.cs,
+DirectorTargetReservations.cs and Editor/DirectorEligibilitySetup.cs.
+DirectorEventMemory now keeps per-event-ID cooldown expiry independently of bounded
+history. Completed, cancelled and failed real event attempts start their configured
+cooldown AFTER FinishEvent (which must follow effect cleanup). Debug pressure records
+do not start catalogue cooldowns. Cooldowns and global spacing use game time and do
+not reset on room changes. They restart with a fresh Play session.
+
+Installation (outside Play mode):
+1. Open Assets/Scenes/Sandbox/EnvironmentDirector_Test.unity.
+2. Wait for Unity to import and compile the new scripts.
+3. Choose Tools > Environment Director > Set Up Commit 8 In Test Scene.
+4. On EnvironmentDirector, inspect Director Event Eligibility and Director Target
+   Reservations. The setup reuses existing components and does not duplicate them.
+5. Ensure Player Camera is the actual gameplay camera under Player. If more than one
+   enabled camera exists, assign the correct one manually.
+6. Save the test scene with Ctrl+S. The setup intentionally refuses MainHospital.
+
+Policy:
+- Requires fresh, living player observation, recognized room, enabled valid catalogue
+  event, available compatible registered anchor, configured distance and global spacing.
+- Lighting targets only the current room. Audio and apparition anchors can be in other
+  rooms within distance limits; no stationary-room waiting period is required.
+- Rejects Essential lights and light references outside the Director light root.
+- Damage recovery blocks effects. Victory and recent gunfire must explicitly be Inactive;
+  applicable keypad and hunter checks must also explicitly be Inactive.
+- IMPORTANT: Current observation still supplies Unavailable for teammate safety signals.
+  Consequently real effects remain blocked until those adapters are integrated. This is
+  intentional. Do not change Unavailable to Inactive simply to make events eligible.
+- Visibility-required events need the assigned player camera, a point within its view,
+  and an unobstructed physics ray (ignoring triggers, player colliders and source colliders).
+  Apparition visibility targets one metre above its anchor. Geometry needs colliders for
+  ray occlusion. Model bounds visibility and executor asset readiness are later checks.
+- Candidate eligibility does not mean an executor, audio clip or apparition model exists.
+
+Future execution contract:
+1. CollectCandidates returns Rest plus eligible event/anchor pairs (or request rejected
+   pairs too for diagnostics).
+2. After selection, TryReserveCandidate rechecks the candidate and grants a two-second
+   pending lease. Store its returned token. Only one reservation is allowed at a time.
+3. Immediately before starting, Evaluate(definition, anchor, token) again. If rejected,
+   release the token and replan. A stale preview is never permission to execute.
+4. Call EventMemory.BeginEvent before any effect. If it fails, release the token.
+5. Renew the reservation for the effect duration plus cleanup margin; maintain/renew it
+   if needed. EventMemory.EventActive independently prevents concurrent real effects.
+6. MarkEffectDelivered only once the effect is actually delivered.
+7. On completion, cancellation or failure, restore lights/audio/visuals first, then
+   FinishEvent and release the token. Release on every failure path. Old tokens cannot
+   release a newer reservation. Expired leases and disabled reservations are cleared.
+8. During execution use future cancellation monitoring; Evaluate is a pre-start check
+   and correctly rejects while EventMemory reports an active event.
+
+Manual checks for the user - not run during implementation:
+1. Enter Play mode and wait one second. On Director Event Eligibility open the component
+   menu > Preview Eligibility (Play mode, no effects). Expand Preview in the Inspector.
+   First entry is Rest with Eligible checked. Other rows show event, anchor, distance and
+   their first blocking reason. Eligible Event Count excludes Rest.
+2. Missing-signal messages are expected for otherwise suitable candidates. No sound,
+   flicker or blackout should occur. Re-run Preview after each change; it is not live UI.
+3. Walk into another room and preview again. Lighting candidates from other rooms should
+   say they must target the current room; nearby current-room candidates progress to
+   safety checks. Distance-rejected candidates should change as you move.
+4. Disable Director Observation during Play, preview again: valid configured candidates
+   should report observation unavailable/stale. Re-enable it and preview after one second.
+5. Use PlayerStats' existing damage debug action, then preview a nearby compatible event:
+   Damage recovery should block it for the configured recovery time (provided earlier
+   distance/pacing checks pass). Its next reason may then be an unavailable safety signal.
+6. With all required live adapters integrated later, test visibility by facing toward and
+   away from an enabled visibility-required target and putting a wall between it and the
+   camera. Disabled apparition definitions remain disabled until their implementation.
+7. With the executor or a developer harness later: begin and finish a real catalogue
+   event, then read CooldownRemaining(eventId). It should count down from the definition's
+   Cooldown even across room changes and history eviction. Global spacing should also
+   block new attempts until its interval ends. The earlier debug pressure menu tests only
+   global spacing, deliberately NOT per-event cooldowns.
+8. Reservation API checks for a developer harness: reserve an available anchor, attempt
+   a second reservation (must fail), release with a wrong token (must fail), then release
+   with the right token (must succeed). Let a short lease expire and reserve again. These
+   calls must run in Play mode. No fake live safety overrides have been added.
+9. Stop Play mode. Do not save temporary Play-mode configuration changes.
+
+Suggested commit message: feat(director): filter event candidates with safety checks,
+cooldowns and target reservations

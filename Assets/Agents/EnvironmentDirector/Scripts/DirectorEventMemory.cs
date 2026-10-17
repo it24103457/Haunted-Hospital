@@ -66,6 +66,12 @@ namespace HauntedHospital.EnvironmentAI
         private float lastEndedAt;
         private float lastPressureUpdate;
         private bool initialized;
+        // Independent of the bounded diagnostic history: old records cannot erase cooldowns.
+        private readonly Dictionary<string, float> cooldownEnds = new Dictionary<string, float>();
+
+        public float CooldownRemaining(string eventId) =>
+            !string.IsNullOrEmpty(eventId) && cooldownEnds.TryGetValue(eventId, out float end)
+                ? Mathf.Max(0f, end - Time.time) : 0f;
 
         public bool IsReady =>
             initialized &&
@@ -116,6 +122,7 @@ namespace HauntedHospital.EnvironmentAI
         private void Awake()
         {
             history.Clear();
+            cooldownEnds.Clear();
 
             eventPressure = 0f;
             eventActive = false;
@@ -249,6 +256,13 @@ namespace HauntedHospital.EnvironmentAI
             activeEvent.outcome = outcome;
 
             history.Add(activeEvent);
+            if (!activeEvent.debugRecord)
+                foreach (var definition in directorSettings.Events)
+                    if (definition != null && definition.EventId == activeEvent.eventId)
+                    {
+                        cooldownEnds[activeEvent.eventId] = Time.time + definition.Cooldown;
+                        break;
+                    }
 
             while (history.Count > tensionSettings.HistoryCapacity)
                 history.RemoveAt(0);
