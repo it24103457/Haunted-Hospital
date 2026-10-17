@@ -26304,6 +26304,7 @@ GameObject:
   - component: {fileID: 593751877}
   - component: {fileID: 593751876}
   - component: {fileID: 593751878}
+  - component: {fileID: 593751879}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26651,17 +26652,174 @@ MonoBehaviour:
   manualQuietSeconds: 20
   manualGlobalCooldown: 0
   manualCooldowns: []
-  status: Choose a preview from the component menu
+  status: Predictions generated. These are mathematical outcomes, not live eligibility or execution.
   startingState:
     elapsedSeconds: 0
-    vulnerability: 0
-    eventPressure: 0
+    vulnerability: 0.2
+    eventPressure: 0.4
     damageRecoveryRemaining: 0
-    quietSeconds: 0
+    quietSeconds: 20
     globalCooldownRemaining: 0
-    estimatedPressure: 0
+    estimatedPressure: 0.5
     cooldowns: []
-  predictions: []
+  predictions:
+  - action: Rest
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 5
+      vulnerability: 0.2
+      eventPressure: 0.3
+      damageRecoveryRemaining: 0
+      quietSeconds: 25
+      globalCooldownRemaining: 0
+      estimatedPressure: 0.4
+      cooldowns: []
+  - action: light_flicker
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 3
+      vulnerability: 0.2
+      eventPressure: 0.42000002
+      damageRecoveryRemaining: 0
+      quietSeconds: 3
+      globalCooldownRemaining: 12
+      estimatedPressure: 0.52000004
+      cooldowns:
+      - eventId: light_flicker
+        remaining: 45
+  - action: local_blackout
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 4
+      vulnerability: 0.2
+      eventPressure: 0.54
+      damageRecoveryRemaining: 0
+      quietSeconds: 4
+      globalCooldownRemaining: 12
+      estimatedPressure: 0.64000005
+      cooldowns:
+      - eventId: local_blackout
+        remaining: 100
+  - action: phone_ring
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 4
+      vulnerability: 0.2
+      eventPressure: 0.42000002
+      damageRecoveryRemaining: 0
+      quietSeconds: 4
+      globalCooldownRemaining: 12
+      estimatedPressure: 0.52000004
+      cooldowns:
+      - eventId: phone_ring
+        remaining: 60
+  - action: whisper
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 3
+      vulnerability: 0.2
+      eventPressure: 0.48000002
+      damageRecoveryRemaining: 0
+      quietSeconds: 3
+      globalCooldownRemaining: 12
+      estimatedPressure: 0.58000004
+      cooldowns:
+      - eventId: whisper
+        remaining: 55
+  - action: knock
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 2
+      vulnerability: 0.2
+      eventPressure: 0.46
+      damageRecoveryRemaining: 0
+      quietSeconds: 2
+      globalCooldownRemaining: 12
+      estimatedPressure: 0.56
+      cooldowns:
+      - eventId: knock
+        remaining: 45
+  - action: hospital_announcement
+    valid: 1
+    reason: Predicted only; live eligibility and executor readiness still required
+    predictedState:
+      elapsedSeconds: 6
+      vulnerability: 0.2
+      eventPressure: 0.39999998
+      damageRecoveryRemaining: 0
+      quietSeconds: 6
+      globalCooldownRemaining: 12
+      estimatedPressure: 0.49999997
+      cooldowns:
+      - eventId: hospital_announcement
+        remaining: 90
+  - action: distant_apparition
+    valid: 0
+    reason: Event disabled or outside catalogue
+    predictedState:
+      elapsedSeconds: 0
+      vulnerability: 0
+      eventPressure: 0
+      damageRecoveryRemaining: 0
+      quietSeconds: 0
+      globalCooldownRemaining: 0
+      estimatedPressure: 0
+      cooldowns: []
+  - action: light_pulse_apparition
+    valid: 0
+    reason: Event disabled or outside catalogue
+    predictedState:
+      elapsedSeconds: 0
+      vulnerability: 0
+      eventPressure: 0
+      damageRecoveryRemaining: 0
+      quietSeconds: 0
+      globalCooldownRemaining: 0
+      estimatedPressure: 0
+      cooldowns: []
+--- !u!114 &593751879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8086ce49f0854866971d603267e726d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorScoringPreview
+  scoringSettings: {fileID: 11400000, guid: db22902675160934bb134e8b93131528, type: 2}
+  directorSettings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  tensionSettings: {fileID: 11400000, guid: 812fd4cc88937984a972f1959fb83e7e, type: 2}
+  prediction: {fileID: 593751878}
+  desiredTension: {fileID: 593751875}
+  eligibility: {fileID: 593751876}
+  eventMemory: {fileID: 593751872}
+  manualPredictedPressure: 0.48
+  manualDesiredTension: 0.55
+  manualVulnerability: 0.2
+  manualIsRest: 0
+  manualEventRecency: 0
+  manualAnchorRecency: 0
+  manualScore:
+    valid: 1
+    reason: Scored; lower is preferable
+    targetDifference: 0.07000002
+    overshootPenalty: 0
+    eventRepetitionPenalty: 0
+    anchorRepetitionPenalty: 0
+    total: 0.07000002
+  status: No preview requested
+  targetUsed: 0
+  bestCandidateIndex: -1
+  candidates: []
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0

@@ -499,3 +499,82 @@ Manual checks (left to the user; not executed during implementation):
    Stop Play mode after testing. Preview output refreshes only when you invoke its menu.
 
 Suggested commit: feat(director): predict event outcomes and rest transitions for planning
+
+## Milestone 10 - heuristic scoring
+
+New runtime files: DirectorScoringSettings.cs, DirectorHeuristic.cs and
+DirectorScoringPreview.cs. The settings asset is DirectorScoringSettings_Hospital.
+The preview component attaches to EnvironmentDirector in EnvironmentDirector_Test.
+No Editor helper is added. No preview or gameplay tests are run during installation.
+
+Lower total scores are preferable. With defaults:
+  target difference = abs(predicted pressure - desired tension)
+  overshoot penalty = max(0, predicted pressure - desired tension) * (1 + 2 * vulnerability)
+  event repetition penalty = event recency * .15
+  anchor repetition penalty = anchor recency * .10
+  total = sum of these four terms
+
+Weights can be adjusted in the settings asset. Scores need not lie within 0..1.
+Invalid inputs/settings or overflow produce Valid=false and positive infinity; consumers
+must check Valid before comparing scores. This heuristic is for bounded greedy best-first
+search, not a claim of an admissible A* heuristic or an optimal plan.
+
+Repetition uses the most recent delivered, non-debug history record matching the event
+TYPE or anchor ID. Recency = max(0, 1 - secondsSinceRecordEnded / 90), with 90 configurable.
+The two recencies are independent, so a different event on the same anchor can still
+receive an anchor penalty. Delivered effects count even if subsequently cancelled or
+failed; undelivered attempts and debug records do not. The evidence is limited to retained
+Event Memory history (default 20 entries), which is a deliberate bounded-memory policy.
+Rest has no repetition penalty. Future search must pass branch history including simulated
+deliveries so its own repeated actions are penalized. Evaluate recency at selection time,
+not after the proposed effect, so long effects do not dilute their repetition penalty.
+
+The live preview reads a fixed desired-tension sample, captures a planning state and copies
+history. It scores only eligible, successfully predicted candidates. Blocked candidates
+retain their reason and have invalid scores. Best Candidate Index is informational; it
+neither reserves nor plays an event. Exact ties retain candidate order (Rest comes first).
+Future search, event execution and automatic decision making are separate milestones.
+
+Manual test steps (for the user):
+1. Open EnvironmentDirector_Test and select EnvironmentDirector.
+2. Find Director Scoring Preview. Confirm all seven references are assigned: Scoring
+   Settings, Director Settings, Tension Settings, Prediction, Desired Tension, Eligibility,
+   and Event Memory. The last four are existing components on EnvironmentDirector.
+3. Outside Play mode, use the component's three-dot menu > Preview Score From Manual Inputs.
+4. With predicted pressure .58, desired .55, vulnerability .2, Is Rest false, and both
+   recencies 0, expand Manual Score: Valid=true, Target Difference=.03, Overshoot Penalty=.042,
+   repetition penalties=0 and Total approximately .072. Floating-point rounding is normal.
+5. Change predicted pressure to .48 and refresh: difference=.07, overshoot=0, total=.07.
+   This slightly beats .58 because the default policy penalizes overshooting more strongly.
+6. Set predicted pressure=.55: total=0. Set vulnerability=.8 while predicted pressure=.58:
+   overshoot=.078 and total=.108. Restore vulnerability=.2.
+7. With pressure=.58, target=.55, vulnerability=.2, Event Recency=1 and Anchor Recency=1:
+   penalties should be .15 and .10; total=.322. Set Is Rest=true: repetition penalties
+   should become zero, giving .072. Restore Is Rest=false and recencies=0 afterward.
+8. Recency .5 means a match 45 seconds ago with the default 90-second window; the event
+   penalty is .075 and anchor penalty .05. Manual recencies are artificial test inputs;
+   they do not write to real history or mean an event actually occurred.
+9. Enter Play mode, wait for observations and inference, then choose Preview Live Candidate
+   Scores (Play mode, no effects). Expand Candidates. Rest should have a valid score.
+   Missing victory/keypad/hunter connections still block actual event candidates, and
+   those rows must remain unscored. They must not win because an invalid total is zero.
+10. After teammate signals are integrated, refresh in a lit room: eligible candidates
+    should have predicted pressure, repetition evidence and a full score breakdown.
+11. Disable Director Desired Tension and refresh: status should report unavailable/stale
+    desired tension and the candidate list should clear. Re-enable it after checking.
+12. Repeated previews must not change event history, start a scare, create a reservation,
+    reset quiet time or start cooldowns. Natural gameplay time still advances in Play mode.
+
+No automatic scoring loop or 20-minute pacing claim is introduced here. The next milestone
+uses the heuristic to order the bounded search frontier and compare action sequences.
+
+Suggested commit: feat(director): score predicted outcomes with tension and repetition penalties
+
+Manual setup fallback if Editor installation has not completed:
+1. In the Director Settings folder, right-click > Create > Haunted Hospital > Environment
+   Director > Scoring Settings; name the asset DirectorScoringSettings_Hospital.
+2. On EnvironmentDirector in EnvironmentDirector_Test, Add Component > Director Scoring Preview.
+3. Assign the new asset to Scoring Settings, and the existing DirectorSettings_Hospital and
+   DirectorTensionSettings_Hospital assets to Director Settings and Tension Settings.
+4. Drag the EnvironmentDirector GameObject into Prediction, Desired Tension, Eligibility
+   and Event Memory so Unity binds its corresponding components. Save the test scene.
