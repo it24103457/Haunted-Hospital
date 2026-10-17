@@ -37519,6 +37519,7 @@ GameObject:
   - component: {fileID: 1571525341}
   - component: {fileID: 1571525340}
   - component: {fileID: 1571525339}
+  - component: {fileID: 1571525343}
   m_Layer: 0
   m_Name: MenuCamera
   m_TagString: MainCamera
@@ -37644,6 +37645,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1571525343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1571525338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c221d3225e0325d44a70465283e974ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuCameraDrift
+  intro: {fileID: 768832611}
+  moveAmount: {x: 0.04, y: 0.025, z: 0.05}
+  turnAmount: {x: 0.5, y: 0.8, z: 0.3}
+  speed: 0.08
 --- !u!1 &1573531743
 GameObject:
   m_ObjectHideFlags: 0

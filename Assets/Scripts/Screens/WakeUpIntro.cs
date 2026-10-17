@@ -90,6 +90,10 @@ public class WakeUpIntro : MonoBehaviour
         if (started) return;
         started = true;
         scenePath = gameScenePath;
+
+        // The menu's camera drift stops here, so from the moment Play is pressed only the intro moves the camera.
+        var drift = menuCamera.GetComponent<MenuCameraDrift>();
+        if (drift != null) drift.enabled = false;
         StartCoroutine(Run());
     }
 
