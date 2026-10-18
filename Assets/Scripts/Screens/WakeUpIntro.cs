@@ -11,7 +11,7 @@ using UnityEngine.UI;
  * while a blur (a Depth of Field volume) eases off along the Blur curve, the camera bobs with heavy breathing that slowly calms,
  * and the panting sound loops in. Once the eyes are open the camera turns to look at the gun, holds,
  * and the screen fades to black, as if the gun has been picked up, before the game scene loads.
- * Space, Esc or a click skips straight to that last fade. A small "SPACE Skip" hint shows in the corner for a few seconds
+ * Space (and only Space, so Esc or a stray click never cuts it short) skips straight to that last fade. A small "SPACE Skip" hint shows in the corner for a few seconds
  * as the eyes start to open. Once the screen is black, "Loading" with cycling dots shows in the centre while the game scene
  * loads in the background. All timing runs on real time.
  * The lying and gun-look camera positions are two marker objects in the scene, so they can be moved in the Scene view.
@@ -101,8 +101,7 @@ public class WakeUpIntro : MonoBehaviour
     {
         if (!started || skipping) return;
 
-        bool skip = (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame))
-                    || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
+        bool skip = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         if (skip)
         {
             skipping = true;

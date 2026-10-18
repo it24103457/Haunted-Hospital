@@ -16,7 +16,7 @@ using UnityEngine.Serialization;
  * just as it steps inside the lift; it flinches straight back out past the door line, the gun drops to the lobby floor outside,
  * and the doors slam shut. Part two follows; without the roof set, the screen fades to black and the end panel
  * ("YOU ESCAPED", Play Again, Main Menu) fades in.
- * Space, Esc or a click skips straight to the end panel; a small "SPACE Skip" hint shows for a few seconds at the start.
+ * Space (and only Space, so Esc or a stray click never cuts it short) skips straight to the end panel; a small "SPACE Skip" hint shows for a few seconds at the start.
  * Everything runs on real time. Camera and Hunter positions come from marker objects in the scene, so shots can be adjusted there.
  * The lift doors are this scene's own copy of the elevator; their panels are moved directly, and the door animation is switched off.
  */
@@ -215,8 +215,7 @@ public class EscapeCutscene : MonoBehaviour
         if (hunterLooking) hunterHold.lookAt = cam.transform.position;
         if (skipping) return;
 
-        bool skip = (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame))
-                    || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
+        bool skip = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         if (skip)
         {
             skipping = true;
