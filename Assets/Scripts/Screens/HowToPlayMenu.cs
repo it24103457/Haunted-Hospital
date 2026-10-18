@@ -12,7 +12,6 @@ using UnityEngine.UI;
  * The pages come from a plain text file so anyone can edit them without opening Unity:
  *   "=== Title" starts a page, an optional "model: Name" line under it picks a model, the rest is the page text,
  *   and lines starting with # are notes that are never shown.
- * An optional "diagram: controls" line shows the controls picture (ControlsDiagram) in place of the page text.
  * Model names are matched to prefabs through the Models list on this component.
  * A page without a model gives its text the full width; a page without text shows a "coming soon" line.
  * Previous/Next (or the arrow keys, A/D) turn the page with a swipe sound; Back (or Esc) closes the screen and raises onBack.
@@ -32,7 +31,6 @@ public class HowToPlayMenu : MonoBehaviour
     {
         public string Title;
         public string Model;
-        public string Diagram;
         public string Body;
     }
 
@@ -64,7 +62,6 @@ public class HowToPlayMenu : MonoBehaviour
     private readonly List<Page> pages = new List<Page>();
     private int index;
     private AudioSource audioSource;
-    private RectTransform controlsDiagram;
 
     private void Awake()
     {
@@ -134,16 +131,6 @@ public class HowToPlayMenu : MonoBehaviour
         pageCounter.text = (index + 1) + " / " + pages.Count;
         SetModel(FindModel(page.Model));
 
-        // The controls picture takes the place of the page text; it is built the first time it is needed.
-        bool showControls = string.Equals(page.Diagram, "controls", StringComparison.OrdinalIgnoreCase);
-        bodyText.gameObject.SetActive(!showControls);
-        if (showControls && controlsDiagram == null)
-            controlsDiagram = ControlsDiagram.Build(bodyText.rectTransform.parent as RectTransform, bodyText.font, bodyText.color, bodyText.fontSize);
-        if (controlsDiagram != null)
-        {
-            controlsDiagram.gameObject.SetActive(showControls);
-            if (showControls) FitToBody(controlsDiagram);
-        }
 
         if (previousButton != null) previousButton.interactable = index > 0;
         if (nextButton != null) nextButton.interactable = index < pages.Count - 1;
@@ -155,17 +142,6 @@ public class HowToPlayMenu : MonoBehaviour
         if (modelFrame != null) modelFrame.SetActive(hasModel);
         if (preview != null) preview.Show(hasModel ? entry.prefab : null, hasModel ? entry.rotation : Vector3.zero);
         if (textArea != null) textArea.offsetMin = new Vector2(hasModel ? textLeftWithModel : textLeftWithoutModel, textArea.offsetMin.y);
-    }
-
-    // Gives the controls picture the same area as the page text, under the title.
-    private void FitToBody(RectTransform diagram)
-    {
-        RectTransform body = bodyText.rectTransform;
-        diagram.anchorMin = body.anchorMin;
-        diagram.anchorMax = body.anchorMax;
-        diagram.pivot = body.pivot;
-        diagram.offsetMin = body.offsetMin;
-        diagram.offsetMax = body.offsetMax;
     }
 
     private ModelEntry FindModel(string name)
@@ -206,12 +182,6 @@ public class HowToPlayMenu : MonoBehaviour
             if (body.Length == 0 && page.Model == null && line.StartsWith("model:", StringComparison.OrdinalIgnoreCase))
             {
                 page.Model = line.Substring(6).Trim();
-                continue;
-            }
-
-            if (body.Length == 0 && page.Diagram == null && line.StartsWith("diagram:", StringComparison.OrdinalIgnoreCase))
-            {
-                page.Diagram = line.Substring(8).Trim();
                 continue;
             }
 

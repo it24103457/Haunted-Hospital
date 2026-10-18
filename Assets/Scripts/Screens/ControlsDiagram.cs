@@ -3,17 +3,21 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /*
- * Draws the controls as a picture for the How to Play screen: a keyboard cluster on the left and a mouse on the right,
+ * Draws the controls as a picture for the Controls screen: a keyboard cluster on the left and a mouse on the right,
  * with a label beside each control and a thin line running from the label to it.
+ * The labels are passed in by control name (Esc, WASD, E, R, Shift, C, Space, LeftMouse, Mouse); a control without one
+ * gets no label or line. A label's " / " starts a smaller second line.
  * The keyboard is laid out like a real one: Esc in the corner, W A S D in their usual shape with E and R beside W,
  * a wide Shift with C next to it, and a long Space bar along the bottom. The mouse is a rounded oval.
  * The movement keys and the mouse's left button have a darker face than the other keys, so they stand out.
  * Keys are dark boxes with a light border and a darker edge below, so they read as raised keys.
  * Everything is placed in a fixed 1600 x 560 layout centred in the given area, matching the page area of the
- * How to Play screen on its 1920 x 1080 canvas; the canvas scaler takes care of other screen sizes.
+ * menu screens on their 1920 x 1080 canvas; the canvas scaler takes care of other screen sizes.
  */
 public static class ControlsDiagram
 {
+    // The labels being drawn, by control name.
+    private static System.Collections.Generic.IReadOnlyDictionary<string, string> labels;
     private const float Unit = 96f;
     private const float LineWidth = 2f;
 
@@ -25,8 +29,10 @@ public static class ControlsDiagram
     private static readonly Color Highlight = new Color(0.035f, 0.035f, 0.04f, 0.98f);
 
     // Builds the diagram as a child of parent and returns its root, filling the parent's area.
-    public static RectTransform Build(RectTransform parent, TMP_FontAsset font, Color textColor, float textSize)
+    public static RectTransform Build(RectTransform parent, TMP_FontAsset font, Color textColor, float textSize,
+                                      System.Collections.Generic.IReadOnlyDictionary<string, string> controlLabels)
     {
+        labels = controlLabels;
         var root = NewRect("ControlsDiagram", parent);
         root.anchorMin = Vector2.zero;
         root.anchorMax = Vector2.one;
@@ -55,21 +61,20 @@ public static class ControlsDiagram
         Key(stage, font, "Space", new Vector2(-200f, -228f), 420f, 26f);
 
         // Labels on the left point right, to the left edge of their key.
-        Callout(stage, font, textColor, textSize, lineColor, "Pause", new Vector2(-560f, 230f), new Vector2(-518f, 230f), TextAlignmentOptions.MidlineRight);
-        Callout(stage, font, textColor, textSize, lineColor, "Move", new Vector2(-560f, 42f), new Vector2(-386f, 42f), TextAlignmentOptions.MidlineRight);
-        Callout(stage, font, textColor, textSize, lineColor, "Hold to sprint", new Vector2(-560f, -96f), new Vector2(-484f, -96f), TextAlignmentOptions.MidlineRight);
-        Callout(stage, font, textColor, textSize, lineColor, "Jump", new Vector2(-560f, -228f), new Vector2(-410f, -228f), TextAlignmentOptions.MidlineRight);
+        Callout(stage, font, textColor, textSize, lineColor, "Esc", new Vector2(-560f, 230f), new Vector2(-518f, 230f), TextAlignmentOptions.MidlineRight);
+        Callout(stage, font, textColor, textSize, lineColor, "WASD", new Vector2(-560f, 42f), new Vector2(-386f, 42f), TextAlignmentOptions.MidlineRight);
+        Callout(stage, font, textColor, textSize, lineColor, "Shift", new Vector2(-560f, -96f), new Vector2(-484f, -96f), TextAlignmentOptions.MidlineRight);
+        Callout(stage, font, textColor, textSize, lineColor, "Space", new Vector2(-560f, -228f), new Vector2(-410f, -228f), TextAlignmentOptions.MidlineRight);
 
         // Labels on the right point left, to their key.
-        Callout(stage, font, textColor, textSize, lineColor, "Reload", new Vector2(110f, 180f), new Vector2(64f, 180f), TextAlignmentOptions.MidlineLeft);
-        Callout(stage, font, textColor, textSize, lineColor, "Hold to crouch", new Vector2(110f, -96f), new Vector2(-44f, -96f), TextAlignmentOptions.MidlineLeft);
-        Callout(stage, font, textColor, textSize, lineColor,
-            "Interact\n<size=70%>doors, items, notes, keypad</size>", new Vector2(90f, 280f), new Vector2(-92f, 228f), TextAlignmentOptions.MidlineLeft);
+        Callout(stage, font, textColor, textSize, lineColor, "R", new Vector2(110f, 180f), new Vector2(64f, 180f), TextAlignmentOptions.MidlineLeft);
+        Callout(stage, font, textColor, textSize, lineColor, "C", new Vector2(110f, -96f), new Vector2(-44f, -96f), TextAlignmentOptions.MidlineLeft);
+        Callout(stage, font, textColor, textSize, lineColor, "E", new Vector2(90f, 280f), new Vector2(-92f, 228f), TextAlignmentOptions.MidlineLeft);
 
         // Mouse, with its left button picked out.
         Mouse(stage, new Vector2(520f, -20f));
-        Callout(stage, font, textColor, textSize, lineColor, "Shoot", new Vector2(467f, 232f), new Vector2(467f, 112f), TextAlignmentOptions.Bottom);
-        Callout(stage, font, textColor, textSize, lineColor, "Look around", new Vector2(520f, -250f), new Vector2(520f, -170f), TextAlignmentOptions.Top);
+        Callout(stage, font, textColor, textSize, lineColor, "LeftMouse", new Vector2(467f, 232f), new Vector2(467f, 112f), TextAlignmentOptions.Bottom);
+        Callout(stage, font, textColor, textSize, lineColor, "Mouse", new Vector2(520f, -250f), new Vector2(520f, -170f), TextAlignmentOptions.Top);
 
         return root;
     }
@@ -139,10 +144,17 @@ public static class ControlsDiagram
         return ovalSprite;
     }
 
-    // A label with a thin line from the label's anchor point to the control it names.
+    /*
+     * The given control's label with a thin line from the label's anchor point to the control.
+     * Nothing is drawn when the control has no label; a " / " in the label starts a smaller second line.
+     */
     private static void Callout(RectTransform stage, TMP_FontAsset font, Color textColor, float textSize, Color lineColor,
-                                string text, Vector2 labelAt, Vector2 pointAt, TextAlignmentOptions align)
+                                string control, Vector2 labelAt, Vector2 pointAt, TextAlignmentOptions align)
     {
+        if (labels == null || !labels.TryGetValue(control, out string text) || string.IsNullOrWhiteSpace(text)) return;
+        int split = text.IndexOf(" / ", System.StringComparison.Ordinal);
+        if (split >= 0) text = text.Substring(0, split) + "\n<size=70%>" + text.Substring(split + 3) + "</size>";
+
         var labelSize = new Vector2(420f, textSize * 2.6f);
         Vector2 labelCentre = labelAt;
         Vector2 lineStart = labelAt;

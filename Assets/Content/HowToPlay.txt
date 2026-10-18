@@ -5,11 +5,8 @@
 # one of the entries in the Models list on the HowToPlay object (in the MainMenu scene).
 # Everything after that is the page text. Blank lines become paragraph breaks.
 # A page with no text shows "More information coming soon."
-# An optional "diagram: controls" line under the title shows the keyboard and mouse picture instead of page text.
 # Lines starting with # are notes like these and are never shown in the game.
-
-=== Controls
-diagram: controls
+# The controls have their own screen and file: Controls.txt.
 
 === Health
 model: Medkit
