@@ -12,8 +12,7 @@ using UnityEngine.UI;
  * The pages come from a plain text file so anyone can edit them without opening Unity:
  *   "=== Title" starts a page, an optional "model: Name" line under it picks a model, the rest is the page text,
  *   and lines starting with # are notes that are never shown.
- * A key written in square brackets, such as [W] or [Shift], is drawn as a key cap. A page that uses key caps is laid out
- * as rows, one per line: each line's key caps and words appear in order, and blank lines leave a small gap.
+ * An optional "diagram: controls" line shows the controls picture (ControlsDiagram) in place of the page text.
  * Model names are matched to prefabs through the Models list on this component.
  * A page without a model gives its text the full width; a page without text shows a "coming soon" line.
  * Previous/Next (or the arrow keys, A/D) turn the page with a swipe sound; Back (or Esc) closes the screen and raises onBack.
@@ -33,6 +32,7 @@ public class HowToPlayMenu : MonoBehaviour
     {
         public string Title;
         public string Model;
+        public string Diagram;
         public string Body;
     }
 
@@ -53,13 +53,6 @@ public class HowToPlayMenu : MonoBehaviour
     [SerializeField] private float textLeftWithModel = 860f;
     [SerializeField] private float textLeftWithoutModel = 160f;
 
-    [Header("Key caps")]
-    [SerializeField] private Color keyFill = new Color(0.1f, 0.1f, 0.11f, 0.95f);
-    [SerializeField] private Color keyBorder = new Color(0.82f, 0.82f, 0.78f, 0.7f);
-    [SerializeField] private Color keyLabel = new Color(0.95f, 0.95f, 0.92f, 1f);
-    [Tooltip("Height of each row of keys, as a multiple of the page text size.")]
-    [SerializeField, Min(1f)] private float keyRowHeight = 1.9f;
-
     [Header("Sound")]
     [SerializeField] private AudioClip pageTurn;
     [SerializeField, Range(0f, 1f)] private float pageTurnVolume = 0.7f;
@@ -71,10 +64,7 @@ public class HowToPlayMenu : MonoBehaviour
     private readonly List<Page> pages = new List<Page>();
     private int index;
     private AudioSource audioSource;
-    private RectTransform keyRows;
-
-    // A [Key] written in the page text.
-    private static readonly System.Text.RegularExpressions.Regex KeyPattern = new System.Text.RegularExpressions.Regex(@"\[([^\]]+)\]");
+    private RectTransform controlsDiagram;
 
     private void Awake()
     {
@@ -144,11 +134,16 @@ public class HowToPlayMenu : MonoBehaviour
         pageCounter.text = (index + 1) + " / " + pages.Count;
         SetModel(FindModel(page.Model));
 
-        // Pages with [Key] caps are drawn as rows of keys and words instead of plain text.
-        bool hasKeys = !string.IsNullOrEmpty(page.Body) && KeyPattern.IsMatch(page.Body);
-        bodyText.gameObject.SetActive(!hasKeys);
-        if (hasKeys) BuildKeyRows(page.Body);
-        else if (keyRows != null) keyRows.gameObject.SetActive(false);
+        // The controls picture takes the place of the page text; it is built the first time it is needed.
+        bool showControls = string.Equals(page.Diagram, "controls", StringComparison.OrdinalIgnoreCase);
+        bodyText.gameObject.SetActive(!showControls);
+        if (showControls && controlsDiagram == null)
+            controlsDiagram = ControlsDiagram.Build(bodyText.rectTransform.parent as RectTransform, bodyText.font, bodyText.color, bodyText.fontSize);
+        if (controlsDiagram != null)
+        {
+            controlsDiagram.gameObject.SetActive(showControls);
+            if (showControls) FitToBody(controlsDiagram);
+        }
 
         if (previousButton != null) previousButton.interactable = index > 0;
         if (nextButton != null) nextButton.interactable = index < pages.Count - 1;
@@ -162,123 +157,15 @@ public class HowToPlayMenu : MonoBehaviour
         if (textArea != null) textArea.offsetMin = new Vector2(hasModel ? textLeftWithModel : textLeftWithoutModel, textArea.offsetMin.y);
     }
 
-    /*
-     * Lays the page text out as rows, one per line, in the same area and style as the plain page text.
-     * Each [Key] becomes a key cap: a dark box with a light border and the key's name on it.
-     * The words between keys are drawn as plain text, and a blank line becomes a half-height gap.
-     */
-    private void BuildKeyRows(string body)
+    // Gives the controls picture the same area as the page text, under the title.
+    private void FitToBody(RectTransform diagram)
     {
-        if (keyRows == null)
-        {
-            keyRows = new GameObject("KeyRows", typeof(RectTransform)).GetComponent<RectTransform>();
-            keyRows.SetParent(bodyText.transform.parent, false);
-            var source = bodyText.rectTransform;
-            keyRows.anchorMin = source.anchorMin;
-            keyRows.anchorMax = source.anchorMax;
-            keyRows.pivot = source.pivot;
-            keyRows.offsetMin = source.offsetMin;
-            keyRows.offsetMax = source.offsetMax;
-
-            var column = keyRows.gameObject.AddComponent<VerticalLayoutGroup>();
-            column.childAlignment = TextAnchor.UpperLeft;
-            column.childControlWidth = true;
-            column.childControlHeight = true;
-            column.childForceExpandWidth = false;
-            column.childForceExpandHeight = false;
-            column.spacing = bodyText.fontSize * 0.35f;
-        }
-
-        keyRows.gameObject.SetActive(true);
-        for (int i = keyRows.childCount - 1; i >= 0; i--) Destroy(keyRows.GetChild(i).gameObject);
-
-        float rowHeight = bodyText.fontSize * keyRowHeight;
-        foreach (string line in body.Split('\n'))
-        {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                var gap = new GameObject("Gap", typeof(RectTransform), typeof(LayoutElement));
-                gap.transform.SetParent(keyRows, false);
-                gap.GetComponent<LayoutElement>().preferredHeight = rowHeight * 0.5f;
-                continue;
-            }
-
-            var row = new GameObject("Row", typeof(RectTransform)).GetComponent<RectTransform>();
-            row.SetParent(keyRows, false);
-            var rowLayout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.childAlignment = TextAnchor.MiddleLeft;
-            rowLayout.childControlWidth = true;
-            rowLayout.childControlHeight = true;
-            rowLayout.childForceExpandWidth = false;
-            rowLayout.childForceExpandHeight = false;
-            rowLayout.spacing = bodyText.fontSize * 0.4f;
-            row.gameObject.AddComponent<LayoutElement>().preferredHeight = rowHeight;
-
-            int last = 0;
-            foreach (System.Text.RegularExpressions.Match m in KeyPattern.Matches(line))
-            {
-                AddWords(row, line.Substring(last, m.Index - last));
-                AddKeyCap(row, m.Groups[1].Value.Trim(), rowHeight);
-                last = m.Index + m.Length;
-            }
-            AddWords(row, line.Substring(last));
-        }
-    }
-
-    private void AddWords(RectTransform row, string words)
-    {
-        words = words.Trim();
-        if (words.Length == 0) return;
-
-        var label = new GameObject("Words", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-        label.transform.SetParent(row, false);
-        label.font = bodyText.font;
-        label.fontSize = bodyText.fontSize;
-        label.color = bodyText.color;
-        label.textWrappingMode = TextWrappingModes.NoWrap;
-        label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.raycastTarget = false;
-        label.text = words;
-    }
-
-    // A key cap sized to its label, never narrower than it is tall, with a border drawn as a slightly larger box behind the fill.
-    private void AddKeyCap(RectTransform row, string key, float rowHeight)
-    {
-        float capHeight = rowHeight * 0.88f;
-        float border = Mathf.Max(2f, capHeight * 0.05f);
-
-        var cap = new GameObject("Key " + key, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-        cap.transform.SetParent(row, false);
-        cap.GetComponent<Image>().color = keyBorder;
-        cap.GetComponent<Image>().raycastTarget = false;
-
-        var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image)).GetComponent<RectTransform>();
-        fill.SetParent(cap.transform, false);
-        fill.anchorMin = Vector2.zero;
-        fill.anchorMax = Vector2.one;
-        fill.offsetMin = new Vector2(border, border);
-        fill.offsetMax = new Vector2(-border, -border);
-        fill.GetComponent<Image>().color = keyFill;
-        fill.GetComponent<Image>().raycastTarget = false;
-
-        var label = new GameObject("Label", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-        label.rectTransform.SetParent(cap.transform, false);
-        label.rectTransform.anchorMin = Vector2.zero;
-        label.rectTransform.anchorMax = Vector2.one;
-        label.rectTransform.offsetMin = Vector2.zero;
-        label.rectTransform.offsetMax = Vector2.zero;
-        label.font = bodyText.font;
-        label.fontSize = bodyText.fontSize * 0.8f;
-        label.fontStyle = FontStyles.Bold;
-        label.color = keyLabel;
-        label.alignment = TextAlignmentOptions.Center;
-        label.textWrappingMode = TextWrappingModes.NoWrap;
-        label.raycastTarget = false;
-        label.text = key;
-
-        var size = cap.GetComponent<LayoutElement>();
-        size.preferredHeight = capHeight;
-        size.preferredWidth = Mathf.Max(capHeight, label.GetPreferredValues(key).x + capHeight * 0.7f);
+        RectTransform body = bodyText.rectTransform;
+        diagram.anchorMin = body.anchorMin;
+        diagram.anchorMax = body.anchorMax;
+        diagram.pivot = body.pivot;
+        diagram.offsetMin = body.offsetMin;
+        diagram.offsetMax = body.offsetMax;
     }
 
     private ModelEntry FindModel(string name)
@@ -319,6 +206,12 @@ public class HowToPlayMenu : MonoBehaviour
             if (body.Length == 0 && page.Model == null && line.StartsWith("model:", StringComparison.OrdinalIgnoreCase))
             {
                 page.Model = line.Substring(6).Trim();
+                continue;
+            }
+
+            if (body.Length == 0 && page.Diagram == null && line.StartsWith("diagram:", StringComparison.OrdinalIgnoreCase))
+            {
+                page.Diagram = line.Substring(8).Trim();
                 continue;
             }
 

@@ -5,22 +5,11 @@
 # one of the entries in the Models list on the HowToPlay object (in the MainMenu scene).
 # Everything after that is the page text. Blank lines become paragraph breaks.
 # A page with no text shows "More information coming soon."
-# A key in square brackets, such as [W] or [Shift], is drawn as a key cap. A page that uses them is shown
-# as rows, one per line, with the keys and words in the order they are written.
+# An optional "diagram: controls" line under the title shows the keyboard and mouse picture instead of page text.
 # Lines starting with # are notes like these and are never shown in the game.
 
 === Controls
-[W] [A] [S] [D]  Move
-[Mouse]  Look around
-[Shift]  Hold to sprint
-[C]  Hold to crouch
-[Space]  Jump
-
-[E]  Interact: open doors, pick things up, read notes, use the keypad
-[Left Mouse]  Shoot
-[R]  Reload
-
-[Esc]  Pause
+diagram: controls
 
 === Health
 model: Medkit
