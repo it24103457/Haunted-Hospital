@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
  * The pause menu: Esc opens it with Resume, Restart and Main Menu, and Esc or Resume closes it.
  * While paused, game time and game audio stop, the player's controls are frozen and the mouse is freed (through PlayerControlLock),
  * and the objectives HUD is hidden, since its OnGUI text always draws on top of any Canvas. Resuming puts all of that back.
- * Pausing is not allowed while the death screen is up, after the game is won, or while the keypad screen is open,
+ * Pausing is not allowed while the death or sanity screen is up, after the game is won, or while the keypad screen is open,
  * because those already control the mouse. The keypad also closes on Esc, so a press that closes it never opens the pause menu.
  * Restart and Main Menu go through ScreenNavigation, which sets time and audio back to normal before loading.
  */
@@ -13,6 +13,7 @@ public class PauseMenu : MonoBehaviour
 {
     [SerializeField] private GameObject panel;
     [SerializeField] private DeathScreen deathScreen;
+    [SerializeField] private SanityScreen sanityScreen;
 
     private ObjectiveState objectives;
     private PlayerStats player;
@@ -76,6 +77,7 @@ public class PauseMenu : MonoBehaviour
     {
         if (player != null && player.IsDead) return false;
         if (deathScreen != null && deathScreen.IsShowing) return false;
+        if (sanityScreen != null && sanityScreen.IsShowing) return false;
         if (objectives != null && objectives.HasWon) return false;
         return true;
     }
