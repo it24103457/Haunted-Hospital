@@ -20,7 +20,7 @@ public class SanityScreen : MonoBehaviour
     [SerializeField] private AudioClip sound;
     [SerializeField, Range(0f, 1f)] private float soundVolume = 0.9f;
     [Tooltip("Seconds skipped at the start of the sound.")]
-    [SerializeField, Min(0f)] private float soundStartFrom = 0.01f;
+    [SerializeField, Min(0f)] private float soundStartFrom = 1f;
 
     private PlayerStats player;
 
