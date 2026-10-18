@@ -25317,12 +25317,15 @@ MonoBehaviour:
   - name: KeyBox
     prefab: {fileID: 3274018260018429377, guid: e10986d9624ebd94fa3490f50fdf0523, type: 3}
     rotation: {x: 0, y: 0, z: 0}
+  - name: CoolerBox
+    prefab: {fileID: 7550053421682320669, guid: 4db175aa2e688484fb89444f49d8fa11, type: 3}
+    rotation: {x: 0, y: 0, z: 0}
   - name: KeySwitch
     prefab: {fileID: 6010019419449993721, guid: 25452934102cbeb4a89ef28dec5769d4, type: 3}
     rotation: {x: 0, y: 0, z: 0}
   - name: Thief
     prefab: {fileID: 7676168184634716972, guid: 863d5e74693443644be91d149b92c1cc, type: 3}
-    rotation: {x: 0, y: 0, z: 0}
+    rotation: {x: 0, y: 180, z: 0}
   - name: StashBag
     prefab: {fileID: 919132149155446097, guid: b7ef899e15317604eb6ae20fbb019bcc, type: 3}
     rotation: {x: -90, y: 0, z: 0}
@@ -25334,7 +25337,7 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0}
   - name: Hunter
     prefab: {fileID: 7951111364613086873, guid: 3c7a91e5d24b48f6a0e15c8b7d2f4601, type: 3}
-    rotation: {x: 0, y: 0, z: 0}
+    rotation: {x: 0, y: 180, z: 0}
   titleText: {fileID: 424129217}
   bodyText: {fileID: 1430952866}
   pageCounter: {fileID: 1876405103}

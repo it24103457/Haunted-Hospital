@@ -5,16 +5,22 @@
 # one of the entries in the Models list on the HowToPlay object (in the MainMenu scene).
 # Everything after that is the page text. Blank lines become paragraph breaks.
 # A page with no text shows "More information coming soon."
+# A key in square brackets, such as [W] or [Shift], is drawn as a key cap. A page that uses them is shown
+# as rows, one per line, with the keys and words in the order they are written.
 # Lines starting with # are notes like these and are never shown in the game.
 
 === Controls
-WASD to move, mouse to look around.
-Hold Shift to sprint, C to crouch, Space to jump.
+[W] [A] [S] [D]  Move
+[Mouse]  Look around
+[Shift]  Hold to sprint
+[C]  Hold to crouch
+[Space]  Jump
 
-E to interact: open doors, pick things up, read notes, use the keypad.
-Left mouse to shoot, R to reload.
+[E]  Interact: open doors, pick things up, read notes, use the keypad
+[Left Mouse]  Shoot
+[R]  Reload
 
-Esc to pause.
+[Esc]  Pause
 
 === Health
 model: Medkit
@@ -44,19 +50,23 @@ Your notes so far are shown at the top of the screen.
 
 === Keypad
 model: Keypad
-Enter the four-digit code from the notes to power the elevator. Type the digits and press Enter, or click the keys.
+Enter the four-digit code from the notes to open the elevator doors. Type the digits and press Enter, or click the keys.
 
 === Exit Key
 model: ExitKey
-Locked away in one of the key boxes. You will need it for the elevator's key switch.
+Hidden in one of the first aid shelves or cooler boxes around the hospital. You will need it for the elevator's key switch.
 
-=== Key Box
+=== First Aid Shelf
 model: KeyBox
-Glass-fronted boxes on the walls. One of them holds the exit key.
+Glass-fronted first aid shelves on the walls. The exit key could be in one of them.
+
+=== Cooler Box
+model: CoolerBox
+Cooler boxes left around the hospital. The exit key could be in one of these too.
 
 === Elevator Key Switch
 model: KeySwitch
-Your way out. With the power on and the exit key in hand, turn the key to escape.
+Your way out, inside the elevator. Once the doors are open and you have the exit key, turn the key to escape.
 
 === The Thief
 model: Thief
@@ -71,8 +81,6 @@ Bags and baskets where the Thief hides what it takes. Once an item reaches a sta
 === Barricades
 model: Barricade
 Some doorways are boarded up. Shoot the planks off one at a time to get through.
-
-Breaking the last plank is loud. Something may come to see what made the noise.
 
 === The Hunter
 model: Hunter
