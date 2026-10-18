@@ -34,8 +34,9 @@ public class UIButtonSounds : MonoBehaviour
      * Plays a screen sound from its own short-lived object, shared by the buttons and the death and win screens.
      * The object survives scene loads and ignores the game's audio pause, and removes itself on real time,
      * so the sound is heard in full even while the game is paused or a new scene is loading.
+     * startFrom skips that many seconds at the start of the sound.
      */
-    public static void PlayClip(AudioClip clip, float clipVolume)
+    public static void PlayClip(AudioClip clip, float clipVolume, float startFrom = 0f)
     {
         if (clip == null) return;
 
@@ -44,8 +45,11 @@ public class UIButtonSounds : MonoBehaviour
         var source = go.AddComponent<AudioSource>();
         source.ignoreListenerPause = true;
         source.spatialBlend = 0f;
-        source.PlayOneShot(clip, clipVolume);
-        go.AddComponent<RemoveAfterRealtime>().seconds = clip.length + 0.1f;
+        source.clip = clip;
+        source.volume = clipVolume;
+        source.time = Mathf.Clamp(startFrom, 0f, clip.length - 0.01f);
+        source.Play();
+        go.AddComponent<RemoveAfterRealtime>().seconds = clip.length - source.time + 0.1f;
     }
 
     // Removes its object after a number of real seconds, so sounds played while the game is paused are still cleaned up.
