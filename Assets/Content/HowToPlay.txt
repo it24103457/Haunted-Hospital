@@ -1,0 +1,72 @@
+# How to Play pages, read by the How to Play screen in the main menu.
+#
+# Each page starts with a line "=== Title". The pages appear in the order they are written here.
+# An optional "model: Name" line right under the title shows that model on the page. The name must match
+# one of the entries in the Models list on the HowToPlay object (in the MainMenu scene).
+# Everything after that is the page text. Blank lines become paragraph breaks.
+# A page with no text shows "More information coming soon."
+# Lines starting with # are notes like these and are never shown in the game.
+# The controls have their own screen and file: Controls.txt.
+
+=== Health
+model: Medkit
+You lose health when something hurts you. If it runs out, you die.
+
+Grab a Medkit to restore some of it. Walk up to one and press E to open it.
+
+Supplies are scarce. Grab them before something else does.
+
+=== Ammo
+model: AmmoBox
+Your gun reloads from the ammo you carry in reserve. Press R to reload once your magazine runs low.
+
+Grab an Ammo Box to refill your reserve.
+
+=== Sanity
+model: SanityBottle
+The hospital wears on your mind. Every time you catch sight of the Thief, your sanity slips. If it runs out, you lose your mind.
+
+Grab a Sanity Bottle to steady it again. Its pills restore some of your sanity.
+
+=== Clue Notes
+model: CluePaper
+Notes with single digits are scattered around the hospital. Each one gives you one number of the keypad code.
+
+Your notes so far are shown at the top of the screen.
+
+=== Keypad
+model: Keypad
+Enter the four-digit code from the notes to open the elevator doors. Type the digits and press Enter, or click the keys.
+
+=== Exit Key
+model: ExitKey
+Hidden in one of the first aid shelves or cooler boxes around the hospital. You will need it for the elevator's key switch.
+
+=== First Aid Shelf
+model: KeyBox
+Glass-fronted first aid shelves on the walls. The exit key could be in one of them.
+
+=== Cooler Box
+model: CoolerBox
+Cooler boxes left around the hospital. The exit key could be in one of these too.
+
+=== Elevator Key Switch
+model: KeySwitch
+Your way out, inside the elevator. Once the doors are open and you have the exit key, turn the key to escape.
+
+=== The Thief
+model: Thief
+Something else is in here, and it wants your supplies. It sneaks to medkits, ammo and pills, carries them off to its stash and vanishes, only to return later.
+
+Just seeing it chips away at your sanity. Shoot it to make it drop what it is carrying. It goes for what you need most, so do not leave supplies lying around.
+
+=== Thief Stashes
+model: StashBag
+Bags and baskets where the Thief hides what it takes. Once an item reaches a stash, it is gone.
+
+=== Barricades
+model: Barricade
+Some doorways are boarded up. Shoot the planks off one at a time to get through.
+
+=== The Hunter
+model: Hunter
