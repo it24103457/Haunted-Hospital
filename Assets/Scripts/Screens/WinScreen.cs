@@ -1,14 +1,23 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Video;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /*
- * Shows the win screen when the escape is completed (ObjectiveState.HasWon): "YOU ESCAPED" with Play Again and Main Menu.
+ * Shows the win screen when the escape is completed (ObjectiveState.HasWon).
  * The moment the game is won, the objectives HUD is switched off, so its own OnGUI win screen never appears, not even for a frame.
- * The screen then fades to black, plays the optional cutscene if one is assigned, and fades the title and buttons in over the black as its sound plays.
+ * The screen then fades to black and the game's sounds fade out with it.
+ * If an escape cutscene scene is set, "Loading" with cycling dots shows over the black while that scene loads, and the cutscene
+ * takes over; it ends on its own "YOU ESCAPED" screen, whose Play Again returns to the level remembered here.
+ * Without a cutscene scene, it plays the optional video cutscene if one is assigned, then fades "YOU ESCAPED" with Play Again
+ * and Main Menu in over the black as its sound plays; once the buttons appear, game time and game audio stop.
  * The backdrop opacity is a setting: fully opaque by default, so the game world never shows through after the escape or a cutscene.
- * Once the buttons appear, game time and game audio stop and the mouse is freed. All fades run on real time.
+ * All fades run on real time. The cutscene scene is picked as a scene asset; in the Editor its current path is always read from it,
+ * so moving or renaming the scene never breaks the link; the stored copy of the path is what a built game uses.
  */
 public class WinScreen : MonoBehaviour
 {
@@ -28,18 +37,41 @@ public class WinScreen : MonoBehaviour
     [SerializeField] private AudioClip sound;
     [SerializeField, Range(0f, 1f)] private float soundVolume = 0.9f;
 
-    [Header("Optional cutscene")]
-    [Tooltip("Played full screen after the fade to black and before the title appears. Leave empty for no cutscene.")]
+    [Header("Escape cutscene scene")]
+#if UNITY_EDITOR
+    [Tooltip("Loaded after the fade to black instead of showing this screen. Leave empty to show this screen as before.")]
+    [SerializeField] private SceneAsset cutsceneScene;
+#endif
+    [SerializeField, HideInInspector] private string cutsceneScenePath;
+    [SerializeField] private TMPro.TMP_Text loadingText;
+    [SerializeField, Min(0.05f)] private float loadingDotInterval = 0.4f;
+    [Tooltip("Shortest time Loading stays on screen, so a fast load does not just flash it.")]
+    [SerializeField, Min(0f)] private float minimumLoadingTime = 1f;
+
+    [Header("Optional video cutscene")]
+    [Tooltip("Played full screen after the fade to black and before the title appears. Leave empty for no video.")]
     [SerializeField] private VideoPlayer cutscene;
 
     private ObjectiveState objectives;
 
     public bool IsShowing { get; private set; }
 
+    private string CutscenePath
+    {
+        get
+        {
+#if UNITY_EDITOR
+            if (cutsceneScene != null) return AssetDatabase.GetAssetPath(cutsceneScene);
+#endif
+            return cutsceneScenePath;
+        }
+    }
+
     private void Awake()
     {
         panel.gameObject.SetActive(false);
         if (cutscene != null) cutscene.gameObject.SetActive(false);
+        if (loadingText != null) loadingText.gameObject.SetActive(false);
     }
 
     private void Start()
@@ -78,7 +110,14 @@ public class WinScreen : MonoBehaviour
         SetGroup(content, 0f, false);
         yield return new WaitForSecondsRealtime(delay);
 
-        yield return Fade(panel, fadeToBlack);
+        bool toCutsceneScene = !string.IsNullOrEmpty(CutscenePath);
+        yield return FadeOutGame(toCutsceneScene);
+
+        if (toCutsceneScene)
+        {
+            yield return LoadCutsceneScene();
+            yield break;
+        }
 
         if (cutscene != null) yield return PlayCutscene();
 
@@ -89,6 +128,63 @@ public class WinScreen : MonoBehaviour
 
         Time.timeScale = 0f;
         AudioListener.pause = true;
+    }
+
+    // Fades to black; when a cutscene scene follows, the game's sounds fade out with it and stop.
+    private IEnumerator FadeOutGame(bool fadeSounds)
+    {
+        AudioSource[] sources = fadeSounds ? FindObjectsByType<AudioSource>() : new AudioSource[0];
+        var startVolumes = new float[sources.Length];
+        for (int i = 0; i < sources.Length; i++) startVolumes[i] = sources[i].volume;
+
+        for (float t = 0f; t < fadeToBlack; t += Time.unscaledDeltaTime)
+        {
+            float k = t / fadeToBlack;
+            panel.alpha = k;
+            for (int i = 0; i < sources.Length; i++) if (sources[i] != null) sources[i].volume = startVolumes[i] * (1f - k);
+            yield return null;
+        }
+        panel.alpha = 1f;
+        foreach (var s in sources) if (s != null) s.Stop();
+    }
+
+    /*
+     * Remembers this level for the cutscene's Play Again, then loads the cutscene scene in the background with Loading on screen.
+     * The cutscene only takes over once the shortest loading time has passed, so Loading never just flashes.
+     */
+    private IEnumerator LoadCutsceneScene()
+    {
+        SceneLoader.LastLevelPath = SceneManager.GetActiveScene().path;
+        AsyncOperation load = SceneLoader.LoadAsync(CutscenePath);
+        if (load == null) yield break;
+
+        load.allowSceneActivation = false;
+        if (loadingText != null) loadingText.gameObject.SetActive(true);
+
+        float elapsed = 0f;
+        while (load.progress < 0.9f || elapsed < minimumLoadingTime)
+        {
+            SetLoadingDots(elapsed);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        load.allowSceneActivation = true;
+        while (!load.isDone)
+        {
+            SetLoadingDots(elapsed);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+    }
+
+    // Cycles "Loading", "Loading.", "Loading..", "Loading..."; the unused dots are drawn invisible so the word never shifts.
+    private void SetLoadingDots(float elapsed)
+    {
+        if (loadingText == null) return;
+
+        int dots = (int)(elapsed / loadingDotInterval) % 4;
+        loadingText.text = "Loading" + new string('.', dots) + "<alpha=#00>" + new string('.', 3 - dots);
     }
 
     private IEnumerator PlayCutscene()
@@ -120,4 +216,11 @@ public class WinScreen : MonoBehaviour
         group.interactable = clickable;
         group.blocksRaycasts = clickable;
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        cutsceneScenePath = cutsceneScene != null ? AssetDatabase.GetAssetPath(cutsceneScene) : string.Empty;
+    }
+#endif
 }
