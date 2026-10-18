@@ -12,6 +12,9 @@ using UnityEditor.SceneManagement;
  */
 public static class SceneLoader
 {
+    // The level the player was last playing, remembered before a cutscene scene takes over, so Play Again can return to it.
+    public static string LastLevelPath { get; set; }
+
     public static void Load(string scenePath)
     {
         if (string.IsNullOrEmpty(scenePath))
