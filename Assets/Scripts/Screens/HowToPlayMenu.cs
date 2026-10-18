@@ -131,6 +131,7 @@ public class HowToPlayMenu : MonoBehaviour
         pageCounter.text = (index + 1) + " / " + pages.Count;
         SetModel(FindModel(page.Model));
 
+
         if (previousButton != null) previousButton.interactable = index > 0;
         if (nextButton != null) nextButton.interactable = index < pages.Count - 1;
     }

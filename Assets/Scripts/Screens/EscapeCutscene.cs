@@ -654,15 +654,32 @@ public class EscapeCutscene : MonoBehaviour
         endPanel.blocksRaycasts = true;
     }
 
+    /*
+     * Shows the "SPACE Skip" hint once the opening fade from black has finished, so it comes in on a settled picture,
+     * then fades it out again after a few seconds.
+     */
     private IEnumerator ShowSkipHint()
     {
-        yield return Wait(0.8f);
+        while (fade.alpha > 0.01f) yield return null;
+        yield return Wait(0.3f);
         skipHint.gameObject.SetActive(true);
         skipHint.alpha = 0f;
-        yield return FadeTo(skipHint, 1f, 0.4f);
+        yield return FadeHint(1f, 0.5f);
         yield return Wait(4f);
-        yield return FadeTo(skipHint, 0f, 0.4f);
+        yield return FadeHint(0f, 0.5f);
         skipHint.gameObject.SetActive(false);
+    }
+
+    // Eased fade for the skip hint. Each frame moves it on by at most 1/30 s, so a slow frame (common just after this heavy scene loads) can't make it jump.
+    private IEnumerator FadeHint(float to, float duration)
+    {
+        float from = skipHint.alpha;
+        for (float t = 0f; t < duration; t += Mathf.Min(Time.unscaledDeltaTime, 1f / 30f))
+        {
+            skipHint.alpha = Mathf.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t / duration));
+            yield return null;
+        }
+        skipHint.alpha = to;
     }
 
     /*

@@ -6,7 +6,8 @@ using UnityEditor;
 
 /*
  * Runs the start menu: Play starts the wake-up intro (which loads the game scene when it ends) or, with no intro assigned,
- * loads the game scene straight away. How to Play swaps to the guide panel, Quit closes the game.
+ * loads the game scene straight away. How to Play swaps to the guide panel, Controls to the controls panel,
+ * and Quit closes the game.
  * The cursor is freed and game time and audio run normally whenever the menu starts, since the player may arrive
  * here from a paused or finished game.
  * The game scene is picked as a scene asset in the Inspector; its path is stored alongside it so a built game can load it.
@@ -22,6 +23,7 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private GameObject mainPanel;
     [SerializeField] private GameObject howToPlayPanel;
     [SerializeField] private Button howToPlayButton;
+    [SerializeField] private GameObject controlsPanel;
     [Tooltip("Optional wake-up intro played before the game scene loads. Leave empty to load the game straight away.")]
     [SerializeField] private WakeUpIntro intro;
 
@@ -34,6 +36,7 @@ public class MainMenu : MonoBehaviour
 
         if (howToPlayButton != null) howToPlayButton.interactable = howToPlayPanel != null;
         CloseHowToPlay();
+        CloseControls();
     }
 
     public void Play()
@@ -57,6 +60,20 @@ public class MainMenu : MonoBehaviour
     public void CloseHowToPlay()
     {
         if (howToPlayPanel != null) howToPlayPanel.SetActive(false);
+        if (mainPanel != null) mainPanel.SetActive(true);
+    }
+
+    public void OpenControls()
+    {
+        if (controlsPanel == null) return;
+
+        if (mainPanel != null) mainPanel.SetActive(false);
+        controlsPanel.SetActive(true);
+    }
+
+    public void CloseControls()
+    {
+        if (controlsPanel != null) controlsPanel.SetActive(false);
         if (mainPanel != null) mainPanel.SetActive(true);
     }
 
