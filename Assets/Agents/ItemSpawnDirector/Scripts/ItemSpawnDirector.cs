@@ -8,15 +8,22 @@ using UnityEngine;
  *
  * How it fits together:
  *  Start: places the agreed initial layout - the handoff's even split (a minSpawnDistance away from
- *         the player), serving barricaded markers first, then ordinary ones. With Hard Split off it
- *         falls back to a random fill up to Target Count.
+ *         the player) - solved as a constraint problem: every planned item is a variable over the
+ *         free markers of its group and no two items share a marker; stages widen the domains until
+ *         a solution exists (details in PlaceHardSplit). With Hard Split off it falls back to a
+ *         random fill up to Target Count. Barricaded markers bind to the nearest NavMeshObstacle
+ *         that is not a Door (same rule as WaypointNode), polled live - clearing a barricade flips
+ *         its markers reachable again.
  *  PickupInteractable.AnyCollected: frees that spot and queues a replacement; a stolen delivery waits
  *         Stolen Respawn Delay, a player pickup waits Respawn Delay.
  *  PickupInteractable.AnyReleased (Thief shot, item dropped): the spot is NOT freed - the dropped
  *         item still occupies it and counts toward its type's cap, so nothing duplicates.
  *  Every replacement respects the dynamic cap: cap(type) = Lerp(min, max, need), where need is how
- *         far the player is from full health / sanity / reserve ammo. Existing items are never
- *         despawned when a cap shrinks; caps only gate future spawns.
+ *         far the player is from full health / sanity / reserve ammo - read fresh at respawn time,
+ *         never latched. Existing items are never despawned when a cap shrinks; caps only gate
+ *         future spawns. A respawn also keeps the reachability floor: while fewer than cap-1 of the
+ *         type's alive items sit on reachable (not barricaded-intact) markers, replacements go only
+ *         onto reachable markers.
  *
  * It only uses PickupInteractable's and PlayerStats' public APIs, so it can replace ThiefTestSpawner
  * without any Thief changes. Drop it on an empty GameObject in your own scene copy.
@@ -51,6 +58,8 @@ public class ItemSpawnDirector : MonoBehaviour
     [SerializeField] private string markerPrefix = "SP_S";
     [Tooltip("Markers that share a room with a barricade. Served first at start.")]
     [SerializeField] private string[] barricadeMarkerNames = { "SP_S04", "SP_S08", "SP_S09", "SP_S10", "SP_S12" };
+    [Tooltip("Metres: a barricaded marker binds to the nearest NavMeshObstacle that is not a Door within this range.")]
+    [SerializeField, Min(0f)] private float barricadeSearchRadius = 5f;
     [Tooltip("Start with the even split (barricaded counts first, then ordinary). Off = random fill up to Target Count.")]
     [SerializeField] private bool useHardSplit = true;
 
@@ -94,6 +103,8 @@ public class ItemSpawnDirector : MonoBehaviour
     private readonly Dictionary<PickupType, GameObject> prefabByType = new Dictionary<PickupType, GameObject>();
     private readonly List<PickupType> supplyTypes = new List<PickupType>();
     private readonly HashSet<string> barricadeNames = new HashSet<string>();
+    private readonly Dictionary<string, GameObject> barricadeBindings = new Dictionary<string, GameObject>();
+    private readonly List<Transform> ordinaryPool = new List<Transform>();
     private int distanceRelaxations;
     private int solverBacktracks;
     private int solverStopStage;
@@ -125,6 +136,19 @@ public class ItemSpawnDirector : MonoBehaviour
     /// True while this item holds its spot (spawned, carried, or dropped - but not yet collected).
     public bool IsReserved(PickupInteractable pickup) => occupied.ContainsKey(pickup);
 
+    /// True when an item may be placed here: not sealed behind an intact barricade. Barricaded
+    /// labels whose barricade cannot be observed count as sealed (conservative), everything else
+    /// is open. Polled live, so a cleared barricade flips this to true.
+    public bool IsReachableMarker(string markerName)
+    {
+        if (!barricadeNames.Contains(markerName)) return true;
+        return !BarricadeIntact(markerName);
+    }
+
+    /// The GameObject holding this labelled marker's bound barricade, or null when unbound.
+    public GameObject BoundBarricadeOf(string markerName)
+        => barricadeBindings.TryGetValue(markerName, out GameObject barricade) ? barricade : null;
+
     private bool DistanceEnabled => minSpawnDistance > 0f && player != null;
 
     private void OnEnable()
@@ -150,6 +174,13 @@ public class ItemSpawnDirector : MonoBehaviour
             barricadeNames.Add(name);
         foreach (Transform m in markers)
             if (barricadeNames.Contains(m.name)) barricadedPool.Add(m);
+            else ordinaryPool.Add(m);
+
+        BindBarricades();
+        if (logDetails)
+            foreach (string label in barricadeNames)
+                Log($"barricade binding: {label} -> " +
+                    (barricadeBindings.TryGetValue(label, out GameObject bound) ? bound.name : "none (counts as intact)"));
 
         if (itemPrefabs != null)
         {
@@ -397,7 +428,9 @@ public class ItemSpawnDirector : MonoBehaviour
         TryRespawn();
     }
 
-    // One replacement: a random type that is under its current cap, on a random valid marker.
+    // One replacement: a random type that is under its current cap, on a marker from that type's
+    // floor-aware pool. Type first, then floor, then marker - the floor depends on the chosen
+    // type's cap, which is read here, at fire time.
     private void TryRespawn()
     {
         var eligible = new List<PickupType>();
@@ -410,14 +443,23 @@ public class ItemSpawnDirector : MonoBehaviour
             return;
         }
 
-        Transform marker = PickMarker(markers);
+        PickupType type = eligible[Random.Range(0, eligible.Count)];
+        List<Transform> pool = ChooseRespawnPool(type);
+
+        Transform marker = PickMarker(pool);
+        if (marker == null && !ReferenceEquals(pool, markers))
+        {
+            marker = PickMarker(markers); // last resort: any free marker
+            if (marker != null)
+                Log($"respawn floor: no marker in the floor pool worked for {type} - falling back to every free marker.");
+        }
         if (marker == null)
         {
             Log("replacement skipped: no free marker.");
             return;
         }
 
-        Spawn(eligible[Random.Range(0, eligible.Count)], marker);
+        Spawn(type, marker);
     }
 
     // Dynamic caps
@@ -471,6 +513,80 @@ public class ItemSpawnDirector : MonoBehaviour
     }
 
     // Helpers
+
+    // The replacement's marker pool for this type. The reachability floor keeps at least cap-1 of
+    // the type's alive items on reachable markers; while that floor is broken, only reachable
+    // markers qualify. The cap is read now, at fire time - it is never latched from an earlier
+    // moment. With the floor met (or impossible to meet), every free marker is legal.
+    private List<Transform> ChooseRespawnPool(PickupType type)
+    {
+        int floor = Mathf.Max(0, ComputeCap(type) - 1);
+        int reachableAlive = AliveOnReachable(type);
+        if (reachableAlive >= floor) return FreeMarkers(markers);
+
+        var reachable = new List<Transform>();
+        foreach (Transform m in markers)
+            if (!occupied.ContainsValue(m) && IsReachableMarker(m.name)) reachable.Add(m);
+
+        if (reachable.Count > 0)
+        {
+            Log($"respawn floor: only {reachableAlive} {type} on reachable markers (floor {floor}) - " +
+                "respawning into the reachable pool only.");
+            return reachable;
+        }
+
+        Log("respawn floor: no reachable marker is free - falling back to every free marker.");
+        return FreeMarkers(markers);
+    }
+
+    // How many of this type's alive items sit on markers that are not behind an intact barricade.
+    private int AliveOnReachable(PickupType type)
+    {
+        int count = 0;
+        foreach (KeyValuePair<PickupInteractable, Transform> spot in occupied)
+            if (spot.Key != null && spot.Key.Type == type && IsReachableMarker(spot.Value.name)) count++;
+        return count;
+    }
+
+    private List<Transform> FreeMarkers(List<Transform> pool)
+    {
+        var free = new List<Transform>();
+        foreach (Transform m in pool)
+            if (!occupied.ContainsValue(m)) free.Add(m);
+        return free;
+    }
+
+    // Binds every labelled barricaded marker to the nearest NavMeshObstacle GameObject that is not
+    // part of a Door (doors carry obstacles too - WaypointNode excludes them the same way), within
+    // the search radius. Unbound labels stay conservative: treated as intact until proven open.
+    private void BindBarricades()
+    {
+        var obstacles = FindObjectsByType<UnityEngine.AI.NavMeshObstacle>(FindObjectsInactive.Exclude);
+        foreach (Transform m in markers)
+        {
+            if (!barricadeNames.Contains(m.name)) continue;
+
+            UnityEngine.AI.NavMeshObstacle best = null;
+            float bestDistance = barricadeSearchRadius;
+            foreach (UnityEngine.AI.NavMeshObstacle obstacle in obstacles)
+            {
+                if (obstacle.GetComponentInParent<Door>() != null) continue;
+                float d = Vector3.Distance(m.position, obstacle.transform.position);
+                if (d <= bestDistance) { bestDistance = d; best = obstacle; }
+            }
+            if (best != null) barricadeBindings[m.name] = best.gameObject;
+        }
+    }
+
+    // The same intact rule as WaypointNode: exists, active, and still blocking the NavMesh. A
+    // label with no observable barricade counts as intact - a room we cannot prove is open.
+    private bool BarricadeIntact(string markerName)
+    {
+        if (!barricadeBindings.TryGetValue(markerName, out GameObject barricade) || barricade == null)
+            return true;
+        var obstacle = barricade.GetComponent<UnityEngine.AI.NavMeshObstacle>();
+        return barricade.activeInHierarchy && obstacle != null && obstacle.enabled;
+    }
 
     private string CapSummary(bool includeCap = false)
     {
@@ -530,6 +646,12 @@ public class ItemSpawnDirector : MonoBehaviour
             Log($"  {t}: alive {AliveCount(t)}, cap {ComputeCap(t)}");
         foreach (KeyValuePair<PickupInteractable, Transform> kv in occupied)
             if (kv.Key != null)
-                Log($"  reserved: {kv.Key.name} @ {kv.Value.name}");
+                Log($"  reserved: {kv.Key.name} @ {kv.Value.name} " +
+                    $"({(IsReachableMarker(kv.Value.name) ? "reachable" : "barricaded")})");
+        foreach (string label in barricadeNames)
+            Log($"  barricade: {label} -> " +
+                (barricadeBindings.TryGetValue(label, out GameObject bound)
+                    ? $"{bound.name} ({(BarricadeIntact(label) ? "intact" : "down")})"
+                    : "unbound (intact by rule)"));
     }
 }
