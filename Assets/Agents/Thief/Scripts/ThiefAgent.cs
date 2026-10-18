@@ -39,6 +39,7 @@ public enum ThiefState
  * After each delivery it vanishes for a random vanishRespawnDelayMin-Max, keeping what it has learned;
  * only being killed wipes its memory.
  * At the start of play it is Inactive (not in the level yet) for a random firstSpawnDelayMin-Max.
+ * Each time the player catches sight of it, the player loses sanityDrainPerSighting sanity.
  */
 [RequireComponent(typeof(NavMeshAgent))]
 public class ThiefAgent : MonoBehaviour, IDamageable
@@ -114,6 +115,16 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [Tooltip("Visual part hidden while dead. Found as a child named Model when left empty.")]
     [SerializeField] private Transform model;
 
+    [Header("Sanity drain")]
+    [Tooltip("Sanity the player loses each time they catch sight of the Thief. 0 turns the drain off.")]
+    [SerializeField, Min(0f)] private float sanityDrainPerSighting = 10f;
+    [Tooltip("Furthest the player can see the Thief from, in metres.")]
+    [SerializeField, Min(0f)] private float sightDistance = 20f;
+    [Tooltip("Seconds the Thief must stay out of the player's sight before seeing it again counts as a new sighting.")]
+    [SerializeField, Min(0f)] private float sightingResetTime = 3f;
+    [Tooltip("The camera the player looks through. Found on the player when left empty.")]
+    [SerializeField] private Camera playerCamera;
+
     // Output contract
 
     // World positions the Thief wants to walk through, in order. Empty while it stands still.
@@ -162,6 +173,12 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     // Raised when the Thief vanishes after a stash delivery.
     public event Action OnVanished;
+
+    // True while the player can see the Thief (the current sighting, including the short grace after it leaves view).
+    public bool IsSeenByPlayer => seenByPlayer;
+
+    // Raised once per sighting, when the player catches sight of the Thief and loses sanity.
+    public event Action OnSeenByPlayer;
 
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private PickupInteractable carriedItem = null;
@@ -212,6 +229,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     private readonly List<Transform> thiefSpawns = new List<Transform>();
     private Collider hitbox;
 
+    // The current sighting by the player, and when the player last had the Thief in view.
+    private bool seenByPlayer;
+    private float lastSeenTime;
+
     // True while the Thief is on a trip, including waiting at a door along the way.
     private bool IsTravelling =>
         State == ThiefState.GoToItem || State == ThiefState.GoToStash || State == ThiefState.WaitAtDoor;
@@ -226,6 +247,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         if (graph == null) graph = FindAnyObjectByType<WaypointGraph>();
         if (player == null) player = FindAnyObjectByType<PlayerStats>();
+        if (playerCamera == null && player != null) playerCamera = player.GetComponentInChildren<Camera>();
+        if (playerCamera == null) playerCamera = Camera.main;
 
         if (graph == null) Debug.LogError($"ThiefAgent '{name}' found no WaypointGraph in the scene.", this);
         if (player == null) Debug.LogError($"ThiefAgent '{name}' found no PlayerStats in the scene.", this);
@@ -250,6 +273,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
      */
     private void Update()
     {
+        // Out of the level (dead, vanished or not yet appeared) it can't be seen, so its next appearance is a new sighting.
+        if (IsInPlay) UpdateSighting();
+        else seenByPlayer = false;
+
         switch (State)
         {
             case ThiefState.Deciding:
@@ -705,6 +732,51 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         // A broken barricade is walked straight through, and forgotten if it was remembered as intact.
         knownBlocked.Remove(checkpoint);
         PublishNextSegment();
+    }
+
+    // Sanity drain
+
+    /*
+     * Drains the player's sanity once per sighting. A sighting starts the moment the player sees the Thief and lasts
+     * until the Thief has been out of view for sightingResetTime, so a brief glimpse behind a pillar doesn't count twice.
+     * Raises OnSeenByPlayer when a sighting starts.
+     */
+    private void UpdateSighting()
+    {
+        if (!PlayerCanSee())
+        {
+            if (seenByPlayer && Time.time - lastSeenTime >= sightingResetTime) seenByPlayer = false;
+            return;
+        }
+
+        lastSeenTime = Time.time;
+        if (seenByPlayer) return;
+
+        seenByPlayer = true;
+        player.DrainSanity(sanityDrainPerSighting);
+        OnSeenByPlayer?.Invoke();
+    }
+
+    /*
+     * True when the player can see the Thief: the player is alive, the middle of the Thief's hitbox is within
+     * sightDistance of the player's camera and inside its view, and nothing solid stands between the two.
+     */
+    private bool PlayerCanSee()
+    {
+        if (player == null || player.IsDead || playerCamera == null || hitbox == null || !hitbox.enabled) return false;
+
+        Vector3 eye = playerCamera.transform.position;
+        Vector3 target = hitbox.bounds.center;
+        if ((target - eye).sqrMagnitude > sightDistance * sightDistance) return false;
+
+        Vector3 view = playerCamera.WorldToViewportPoint(target);
+        if (view.z <= 0f || view.x < 0f || view.x > 1f || view.y < 0f || view.y > 1f) return false;
+
+        // The first solid thing on the line from the camera must be the Thief itself.
+        if (Physics.Linecast(eye, target, out RaycastHit hit, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            return hit.collider == hitbox || hit.transform.IsChildOf(transform);
+
+        return true;
     }
 
     // Player stat tracking
