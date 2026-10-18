@@ -117,7 +117,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     [Header("Sanity drain")]
     [Tooltip("Sanity the player loses each time they catch sight of the Thief. 0 turns the drain off.")]
-    [SerializeField, Min(0f)] private float sanityDrainPerSighting = 10f;
+    [SerializeField, Min(0f)] private float sanityDrainPerSighting = 5f;
     [Tooltip("Furthest the player can see the Thief from, in metres.")]
     [SerializeField, Min(0f)] private float sightDistance = 20f;
     [Tooltip("Seconds the Thief must stay out of the player's sight before seeing it again counts as a new sighting.")]
