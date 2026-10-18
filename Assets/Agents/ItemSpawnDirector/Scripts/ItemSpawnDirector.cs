@@ -95,6 +95,8 @@ public class ItemSpawnDirector : MonoBehaviour
     private readonly List<PickupType> supplyTypes = new List<PickupType>();
     private readonly HashSet<string> barricadeNames = new HashSet<string>();
     private int distanceRelaxations;
+    private int solverBacktracks;
+    private int solverStopStage;
 
     /// Items alive on their spots. Collected items are gone; dropped/carried ones still count.
     public int AliveCount(PickupType type)
@@ -185,23 +187,87 @@ public class ItemSpawnDirector : MonoBehaviour
 
         if (logDetails)
             Log($"start: placed {placed}/{markerSummary()} items ({CapSummary(true)}), " +
-                $"{FreeMarkerCount} markers free, distance relaxations: {distanceRelaxations}");
+                $"{FreeMarkerCount} markers free, distance relaxations: {distanceRelaxations}" +
+                (useHardSplit ? $", CSP: stage {solverStopStage}/5, {solverBacktracks} backtracks" : ""));
     }
 
-    // Initial layout: barricaded entries first (so those markers are always served), then ordinary ones.
+    // Initial layout: the hard split solved as a constraint problem. Every planned item is a
+    // variable, its domain is the free markers it may legally use (its pool, minus markers too
+    // close to the player) and no two items may share a marker; SpawnCspSolver searches for a
+    // full assignment. Stages widen the domains until one exists:
+    //   1 pool + distance, 2 pool only, 3 barricaded items may spill onto ordinary markers
+    //   (distance back on), 4 anywhere free, 5 per-item placement as before.
     private int PlaceHardSplit()
     {
-        int placed = 0;
         List<PickupType> barricadedPlan = BuildPlan(barricadedCounts);
         List<PickupType> ordinaryPlan = BuildPlan(ordinaryCounts);
         Shuffle(barricadedPlan);
         Shuffle(ordinaryPlan);
 
+        var ordinaryPool = new List<Transform>();
+        foreach (Transform m in markers)
+            if (!barricadeNames.Contains(m.name)) ordinaryPool.Add(m);
+
+        for (int stage = 1; stage <= 4; stage++)
+        {
+            bool relaxDistance = stage == 2 || stage == 4;
+            bool barricadeSpill = stage == 3 || stage == 4;
+
+            var slotTypes = new List<PickupType>();
+            var variables = new List<SpawnCspSolver.Variable>();
+
+            for (int i = 0; i < barricadedPlan.Count; i++)
+            {
+                List<Transform> domain = DomainFor(barricadeSpill ? markers : barricadedPool, relaxDistance);
+                variables.Add(new SpawnCspSolver.Variable($"barricaded {i} ({barricadedPlan[i]})", domain));
+                slotTypes.Add(barricadedPlan[i]);
+            }
+            for (int i = 0; i < ordinaryPlan.Count; i++)
+            {
+                List<Transform> domain = DomainFor(ordinaryPool, relaxDistance);
+                variables.Add(new SpawnCspSolver.Variable($"ordinary {i} ({ordinaryPlan[i]})", domain));
+                slotTypes.Add(ordinaryPlan[i]);
+            }
+
+            if (stage > 1)
+                Log($"initial layout: relaxing to stage {stage} ({(barricadeSpill ? "barricaded items may spill, " : "")}" +
+                    $"{(relaxDistance ? "distance relaxed" : "pools only")}).");
+
+            if (!SpawnCspSolver.Solve(variables, out SpawnCspSolver.Stats stats))
+            {
+                solverBacktracks += stats.Backtracks;
+                continue;
+            }
+
+            solverBacktracks += stats.Backtracks;
+            solverStopStage = stage;
+            int placedStage = 0;
+            for (int i = 0; i < variables.Count; i++)
+                if (variables[i].Assignment != null && Spawn(slotTypes[i], variables[i].Assignment))
+                    placedStage++;
+            if (stage > 1)
+                Log($"initial layout: stage {stage} placed all {placedStage} items.");
+            return placedStage;
+        }
+
+        // Stage 5: no relaxation gave the solver an assignment - the old per-item placement.
+        solverStopStage = 5;
+        Log("initial layout: no solver stage found an assignment - falling back to per-item placement.");
+        int placed = 0;
         foreach (PickupType type in barricadedPlan)
             placed += TryPlace(type, barricadedPool) ? 1 : 0;
         foreach (PickupType type in ordinaryPlan)
             placed += TryPlace(type, markers) ? 1 : 0;
         return placed;
+    }
+
+    // Free markers of the pool that satisfy the distance rule (unless it is relaxed).
+    private List<Transform> DomainFor(List<Transform> pool, bool ignoreDistance)
+    {
+        var domain = new List<Transform>();
+        foreach (Transform m in pool)
+            if (!occupied.ContainsValue(m) && (ignoreDistance || PassesDistance(m))) domain.Add(m);
+        return domain;
     }
 
     // Fallback layout: random types on random free markers, up to Target Count and the per-type max.
