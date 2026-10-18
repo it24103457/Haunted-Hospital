@@ -60,22 +60,84 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     [ContextMenu("Test: Distance Window")]
     public void Test_DistanceWindow() => Run(Test_DistanceWindowRoutine(), "DistanceWindow");
 
+    [ContextMenu("Test: Solver Unit")]
+    public void Test_SolverUnit() => Run(Test_SolverUnitRoutine(), "SolverUnit");
+
+    [ContextMenu("Test: Desperation Floor")]
+    public void Test_DesperationFloor() => Run(Test_DesperationFloorRoutine(), "DesperationFloor");
+
+    [ContextMenu("Test: Cap One Allows Barricade")]
+    public void Test_CapOneAllowsBarricade() => Run(Test_CapOneAllowsBarricadeRoutine(), "CapOneAllowsBarricade");
+
+    [ContextMenu("Test: Cleared Room Becomes Reachable")]
+    public void Test_ClearedRoomBecomesReachable() => Run(Test_ClearedRoomBecomesReachableRoutine(), "ClearedRoomBecomesReachable");
+
     [ContextMenu("Run All Tests")]
     public void RunAllTests() => Run(TestAllRoutine(), "AllTests");
 
     // The full suite, in an order that leaves the scene in a workable state
     private IEnumerator TestAllRoutine()
     {
+        yield return Test_SolverUnitRoutine();
         yield return Test_InitialPlacementRoutine();
         yield return Test_DynamicCapsRoutine();
         yield return Test_CapEnforcementRoutine();
         yield return Test_DroppedItemKeepsSpotRoutine();
         yield return Test_PlayerCollectRespawnRoutine();
         yield return Test_StolenRespawnRoutine();
+        yield return Test_DesperationFloorRoutine();
+        yield return Test_CapOneAllowsBarricadeRoutine();
+        yield return Test_ClearedRoomBecomesReachableRoutine();
         yield return Test_DistanceWindowRoutine();
     }
 
     // The tests
+
+    // SpawnCspSolver in isolation on synthetic markers (no scene state): finds an assignment
+    // when one exists, respects domains and distinctness, and reports failure when the
+    // constraints cannot be satisfied.
+    private IEnumerator Test_SolverUnitRoutine()
+    {
+        Transform a = NewSyntheticMarker("cspA");
+        Transform b = NewSyntheticMarker("cspB");
+        Transform c = NewSyntheticMarker("cspC");
+
+        // Solvable: X{A,B} Y{A,C} Z{A,B,C} - e.g. Z=A, X=B, Y=C.
+        var solvable = new List<SpawnCspSolver.Variable>
+        {
+            new SpawnCspSolver.Variable("X", a, b),
+            new SpawnCspSolver.Variable("Y", a, c),
+            new SpawnCspSolver.Variable("Z", a, b, c),
+        };
+
+        if (Require(SpawnCspSolver.Solve(solvable, out SpawnCspSolver.Stats stats),
+            "solver finds an assignment when one exists"))
+        {
+            var used = new HashSet<Transform>();
+            foreach (SpawnCspSolver.Variable v in solvable)
+            {
+                Check(v.Assignment != null && v.Domain.Contains(v.Assignment),
+                    $"variable {v.Id} got a value from its own domain");
+                if (v.Assignment != null)
+                    Check(used.Add(v.Assignment), $"variable {v.Id} got a distinct marker");
+            }
+            Log($"TEST INFO: solver used {stats.Backtracks} backtracks on the solvable case");
+        }
+
+        // Unsolvable: two variables sharing one marker while distinctness is required.
+        var unsolvable = new List<SpawnCspSolver.Variable>
+        {
+            new SpawnCspSolver.Variable("P", a),
+            new SpawnCspSolver.Variable("Q", a),
+        };
+        Check(!SpawnCspSolver.Solve(unsolvable, out _),
+            "solver reports failure when the constraints cannot be satisfied");
+
+        Destroy(a.gameObject);
+        Destroy(b.gameObject);
+        Destroy(c.gameObject);
+        yield break;
+    }
 
     // The director placed the agreed initial layout: the right total, an even per-type split,
     // and every placed item reserved on a marker.
@@ -99,6 +161,23 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         foreach (PickupInteractable p in AllItems())
             if (p != null && director.IsReserved(p)) reserved++;
         Check(reserved == total, $"all {total} items hold a reserved spot ({reserved} reserved)");
+
+        // The hard split is exact: exactly 3 items sit on barricaded-labeled markers and the
+        // rest on ordinary ones. Labels mirror the director's default Inspector list - if a
+        // designer retunes that list, update these together with it.
+        string[] barricadeLabels = { "SP_S04", "SP_S08", "SP_S09", "SP_S10", "SP_S12" };
+        int onBarricade = 0, onOrdinary = 0, offMarker = 0;
+        foreach (PickupInteractable p in AllItems())
+        {
+            if (p == null || !director.IsReserved(p)) continue;
+            Transform m = NearestMarker(p.transform.position);
+            if (m == null) { offMarker++; continue; }
+            if (Array.IndexOf(barricadeLabels, m.name) >= 0) onBarricade++;
+            else onOrdinary++;
+        }
+        Check(offMarker == 0, $"every reserved item sits on a marker ({offMarker} off)");
+        Check(onBarricade == 3, $"exactly 3 items on barricaded markers (found {onBarricade})");
+        Check(onOrdinary == total - 3, $"remaining items sit on ordinary markers (found {onOrdinary}, expected {total - 3})");
     }
 
     // A player pickup (TryClaim + Remove) frees the spot and brings a replacement after ~10s.
@@ -312,6 +391,111 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         RestorePlayer(player, snapshot);
     }
 
+    // The reachability floor at work: ammo drained (cap opens to 3), every ammo box collected,
+    // then drained again so the queued replacements all fire under the open cap. At least
+    // cap-1 of the restored supply must sit on markers that are not behind an intact barricade.
+    private IEnumerator Test_DesperationFloorRoutine()
+    {
+        if (!Guard()) yield break;
+        PlayerStats player = FindPlayer();
+        if (!Require(player != null, "a PlayerStats exists")) yield break;
+
+        PlayerSnapshot before = SnapshotPlayer(player);
+
+        player.TryUseAmmo(player.ReserveAmmo);
+        int cap = director.CurrentCap(PickupType.Ammo);
+        Check(cap >= 2, $"ammo cap opens up when the reserve is empty (cap {cap})");
+
+        int ammoBefore = director.AliveCount(PickupType.Ammo);
+        foreach (PickupInteractable p in AllItems())
+            if (p != null && p.Type == PickupType.Ammo && !p.IsCollected) SimulatePlayerCollect(p);
+        Check(director.AliveCount(PickupType.Ammo) == 0, "every ammo box is collected");
+
+        player.TryUseAmmo(player.ReserveAmmo); // keep the cap open while replacements fire
+
+        bool arrived = false;
+        yield return WaitUntil(() => director.AliveCount(PickupType.Ammo) >= ammoBefore, 25f, v => arrived = v);
+        Check(arrived, $"ammo supply restored to {ammoBefore} (found {director.AliveCount(PickupType.Ammo)})");
+
+        if (arrived)
+        {
+            int floor = Mathf.Min(Mathf.Max(0, director.CurrentCap(PickupType.Ammo) - 1), ammoBefore);
+            int reachable = 0;
+            foreach (PickupInteractable p in AllItems())
+            {
+                if (p == null || p.Type != PickupType.Ammo || !director.IsReserved(p)) continue;
+                Transform m = NearestMarker(p.transform.position);
+                if (m != null && director.IsReachableMarker(m.name)) reachable++;
+            }
+            Check(reachable >= floor,
+                $"ammo on reachable markers: {reachable} of {ammoBefore} (floor {floor} at cap {director.CurrentCap(PickupType.Ammo)})");
+        }
+
+        RestorePlayer(player, before);
+    }
+
+    // Over-tightening guard for the floor: at full stats the cap is 1 and the floor is 0, so a
+    // replacement may legitimately land behind an intact barricade - the suite only requires
+    // that the single slot is restored, wherever it lands.
+    private IEnumerator Test_CapOneAllowsBarricadeRoutine()
+    {
+        if (!Guard()) yield break;
+        PlayerStats player = FindPlayer();
+        if (!Require(player != null, "a PlayerStats exists")) yield break;
+
+        PlayerSnapshot before = SnapshotPlayer(player);
+        player.AddAmmo(player.MaxReserveAmmo); // true full stats, so the cap really sits at its minimum
+        Check(director.CurrentCap(PickupType.Ammo) == 1,
+            $"ammo cap sits at its minimum at full stats (cap {director.CurrentCap(PickupType.Ammo)})");
+
+        for (int cycle = 1; cycle <= 3; cycle++)
+        {
+            foreach (PickupInteractable p in AllItems())
+                if (p != null && p.Type == PickupType.Ammo && !p.IsCollected) SimulatePlayerCollect(p);
+            Check(director.AliveCount(PickupType.Ammo) == 0, $"cycle {cycle}: every ammo box is collected");
+
+            bool arrived = false;
+            yield return WaitUntil(() => director.AliveCount(PickupType.Ammo) >= 1, 15f, v => arrived = v);
+            Check(arrived, $"cycle {cycle}: the single slot was restored under cap 1 (floor 0 - any marker is legal)");
+        }
+
+        RestorePlayer(player, before);
+    }
+
+    // A labeled marker whose barricade is bound flips reachable once the barricade is cleared
+    // (SetActive(false), exactly what the breakables do) and back when it is restored. Scenes
+    // without breakable barricades pass with a skip note - that is the Scene A case.
+    private IEnumerator Test_ClearedRoomBecomesReachableRoutine()
+    {
+        if (!Guard()) yield break;
+
+        string[] barricadeLabels = { "SP_S04", "SP_S08", "SP_S09", "SP_S10", "SP_S12" };
+        GameObject bound = null;
+        string boundLabel = null;
+        foreach (string label in barricadeLabels)
+        {
+            GameObject b = director.BoundBarricadeOf(label);
+            if (b != null) { bound = b; boundLabel = label; break; }
+        }
+        if (bound == null)
+        {
+            Check(true, "no labeled marker has a bound barricade here - clearing test skipped");
+            yield break;
+        }
+
+        Check(!director.IsReachableMarker(boundLabel),
+            $"'{boundLabel}' is unreachable while its barricade is intact");
+
+        bool wasActive = bound.activeSelf;
+        bound.SetActive(false);
+        Check(director.IsReachableMarker(boundLabel),
+            $"'{boundLabel}' became reachable after its barricade was cleared");
+
+        bound.SetActive(wasActive);
+        Check(!director.IsReachableMarker(boundLabel),
+            $"'{boundLabel}' is unreachable again after the barricade is restored");
+    }
+
     // Plumbing
 
     private bool Guard()
@@ -437,6 +621,27 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         foreach (PickupInteractable p in AllItems())
             if (p != null && !p.IsCollected && director != null && director.IsReserved(p)) return p;
         return null;
+    }
+
+    private static Transform NewSyntheticMarker(string name)
+    {
+        // Synthetic markers never start with "SP_S", so no marker scan in the suite can pick them up.
+        var go = new GameObject(name);
+        go.transform.position = new Vector3(9999f, 0f, 9999f);
+        return go.transform;
+    }
+
+    // The reserved marker for an item position: the nearest SP_S marker within 1.5m.
+    private static Transform NearestMarker(Vector3 pos, float maxDistance = 1.5f)
+    {
+        Transform best = null;
+        float bestDistance = maxDistance;
+        foreach (Transform t in FindMarkers())
+        {
+            float d = Vector3.Distance(t.position, pos);
+            if (d < bestDistance) { bestDistance = d; best = t; }
+        }
+        return best;
     }
 
     private static PlayerStats FindPlayer() => FindFirstObjectByType<PlayerStats>();
