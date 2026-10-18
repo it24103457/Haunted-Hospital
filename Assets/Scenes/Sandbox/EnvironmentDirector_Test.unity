@@ -26306,6 +26306,8 @@ GameObject:
   - component: {fileID: 593751878}
   - component: {fileID: 593751879}
   - component: {fileID: 593751880}
+  - component: {fileID: 593751882}
+  - component: {fileID: 593751881}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26397,6 +26399,8 @@ MonoBehaviour:
   playerTransform: {fileID: 936268515}
   roomTracker: {fileID: 593751869}
   settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  hunterSource: {fileID: 593751881}
+  maximumHunterSignalAge: 0.5
   observationInterval: 0.1
   referencesValid: 0
   validationMessage: Waiting for Play mode
@@ -26846,11 +26850,153 @@ MonoBehaviour:
   manualDamageRecoveryRemaining: 0
   manualQuietSeconds: 20
   manualGlobalCooldown: 0
-  manualEvents: []
+  manualEvents:
+  - {fileID: 0}
   manualCooldowns: []
-  status: No plan requested
-  recommendedFirstAction: 
+  status: 'MANUAL ONLY: Frontier exhausted within depth limit'
+  recommendedFirstAction: Rest
   plan:
+    valid: 1
+    manualOnly: 1
+    reachedHorizon: 1
+    stopReason: Frontier exhausted within depth limit
+    sampledAt: 0
+    desiredTension: 0.55
+    expandedNodes: 3
+    generatedNodes: 4
+    maximumDepthReached: 3
+    candidateCount: 1
+    finalScore: 0.35
+    steps:
+    - action:
+        definition: {fileID: 0}
+        anchor: {fileID: 0}
+        anchorId: 
+        roomId: 
+      predictedState:
+        elapsedSeconds: 5
+        vulnerability: 0.2
+        eventPressure: 0.3
+        damageRecoveryRemaining: 0
+        quietSeconds: 25
+        globalCooldownRemaining: 0
+        estimatedPressure: 0.4
+        cooldowns: []
+      localScore:
+        valid: 1
+        reason: Scored; lower is preferable
+        targetDifference: 0.15
+        overshootPenalty: 0
+        eventRepetitionPenalty: 0
+        anchorRepetitionPenalty: 0
+        total: 0.15
+      branchScore: 0.15
+    - action:
+        definition: {fileID: 0}
+        anchor: {fileID: 0}
+        anchorId: 
+        roomId: 
+      predictedState:
+        elapsedSeconds: 10
+        vulnerability: 0.2
+        eventPressure: 0.20000002
+        damageRecoveryRemaining: 0
+        quietSeconds: 30
+        globalCooldownRemaining: 0
+        estimatedPressure: 0.3
+        cooldowns: []
+      localScore:
+        valid: 1
+        reason: Scored; lower is preferable
+        targetDifference: 0.25
+        overshootPenalty: 0
+        eventRepetitionPenalty: 0
+        anchorRepetitionPenalty: 0
+        total: 0.25
+      branchScore: 0.25
+    - action:
+        definition: {fileID: 0}
+        anchor: {fileID: 0}
+        anchorId: 
+        roomId: 
+      predictedState:
+        elapsedSeconds: 15
+        vulnerability: 0.2
+        eventPressure: 0.100000024
+        damageRecoveryRemaining: 0
+        quietSeconds: 35
+        globalCooldownRemaining: 0
+        estimatedPressure: 0.20000002
+        cooldowns: []
+      localScore:
+        valid: 1
+        reason: Scored; lower is preferable
+        targetDifference: 0.35
+        overshootPenalty: 0
+        eventRepetitionPenalty: 0
+        anchorRepetitionPenalty: 0
+        total: 0.35
+      branchScore: 0.35
+    expansionTrace:
+    - nodeId: 0
+      depth: 0
+      lastAction: Root
+      priority: 0
+    - nodeId: 1
+      depth: 1
+      lastAction: Rest
+      priority: 0.15
+    - nodeId: 2
+      depth: 2
+      lastAction: Rest
+      priority: 0.25
+  liveCandidates: []
+--- !u!114 &593751881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65e8cf6d33697274195cc7376d5bf34a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorManualHunterSource
+  enableSimulation: 1
+  signalAvailable: 1
+  dangerActive: 0
+  freezeTimestamp: 0
+--- !u!114 &593751882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35d5a26280b31b646a9ac77fb092b745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorDecisionLoop
+  planner: {fileID: 593751880}
+  observation: {fileID: 593751871}
+  eligibility: {fileID: 593751876}
+  eventMemory: {fileID: 593751872}
+  decisionInterval: 1
+  maximumObservationAge: 0.5
+  status: Waiting for Play mode
+  planningAttempts: 0
+  decidedAt: 0
+  decisionRoom: 
+  recommendedAction: 
+  decisionAvailable: 0
+  decision:
+    definition: {fileID: 0}
+    anchor: {fileID: 0}
+    anchorId: 
+    roomId: 
+  latestPlan:
     valid: 0
     manualOnly: 0
     reachedHorizon: 0
@@ -26864,7 +27010,6 @@ MonoBehaviour:
     finalScore: 0
     steps: []
     expansionTrace: []
-  liveCandidates: []
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0

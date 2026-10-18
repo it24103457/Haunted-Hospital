@@ -9,6 +9,8 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private Transform playerTransform;
         [SerializeField] private DirectorRoomTracker roomTracker;
         [SerializeField] private DirectorSettings settings;
+        [SerializeField] private DirectorHunterSignalSource hunterSource;
+        [SerializeField, Min(0.02f)] private float maximumHunterSignalAge = 0.5f;
         [SerializeField, Min(0.02f)] private float observationInterval = 0.1f;
         [Header("Runtime observations (display only; overwritten on refresh)")]
         [SerializeField] private bool referencesValid;
@@ -138,6 +140,18 @@ namespace HauntedHospital.EnvironmentAI
             if (observedRoom != room) { observedRoom = room; enteredAt = Time.time; }
             snapshot = new DirectorObservationSnapshot(playerStats, playerTransform.position,
                 room, Time.time, enteredAt, receivedDamage, damagedAt, settings.DamageRecoverySeconds);
+            var hunter = DirectorSignalState.Unavailable;
+            if (hunterSource != null && hunterSource.isActiveAndEnabled &&
+                hunterSource.gameObject.scene == gameObject.scene &&
+                hunterSource.TryRead(out var state, out var timestamp) &&
+                Finite(timestamp) && Finite(maximumHunterSignalAge) && maximumHunterSignalAge > 0f &&
+                timestamp <= Time.time && Time.time - timestamp <= maximumHunterSignalAge &&
+                (state == DirectorSignalState.Active || state == DirectorSignalState.Inactive))
+                hunter = state;
+            snapshot = snapshot.WithHunterDanger(hunter);
+            validationMessage = "Ready; Hunter: " + hunter +
+                (hunterSource is DirectorManualHunterSource ? " (manual simulation)" : "") +
+                "; gunfire, keypad and victory remain unavailable until connected";
         }
 
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);

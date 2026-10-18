@@ -708,3 +708,30 @@ E. Live integration preview, without playing effects
    a real cooldown, or reserve a target. Stop Play mode after testing.
 
 Suggested commit: feat(director): plan event sequences with bounded greedy best-first search
+
+## Commit 12 — recurring decisions and replaceable Hunter input
+
+DirectorDecisionLoop calls the existing live planner once per second. It exposes a current recommendation and full plan in the Inspector. It does not execute effects, reserve anchors, or write event memory. Strict eligibility is checked again for the first action, because planning can simulate cooldowns expiring in future steps. A recommendation is not permission to execute later without revalidation.
+
+DirectorHunterSignalSource is the contract for a future real Hunter adapter: TryRead returns Active/Inactive/Unavailable with a sample timestamp. DirectorObservation accepts only an enabled same-scene source with a finite, non-future timestamp no older than Maximum Hunter Signal Age (default 0.5 seconds). Missing, disabled and stale sources remain Unavailable.
+
+DirectorManualHunterSource is an explicit simulation source. Enable Simulation must be checked; Signal Available and Danger Active control its current state. Freeze Timestamp deliberately lets a previously sampled signal become stale. Replace the source reference with the real adapter later; no planner changes are required.
+
+The current branch still leaves recent gunfire, keypad interaction and victory unavailable. The Hunter mock does not override them. Rest-only decisions are therefore expected until those adapters are connected. Do not interpret Rest as confirmation that all safety signals are available.
+
+### Manual checks for the user (not run during implementation)
+
+1. Open EnvironmentDirector_Test outside Play mode. Select EnvironmentDirector.
+2. Confirm Director Decision Loop references the local Planner Preview, Observation, Event Eligibility and Event Memory. Interval is 1 second.
+3. Confirm Observation's Hunter Source points to Director Manual Hunter Source.
+4. Enter Play mode and stand inside a registered room. Watch Planning Attempts increase approximately once per second and Latest Plan populate. No effect should be executed.
+5. On Manual Hunter Source, check Enable Simulation and Signal Available, and leave Danger Active unchecked. Observation's Hunter Danger should become Inactive.
+6. Check Danger Active. Hunter Danger should become Active after the next observation refresh. Existing immediate-danger restrictions should appear in eligibility; other unavailable signals may be the first reported rejection.
+7. Uncheck Signal Available, or disable the component. Hunter Danger must become Unavailable.
+8. Restore availability and unfreeze the timestamp for at least one sample. Check Freeze Timestamp, then wait longer than 0.5 seconds. Hunter Danger must become Unavailable. Unfreeze it to resume fresh samples.
+9. Walk through rooms. Decisions should use the current room; event-memory quiet time and cooldowns must not reset on room entry.
+10. Disable the Decision Loop. Its recommendation and latest plan clear and planning attempts stop increasing. Re-enable it to resume.
+11. Disable Observation or Desired Tension. The loop should report unavailable observations or an invalid/stale plan rather than retaining an executable recommendation.
+12. Leave Play mode. Runtime changes to simulation toggles are not saved; deliberately configure the test scene outside Play mode if you want different starting values.
+
+No test was run automatically. The manual source belongs in the sandbox until replaced with the real Hunter adapter. Full automatic scare execution is a later milestone.
