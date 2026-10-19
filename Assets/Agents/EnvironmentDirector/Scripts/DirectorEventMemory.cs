@@ -87,7 +87,7 @@ namespace HauntedHospital.EnvironmentAI
         // Read-only projection for planning; unlike EventPressure this does not advance memory.
         public float PlanningEventPressure => IsReady
             ? Mathf.Clamp(eventPressure - tensionSettings.EventPressureDecayPerSecond *
-                Mathf.Max(0f, Time.time - lastPressureUpdate), 0f, tensionSettings.MaximumEventPressure)
+                (eventActive && activeEvent.effectDelivered ? 0f : Mathf.Max(0f, Time.time - lastPressureUpdate)), 0f, tensionSettings.MaximumEventPressure)
             : 0f;
 
         public IReadOnlyList<DirectorEventRecord> History =>
@@ -108,7 +108,7 @@ namespace HauntedHospital.EnvironmentAI
 
         public float QuietSeconds =>
             initialized
-                ? Mathf.Max(0f, Time.time - lastDeliveredAt)
+                ? (eventActive && activeEvent.effectDelivered ? 0f : Mathf.Max(0f, Time.time - lastDeliveredAt))
                 : 0f;
 
         public float SecondsSinceEventEnded =>
@@ -173,7 +173,7 @@ namespace HauntedHospital.EnvironmentAI
                 return;
 
             float now = Time.time;
-            float elapsed = Mathf.Max(0f, now - lastPressureUpdate);
+            float elapsed = eventActive && activeEvent.effectDelivered ? 0f : Mathf.Max(0f, now - lastPressureUpdate);
 
             eventPressure = Mathf.Clamp(
                 eventPressure -
@@ -258,6 +258,8 @@ namespace HauntedHospital.EnvironmentAI
                 return false;
             }
 
+            AdvancePressure();
+            if (activeEvent.effectDelivered) lastDeliveredAt = Time.time;
             activeEvent.endedAt = Time.time;
             activeEvent.outcome = outcome;
 

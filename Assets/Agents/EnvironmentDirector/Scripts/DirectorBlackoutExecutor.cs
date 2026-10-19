@@ -14,6 +14,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private Transform essentialLightsRoot;
         [SerializeField] private AudioSource sound;
         [SerializeField] private AudioClip blackoutSound;
+        [SerializeField, Min(0f)] private float blackoutSoundStartSeconds;
         [SerializeField, Range(0,1)] private float volume = .35f;
         [SerializeField] private string status = "Idle";
         [SerializeField] private bool running;
@@ -33,14 +34,16 @@ namespace HauntedHospital.EnvironmentAI
             if (!Application.isPlaying || running || !Supports(candidate.definition) ||
                 eligibility == null || reservations == null || memory == null || observation == null ||
                 !memory.IsReady || directorLightsRoot == null || essentialLightsRoot == null) return false;
+            if (blackoutSound.loadState != AudioDataLoadState.Loaded)
+            { blackoutSound.LoadAudioData(); status = "Waiting for blackout audio"; return false; }
             if (!eligibility.TryReserveCandidate(candidate.definition,candidate.anchor,out token)) return false;
             var check = eligibility.Evaluate(candidate.definition,candidate.anchor,token);
             if (!check.eligible) { reservations.Release(token); token = null; status = check.reason; return false; }
             lights.Clear(); intensities.Clear();
-            foreach (var light in candidate.anchor.DirectorLights)
+            foreach (var light in directorLightsRoot.GetComponentsInChildren<Light>(true))
             {
                 if (light == null || !light.transform.IsChildOf(directorLightsRoot) ||
-                    light.transform.IsChildOf(essentialLightsRoot)) { Release(); return false; }
+                    light.transform.IsChildOf(essentialLightsRoot)) continue;
                 if (light.isActiveAndEnabled && light.intensity > 0)
                 { lights.Add(light); intensities.Add(light.intensity); }
             }
@@ -50,10 +53,12 @@ namespace HauntedHospital.EnvironmentAI
             ownsMemory = true; action = candidate; running = true; startedAt = Time.time;
             reservations.Renew(token,candidate.definition.Duration+1);
             sound.transform.position = lights[0].transform.position;
-            sound.clip = blackoutSound; sound.volume = volume; sound.Play();
+            sound.Stop(); sound.clip = blackoutSound; sound.volume = volume; sound.loop = false; sound.pitch = 1f;
+            sound.time = Mathf.Clamp(blackoutSoundStartSeconds, 0f, Mathf.Max(0f, blackoutSound.length - .05f));
+            sound.Play();
             ApplyBrightness(1f);
             memory.MarkEffectDelivered(candidate.definition.PredictedTensionIncrease);
-            status = "Fading out " + candidate.roomId;
+            status = "Fading out hospital Director lights";
             return true;
         }
 
@@ -66,7 +71,7 @@ namespace HauntedHospital.EnvironmentAI
                 reservations == null || !reservations.isActiveAndEnabled ||
                 !reservations.Owns(action.anchor,token) ||
                 !state.IsValid || Time.time-state.SampledAt > .5f || state.SampledAt > Time.time ||
-                !state.IsAlive || state.RoomId != action.roomId || state.DamageRecoveryActive ||
+                !state.IsAlive || state.DamageRecoveryActive ||
                 state.Victory != DirectorSignalState.Inactive ||
                 state.KeypadInteraction != DirectorSignalState.Inactive ||
                 state.RecentGunfire != DirectorSignalState.Inactive ||
@@ -88,17 +93,17 @@ namespace HauntedHospital.EnvironmentAI
             if (elapsed < fadeOut)
             {
                 multiplier = 1f - Mathf.SmoothStep(0f, 1f, elapsed / fadeOut);
-                status = "Fading out " + action.roomId;
+                status = "Fading out hospital Director lights";
             }
             else if (elapsed < recoveryStarts)
             {
                 multiplier = 0f;
-                status = "Blackout " + action.roomId;
+                status = "Hospital blackout";
             }
             else
             {
                 multiplier = Mathf.SmoothStep(0f, 1f, (elapsed - recoveryStarts) / fadeIn);
-                status = "Restoring " + action.roomId;
+                status = "Restoring hospital Director lights";
             }
             ApplyBrightness(multiplier);
             float recovery = Mathf.InverseLerp(recoveryStarts, duration, elapsed);

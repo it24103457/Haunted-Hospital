@@ -59,9 +59,9 @@ namespace HauntedHospital.EnvironmentAI
                 if (record.debugRecord || !record.effectDelivered) continue;
                 if (!Finite(record.endedAt) || record.endedAt > evaluatedAt) continue;
                 float recency = Mathf.Clamp01(1f - (evaluatedAt - record.endedAt) / windowSeconds);
-                if (record.eventType == eventType) result.eventRecency = Mathf.Max(result.eventRecency, recency);
+                if (record.eventType == eventType) result.eventRecency = Mathf.Clamp01(result.eventRecency + recency);
                 if (!string.IsNullOrEmpty(anchorId) && record.anchorId == anchorId)
-                    result.anchorRecency = Mathf.Max(result.anchorRecency, recency);
+                    result.anchorRecency = Mathf.Clamp01(result.anchorRecency + recency);
             }
             return result;
         }

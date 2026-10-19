@@ -13,6 +13,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorEventMemory eventMemory;
         [SerializeField] private DirectorFlickerExecutor executor;
         [SerializeField] private DirectorBlackoutExecutor blackoutExecutor;
+        [SerializeField] private DirectorPhoneExecutor phoneExecutor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 1f;
         [SerializeField, Min(0.02f)] private float maximumObservationAge = 0.5f;
         [Header("Runtime decisions and execution")]
@@ -38,7 +39,7 @@ namespace HauntedHospital.EnvironmentAI
             if (Time.time < nextDecisionAt) return;
             nextDecisionAt = Time.time + decisionInterval;
             planningAttempts++;
-            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor);
+            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor);
             decisionAvailable = false;
             recommendedAction = "None";
             if (latestPlan == null || !latestPlan.valid || latestPlan.manualOnly || latestPlan.steps.Count == 0)
@@ -54,7 +55,9 @@ namespace HauntedHospital.EnvironmentAI
             }
             decisionAvailable = true;
             status = decision.IsRest ? "Rest recommended; inspect eligibility for blocked event reasons" : "Event recommended";
-            if (!decision.IsRest && ((executor != null && executor.Supports(decision.definition) && executor.TryStart(decision)) || (blackoutExecutor != null && blackoutExecutor.Supports(decision.definition) && blackoutExecutor.TryStart(decision))))
+            if (!decision.IsRest && ((executor != null && executor.Supports(decision.definition) && executor.TryStart(decision)) ||
+                (blackoutExecutor != null && blackoutExecutor.Supports(decision.definition) && blackoutExecutor.TryStart(decision)) ||
+                (phoneExecutor != null && phoneExecutor.Supports(decision.definition) && phoneExecutor.TryStart(decision))))
             { decisionAvailable = false; status = "Executing " + decision.Label; }
         }
 

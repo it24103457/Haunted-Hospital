@@ -50,7 +50,7 @@ namespace HauntedHospital.EnvironmentAI
             ownsMemory = true; action = candidate; running = true; startedAt = Time.time;
             reservations.Renew(token,candidate.definition.Duration+1);
             sound.transform.position = lights[0].transform.position;
-            sound.clip = flickerSound; sound.volume = volume; sound.Play();
+            sound.clip = flickerSound; sound.volume = volume; sound.pitch = 1f; sound.loop = true; sound.Play();
             ApplyBrightness(.35f);
             memory.MarkEffectDelivered(candidate.definition.PredictedTensionIncrease);
             status = "Flickering " + candidate.roomId;
@@ -66,7 +66,7 @@ namespace HauntedHospital.EnvironmentAI
                 reservations == null || !reservations.isActiveAndEnabled ||
                 !reservations.Owns(action.anchor,token) ||
                 !state.IsValid || Time.time-state.SampledAt > .5f || state.SampledAt > Time.time ||
-                !state.IsAlive || state.RoomId != action.roomId || state.DamageRecoveryActive ||
+                !state.IsAlive || state.DamageRecoveryActive ||
                 state.Victory != DirectorSignalState.Inactive ||
                 state.KeypadInteraction != DirectorSignalState.Inactive ||
                 state.RecentGunfire != DirectorSignalState.Inactive ||
@@ -94,7 +94,7 @@ namespace HauntedHospital.EnvironmentAI
         private void Finish(DirectorEventOutcome outcome)
         {
             ApplyBrightness(1);
-            if(sound!=null) {sound.Stop();sound.volume=volume;}
+            if(sound!=null) {sound.Stop();sound.loop=false;sound.volume=volume;}
             running=false;
             if(ownsMemory && memory!=null) memory.FinishEvent(outcome);
             ownsMemory=false; Release();

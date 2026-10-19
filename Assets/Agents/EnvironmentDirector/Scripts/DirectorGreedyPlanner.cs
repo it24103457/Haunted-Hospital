@@ -24,7 +24,8 @@ namespace HauntedHospital.EnvironmentAI
         public static DirectorSearchPlan Search(DirectorPlanningState source,
             IReadOnlyList<DirectorPlanningAction> suppliedActions, IReadOnlyList<DirectorEventRecord> history,
             float desiredTension, float sampledAt, bool manualOnly, DirectorSettings director,
-            DirectorTensionSettings tension, DirectorScoringSettings scoring, bool scoreWholeTrajectory = false)
+            DirectorTensionSettings tension, DirectorScoringSettings scoring, bool scoreWholeTrajectory = false,
+            bool varyLiveChoice = false)
         {
             var result = new DirectorSearchPlan { manualOnly = manualOnly, sampledAt = sampledAt,
                 desiredTension = desiredTension, stopReason = "Invalid search inputs" };
@@ -55,6 +56,7 @@ namespace HauntedHospital.EnvironmentAI
             var root = new Node { id = 0, state = source, history = new List<DirectorEventRecord>(history) };
             var frontier = new List<Node> { root };
             Node bestLeaf = null, bestPartial = null;
+            var alternatives = new Dictionary<string, Node>();
             result.generatedNodes = 1;
             bool generationLimit = false;
             while (frontier.Count > 0 && result.expandedNodes < director.ExpansionBudget && !generationLimit)
@@ -75,7 +77,7 @@ namespace HauntedHospital.EnvironmentAI
                     string reason;
                     bool predicted = action.IsRest
                         ? DirectorStatePredictor.TryPredictRest(current.state, director, tension, out next, out reason)
-                        : DirectorStatePredictor.TryPredictEvent(current.state, action.definition, director, tension, out next, out reason);
+                        : DirectorStatePredictor.TryPredictEvent(current.state, action.definition, director, tension, out next, out reason, action.durationOverride);
                     if (!predicted) continue;
                     float start = sampledAt + current.state.ElapsedSeconds;
                     float end = sampledAt + next.ElapsedSeconds;
@@ -109,11 +111,34 @@ namespace HauntedHospital.EnvironmentAI
                     if (child.depth == director.PlanningDepth)
                     {
                         if (Better(child, bestLeaf)) bestLeaf = child;
+                        Node first = child;
+                        while (first.parent != root) first = first.parent;
+                        string type = first.step.action.Label;
+                        if (!alternatives.TryGetValue(type, out var previous) || Better(child, previous))
+                            alternatives[type] = child;
                     }
                     else frontier.Add(child);
                 }
             }
             Node chosen = bestLeaf ?? bestPartial;
+            // One best plan per event type: rooms with many light anchors get no extra lottery tickets.
+            // Search remains heuristic-driven; only similarly scored complete live plans participate.
+            if (varyLiveChoice && !manualOnly && bestLeaf != null && scoring.LiveChoiceTolerance > 0f)
+            {
+                var pool = new List<Node>();
+                var weights = new List<float>();
+                float total = 0f;
+                foreach (var candidate in alternatives.Values)
+                {
+                    float difference = (candidate.priority - bestLeaf.priority) / director.PlanningDepth;
+                    if (difference > scoring.LiveChoiceTolerance) continue;
+                    float weight = (float)Math.Exp(-2f * difference / scoring.LiveChoiceTolerance);
+                    pool.Add(candidate); weights.Add(weight); total += weight;
+                }
+                float pick = UnityEngine.Random.value * total;
+                for (int i = 0; i < pool.Count; i++)
+                { pick -= weights[i]; if (pick <= 0f || i == pool.Count - 1) { chosen = pool[i]; break; } }
+            }
             result.stopReason = generationLimit ? "Generated-node limit reached" : frontier.Count == 0
                 ? "Frontier exhausted within depth limit" : "Expansion budget reached";
             if (chosen == null) { result.stopReason = "No valid predicted transition"; return result; }

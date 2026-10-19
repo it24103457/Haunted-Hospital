@@ -10,6 +10,7 @@ namespace HauntedHospital.EnvironmentAI
         public DirectorEventAnchor anchor;
         public string anchorId;
         public string roomId;
+        public float durationOverride; // Zero uses the event definition; audio can supply its full length.
         public bool IsRest => definition == null;
         public string Label => IsRest ? "Rest" : definition.EventId;
     }

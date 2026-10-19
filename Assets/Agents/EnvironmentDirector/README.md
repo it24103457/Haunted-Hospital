@@ -785,3 +785,57 @@ The blackout cancels and restores lights immediately when the player changes roo
 12. Stop Play mode to discard temporary component toggles. No gameplay testing was run during implementation.
 
 Suggested commit: feat(director): add local blackouts with relay audio and safe light restoration
+
+## Commit 15 — phone ringing followed by rotating voice lines
+
+DirectorPhoneExecutor is now a supported automatic effect alongside flicker and blackout. It reserves an eligible phone anchor, plays the full Phone ringing sound, waits 0.2 seconds, and plays one complete voice line through a second spatial AudioSource at the same phone. Two scheduled sources prevent ring/voice overlap. Pitch is 1 and Doppler is disabled. The event stays active until the selected clip ends; other Director events cannot overlap it.
+
+The three voices use a shuffled cycle: every line completes once before the next cycle begins, with no immediate repeat at a cycle boundary. The cycle is shared across all phones and resets when a new Play session begins. An interrupted line is retained for the next safe phone event. Current Voice, Current Duration, Completed In Cycle, Completed Cycles and Status appear on the executor.
+
+Imported audio from the external Projects/Sounds folder into Assets/Audio/World:
+- Backgorund_Sounds/Phone ringing sound.mp3: 20.193 seconds.
+- Voices/Phone_voice_01.mp3: 10.92 seconds; total event about 31.46 seconds.
+- Voices/Phone_voice_02.wav: 5 seconds; total event about 25.54 seconds.
+- Voices/Phone_voice_03.mp3: 7.68 seconds; total event about 28.22 seconds.
+- Backgorund_Sounds/Blackout sound.mp3: 3.48 seconds, replacing the previous blackout relay clip without changing four-second blackout timing.
+
+Totals include a 0.15-second audio scheduling lead and 0.2-second ring-to-voice gap. ED_PhoneRing's fallback duration covers the longest sequence. Live planning uses the selected line's actual duration via DirectorPlanningAction.durationOverride; future hypothetical phone actions use that same snapshot duration, and the planner captures a fresh duration on every real decision. Phone cooldown remains 60 seconds after the event finishes.
+
+PhoneRingAudio and PhoneVoiceAudio are children of EnvironmentDirector in EnvironmentDirector_Test. Both use spatial audio (2m minimum, 18m maximum, linear falloff), no looping and no Play On Awake. The executor sets volumes to 0.4 for ringing and 0.7 for voices. Walking across a room boundary does not cut playback, but walking away makes it quieter. Required safety interruptions (shooting, hunter danger, damage, keypad use, death, victory, pause, missing/stale signals, disabled target or executor) still cancel playback. This audio does not publish gameplay noise to the Hunter. No telephone pickup interaction or handset animation is added.
+
+### Manual checks for the user (not run by the assistant)
+1. Open EnvironmentDirector_Test, let Unity finish compilation, and select EnvironmentDirector.
+2. In Director Phone Executor, check Ring Clip and the three Voice Clips are assigned. Confirm its Ring Source and Voice Source reference the two separate child objects, and Decision Loop's Phone Executor reference is filled.
+3. Enter Play mode. Keep the Hunter mock available with danger inactive, the player alive, and avoid shooting or opening the keypad.
+4. For a focused phone check, disable ONLY the Director Flicker Executor and Director Blackout Executor components during Play mode. Leave Decision Loop, observation, eligibility, memory and Phone Executor enabled. Stop Play afterward to discard these temporary toggles.
+5. Stand in a room containing a registered phone, between 2 and 12 metres from it. Phone eligibility still depends on cooldowns, safety signals and the planner; there is no fixed guarantee of immediate playback. Use the existing Event Eligibility preview if needed to see rejection reasons.
+6. When phone_ring starts, watch Phone Executor Status. Expect about 20.2 seconds of ringing, a short gap, then the selected complete voice line. Current Duration should match approximately 25.54, 28.22 or 31.46 seconds. No other Director event should start during this sequence.
+7. Watch Current Voice and let three phone events complete. All three lines should be different. Completed In Cycle goes 1, 2, then 0, and Completed Cycles becomes 1. The fourth begins a new shuffled cycle. Allow at least the 60-second phone cooldown between completions and later starts; other rules can delay it further.
+8. Cross the room boundary during a voice: it should continue at the original phone, fading with distance. Stay near the phone when checking the entire sentence is audible.
+9. During a separate phone event, shoot or enable mock Hunter danger. Both sounds should stop, Event Memory should record cancellation, and the reservation should clear. After safety and cooldowns allow another phone event, the unfinished voice should be retried.
+10. Restore the light executor components, then check a blackout uses Blackout sound rather than the old relay clip, keeps Essential lights unchanged and restores Director lights afterward.
+11. Stop Play mode. MainHospital has not been updated by this setup. No automated tests or Play-mode tests were run.
+
+Suggested commit: feat(director): add sequenced phone voices and update blackout audio
+
+## Pacing revision after commit 15
+
+Supersedes the earlier local-blackout and three-second flicker descriptions:
+- Flicker lasts 10 seconds in its selected room. Electrical audio loops at original pitch and fades during the final 0.4 seconds, then stops. Walking out does not cancel it; safety interruptions still do.
+- Blackout lasts 30 seconds across all currently illuminated Director lights beneath the Director light root. Essential lights are excluded. It captures and restores each light's own intensity. Room changes no longer cancel it. Existing local_blackout ID/type are retained for serialized compatibility; the initiating local anchor still supplies eligibility/reservation context.
+- Blackout audio uses a serialized start offset measured from the first meaningful signal in the clip, with a short pre-roll. The original sound file remains intact; audio is preloaded and execution waits for loaded audio. The sound plays once at the start, not on a 30-second loop.
+- Live pressure is held while a delivered event is active, then decays afterward. Quiet time stays zero during a delivered effect. Prediction follows the same sustained-pressure rule. Phone predicted pressure increases to 0.18; its full voice-cycle timing is unchanged.
+- Repetition recency accumulates across delivered records (capped at 1). Window 180 seconds, event penalty weight 0.22, anchor weight 0.10. Repetition is penalized, not forbidden.
+- Live best-first search groups complete plans by their first event type and retains the best plan per type. It randomly selects among plans within 0.16 average score per search step of the best, weighted toward lower scores. Rest remains a candidate; missing targets, cooldowns and safety still apply. This prevents extra light anchors becoming extra lottery tickets. Manual previews remain deterministic. This is not an event rotation, and no fixed event frequency is guaranteed.
+- Global spacing remains 12 seconds after completion, with cooldowns of 45 seconds for flicker, 100 for blackout and 60 for phone. Strong repetition scoring can still lead to Rest. Automatic planner Live Candidates now refreshes with planning eligibility/rejection reasons; a planning-eligible event can still have a live cooldown.
+
+### User checks for this revision (not run by the assistant)
+1. In EnvironmentDirector_Test, enter Play mode with valid player signals and the Hunter mock safe. Keep all three executors enabled.
+2. When a flicker starts, time approximately 10 seconds; confirm audio covers the effect and stops with restoration. Walking away should not terminate the original room's effect.
+3. When blackout starts, walk between rooms: Director lighting should stay off throughout the hospital for about 30 seconds including fades, while Essential lighting remains. Confirm each room returns to its previous brightness.
+4. Check blackout audio starts with the fade-out rather than seconds later. The measured Blackout Sound Start Seconds field is adjustable if the desired dramatic transient is later than the detected sound onset.
+5. Stay within 2–12 metres of a registered phone for some decisions. Confirm complete ring then voice playback. Check several sessions for variety; identical order remains possible by chance and short sessions cannot prove a distribution.
+6. Inspect Planner Preview's Live Candidates if phone is absent. Distinguish unavailable targets/safety from cooldowns and score selection. No eligible phone means it cannot be selected.
+7. Repeat an event and inspect the search score's repetition penalty. It should remember repeats beyond the 100-second blackout cooldown. Consecutive repeats are possible but disadvantaged.
+8. During a light effect, shoot or activate mock Hunter danger: audio stops, lights restore, reservation clears. Death, victory, missing signals, pause or disabling the executor also stop effects.
+9. No gameplay or automated tests were run. Shared event/scoring settings affect other scenes that reference these assets; scene wiring changes are confined to EnvironmentDirector_Test.
