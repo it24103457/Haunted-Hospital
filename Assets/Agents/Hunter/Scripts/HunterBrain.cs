@@ -4,23 +4,10 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /*
- * The Sound Hunter's decision maker (skeleton: it spawns, patrols and can be shot dead).
- *
- * Like the Thief, it never moves itself. It publishes what it wants through the output contract below,
- * and a mover (HunterTestMover for now, the Agent Controller later) turns CurrentPath into movement and applies
- * SpeedMultiplier to the NavMeshAgent's speed.
- *
- * Other scripts READ it through IHunterStatus (the Director) or the contract below (the mover);
- * only this script changes the state.
- *
- * What works now:
- *   Spawn   at a random "HunterSpawn" marker (or where it is placed if there are none).
- *   Patrol  picks a reachable Normal waypoint far enough away, publishes it as a one-point path, waits there
- *           for a moment, then picks the next. The NavMeshAgent does the actual route finding, so closed
- *           doors and intact barricades are simply not crossed yet. The Hunter's own A* and door handling
- *           replace this in a later step.
- *   Damage  implements IDamageable, so the player's shots hurt it; at 0 health it becomes Dead.
- * Hearing (HunterEars) and the other states are added later.
+ * The Sound Hunter's decision maker. It spawns, patrols, takes damage and respawns out of the player's sight.
+ * It never moves itself: it publishes CurrentPath, State, SpeedMultiplier and LookTarget, and a mover
+ * (HunterTestMover for now) acts on them. Other scripts only read it, through IHunterStatus.
+ * Hearing and the other states are added in later steps.
  */
 public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 {
@@ -29,6 +16,10 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     [SerializeField] private HunterSettings settings;
     [Tooltip("The shared waypoint graph. Found in the scene when left empty.")]
     [SerializeField] private WaypointGraph graph;
+    [Tooltip("The player, used to keep respawns away from them. Found in the scene when left empty.")]
+    [SerializeField] private PlayerStats player;
+    [Tooltip("The camera the player looks through. Found on the player when left empty.")]
+    [SerializeField] private Camera playerCamera;
 
     [Header("Spawning")]
     [Tooltip("Name prefix of the Hunter spawn markers in the scene.")]
@@ -38,34 +29,34 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 
     // Output contract (what the mover and animation read)
 
-    /// <summary>What the Hunter is doing right now. Inactive until it spawns.</summary>
+    // What the Hunter is doing right now. Inactive until it spawns.
     public HunterState State { get; private set; } = HunterState.Inactive;
 
-    /// <summary>World positions the Hunter wants to walk through, in order. Empty while it stands still.</summary>
+    // World positions the Hunter wants to walk through, in order. Empty while it stands still.
     public IReadOnlyList<Vector3> CurrentPath => currentPath;
 
-    /// <summary>Factor applied to the NavMeshAgent's base speed by whatever moves the Hunter. 0 means stand still.</summary>
+    // Factor applied to the NavMeshAgent's base speed by whatever moves the Hunter. 0 means stand still.
     public float SpeedMultiplier { get; private set; }
 
-    /// <summary>A point the Hunter should face instead of facing where it walks, or null for none.</summary>
+    // A point the Hunter should face instead of facing where it walks, or null for none.
     public Vector3? LookTarget { get; private set; }
 
     public float Health { get; private set; }
     public float MaxHealth => settings != null ? settings.MaxHealth : 0f;
 
-    /// <summary>Raised whenever CurrentPath is replaced or cleared, with the new path.</summary>
+    // Raised whenever CurrentPath is replaced or cleared, with the new path.
     public event Action<IReadOnlyList<Vector3>> OnPathChanged;
 
-    /// <summary>Raised whenever State changes, with the new state.</summary>
+    // Raised whenever State changes, with the new state.
     public event Action<HunterState> OnStateChanged;
 
-    /// <summary>Raised each time the Hunter appears in the level.</summary>
+    // Raised each time the Hunter appears in the level: the first spawn and every respawn. Memory should be cleared on this.
     public event Action OnSpawned;
 
-    /// <summary>Raised when the Hunter takes damage (and survives or not), with the hit. HunterEars will use this to look toward the shooter.</summary>
+    // Raised when the Hunter takes damage (and survives or not), with the hit. HunterEars will use this to look toward the shooter.
     public event Action<DamageInfo> OnDamaged;
 
-    /// <summary>Raised when the Hunter dies.</summary>
+    // Raised when the Hunter dies.
     public event Action OnDied;
 
     // IHunterStatus (read-only view for the Director)
@@ -81,15 +72,31 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private readonly List<WaypointNode> candidates = new List<WaypointNode>();
+    private readonly List<Transform> spawnMarkers = new List<Transform>();
+    private readonly List<Transform> allowedMarkers = new List<Transform>();
     private NavMeshPath scratchPath;
     private NavMeshAgent agent;
     private NavMeshQueryFilter navFilter;
 
+    // The body: what gets switched off on death and back on at respawn.
+    private Renderer[] renderers;
+    private Collider[] colliders;
+    private bool[] rendererWasOn;
+    private bool[] colliderWasOn;
+
+    // Patrol
     private Vector3 patrolDestination;
     private bool hasPatrolDestination;
     private float patrolWaitUntil;
     private float patrolLegStart;
     private bool reportedNoPatrolPoint;
+
+    // Death and respawn
+    private float deathTime;
+    private bool bodyHidden;
+    private float nextRespawnAttempt;
+    private bool reportedWaitingToRespawn;
+    private bool warnedNoMarkers;
 
     private void Awake()
     {
@@ -99,11 +106,23 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         // Path checks use the Hunter's own agent type, the one the hospital NavMesh is baked for.
         navFilter = new NavMeshQueryFilter { areaMask = NavMesh.AllAreas };
         if (agent != null) navFilter.agentTypeID = agent.agentTypeID;
+
+        // Remember what was on at the start, so respawning restores exactly that.
+        renderers = GetComponentsInChildren<Renderer>(true);
+        rendererWasOn = new bool[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++) rendererWasOn[i] = renderers[i].enabled;
+
+        colliders = GetComponentsInChildren<Collider>(true);
+        colliderWasOn = new bool[colliders.Length];
+        for (int i = 0; i < colliders.Length; i++) colliderWasOn[i] = colliders[i].enabled;
     }
 
     private void Start()
     {
         if (graph == null) graph = FindAnyObjectByType<WaypointGraph>();
+        if (player == null) player = FindAnyObjectByType<PlayerStats>();
+        if (playerCamera == null && player != null) playerCamera = player.GetComponentInChildren<Camera>();
+        if (playerCamera == null) playerCamera = Camera.main;
 
         // Report a missing reference once, and expose the Hunter as unavailable instead of throwing errors every frame.
         if (settings == null)
@@ -115,6 +134,11 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         else
             IsReady = true;
 
+        // Without the player the Hunter still works; it just cannot keep respawns away from them.
+        if (IsReady && player == null)
+            Debug.LogWarning("[Hunter] No PlayerStats found, so respawns cannot avoid the player.", this);
+
+        CacheSpawnMarkers();
         StateChanged?.Invoke();
 
         if (IsReady && spawnOnStart) Spawn();
@@ -129,19 +153,36 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
             case HunterState.Patrol:
                 UpdatePatrol();
                 break;
+            case HunterState.Dead:
+                UpdateDead();
+                break;
             // The other states are added in later build steps.
         }
     }
 
     // Spawning
 
-    /// <summary>Puts the Hunter in the level at full health and starts it patrolling.</summary>
+    /// <summary>
+    /// Puts the Hunter in the level at full health and starts it patrolling.
+    /// Prefers a marker away from the player; if none qualifies (this is the first spawn), uses any marker.
+    /// </summary>
     public void Spawn()
     {
-        if (!IsReady) return;
+        if (!TrySpawn(true)) TrySpawn(false);
+    }
+
+    // Spawns at an allowed marker; returns false (and changes nothing) if applyPlayerRules is on and no marker qualifies.
+    private bool TrySpawn(bool applyPlayerRules)
+    {
+        if (!IsReady) return false;
+        if (!TryPickSpawnPosition(applyPlayerRules, out Vector3 position)) return false;
+
+        SetCollisionActive(true);
+        SetVisible(true);
+        bodyHidden = false;
 
         Health = settings.MaxHealth;
-        MoveTo(PickSpawnPosition());
+        MoveTo(position);
 
         hasPatrolDestination = false;
         patrolWaitUntil = 0f;
@@ -155,28 +196,75 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 
         SetState(HunterState.Patrol);
         OnSpawned?.Invoke();
+        return true;
     }
 
-    // Chooses a random spawn marker; falls back to where the Hunter was placed.
-    private Vector3 PickSpawnPosition()
+    private void CacheSpawnMarkers()
     {
-        var markers = new List<Transform>();
+        spawnMarkers.Clear();
         foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude))
         {
-            if (t.name.StartsWith(spawnPointPrefix)) markers.Add(t);
+            if (t.name.StartsWith(spawnPointPrefix)) spawnMarkers.Add(t);
         }
+    }
 
-        if (markers.Count == 0)
+    // Chooses a random marker (one that passes the player rules, when asked to); falls back to where the Hunter was placed.
+    private bool TryPickSpawnPosition(bool applyPlayerRules, out Vector3 position)
+    {
+        position = transform.position;
+
+        if (spawnMarkers.Count == 0)
         {
-            Debug.LogWarning("[Hunter] No spawn markers found, so it stays where it is placed.", this);
-            return transform.position;
+            if (!warnedNoMarkers)
+            {
+                Debug.LogWarning("[Hunter] No spawn markers found, so it stays where it is placed.", this);
+                warnedNoMarkers = true;
+            }
+            return true;
         }
 
-        Vector3 position = markers[UnityEngine.Random.Range(0, markers.Count)].position;
+        allowedMarkers.Clear();
+        foreach (Transform marker in spawnMarkers)
+        {
+            if (marker == null) continue;
+            if (applyPlayerRules && !IsAllowedRespawnPoint(marker.position)) continue;
+            allowedMarkers.Add(marker);
+        }
+
+        if (allowedMarkers.Count == 0) return false;
+
+        Vector3 point = allowedMarkers[UnityEngine.Random.Range(0, allowedMarkers.Count)].position;
 
         // The filter overload matters: the plain area-mask overload only looks at the Humanoid NavMesh,
         // and this hospital is baked for the Hospital_Blockout agent type.
-        return NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, navFilter) ? hit.position : position;
+        position = NavMesh.SamplePosition(point, out NavMeshHit hit, 2f, navFilter) ? hit.position : point;
+        return true;
+    }
+
+    // A respawn point must be far from the player and, when asked, out of the player's view.
+    private bool IsAllowedRespawnPoint(Vector3 point)
+    {
+        if (player == null) return true;
+
+        Vector3 toPlayer = player.transform.position - point;
+        toPlayer.y = 0f;
+        if (toPlayer.magnitude < settings.RespawnMinDistanceFromPlayer) return false;
+
+        if (settings.RespawnAvoidPlayerView && IsInPlayerView(point)) return false;
+        return true;
+    }
+
+    // True when the point is inside the player's camera view with nothing solid in between.
+    private bool IsInPlayerView(Vector3 point)
+    {
+        if (playerCamera == null) return false;
+
+        Vector3 target = point + Vector3.up * 1f;
+        Vector3 view = playerCamera.WorldToViewportPoint(target);
+        if (view.z <= 0f || view.x < 0f || view.x > 1f || view.y < 0f || view.y > 1f) return false;
+
+        // A wall in between hides the point, so it does not count as seen.
+        return !Physics.Linecast(playerCamera.transform.position, target, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
     }
 
     // Teleports the Hunter, through the NavMeshAgent when there is one so it stays on the NavMesh.
@@ -288,9 +376,61 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     {
         hasPatrolDestination = false;
         LookTarget = null;
-        SetPath(null);
+        SetPath(null);          // while the agent is still on, so the mover stops it cleanly
         SetState(HunterState.Dead);
+
+        deathTime = Time.time;
+        bodyHidden = false;
+        nextRespawnAttempt = 0f;
+        reportedWaitingToRespawn = false;
+
+        SetCollisionActive(false);   // a dead Hunter must not block the player or soak up shots
         OnDied?.Invoke();
+    }
+
+    // While Dead: hide the body after a moment, then respawn after the delay at an allowed marker.
+    private void UpdateDead()
+    {
+        float sinceDeath = Time.time - deathTime;
+
+        if (!bodyHidden && sinceDeath >= settings.DeathLingerSeconds)
+        {
+            SetVisible(false);
+            bodyHidden = true;
+        }
+
+        // A delay of 0 means the Hunter never comes back.
+        if (settings.RespawnDelaySeconds <= 0f) return;
+        if (sinceDeath < settings.RespawnDelaySeconds || Time.time < nextRespawnAttempt) return;
+
+        if (TrySpawn(true)) return;
+
+        // No marker is far enough away and out of sight right now; try again shortly.
+        nextRespawnAttempt = Time.time + settings.RespawnRetrySeconds;
+        if (!reportedWaitingToRespawn && settings.EnableDebugLogging)
+        {
+            Debug.Log("[Hunter] Waiting to respawn: no marker is far enough from the player and out of their view yet.", this);
+            reportedWaitingToRespawn = true;
+        }
+    }
+
+    // Colliders and the NavMeshAgent together: off while dead, back to how they were when respawned.
+    private void SetCollisionActive(bool on)
+    {
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null) colliders[i].enabled = on && colliderWasOn[i];
+        }
+
+        if (agent != null) agent.enabled = on;
+    }
+
+    private void SetVisible(bool on)
+    {
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null) renderers[i].enabled = on && rendererWasOn[i];
+        }
     }
 
     // State and path bookkeeping

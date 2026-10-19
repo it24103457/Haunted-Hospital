@@ -44,6 +44,11 @@ MonoBehaviour:
   freshReachSeconds: 0.5
   maxHealth: 100
   shotAlertSeconds: 4
+  deathLingerSeconds: 3
+  respawnDelaySeconds: 45
+  respawnMinDistanceFromPlayer: 20
+  respawnAvoidPlayerView: 1
+  respawnRetrySeconds: 3
   closedDoorExtraCost: 3
   replanIntervalSeconds: 0.5
   doorApproachDistance: 1.2

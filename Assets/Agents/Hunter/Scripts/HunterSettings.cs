@@ -102,6 +102,24 @@ public sealed class HunterSettings : ScriptableObject
     [Tooltip("Seconds of alert toward whoever shot the Hunter before it goes back to normal behaviour.")]
     [SerializeField, Min(0f)] private float shotAlertSeconds = 4f;
 
+    // Death and respawn
+
+    [Header("Death and respawn")]
+    [Tooltip("The body stays visible this long after death, then disappears. Match it to the death animation when there is one.")]
+    [SerializeField, Min(0f)] private float deathLingerSeconds = 3f;
+
+    [Tooltip("Seconds after death before the Hunter comes back. 0 means it never respawns.")]
+    [SerializeField, Min(0f)] private float respawnDelaySeconds = 45f;
+
+    [Tooltip("It only respawns at a marker at least this many metres (straight line) from the player.")]
+    [SerializeField, Min(0f)] private float respawnMinDistanceFromPlayer = 20f;
+
+    [Tooltip("It never respawns at a marker the player can currently see (inside the camera view with nothing in the way).")]
+    [SerializeField] private bool respawnAvoidPlayerView = true;
+
+    [Tooltip("If no marker is allowed yet, try again this often.")]
+    [SerializeField, Min(0.5f)] private float respawnRetrySeconds = 3f;
+
     // Pathfinding and doors
 
     [Header("Pathfinding")]
@@ -166,6 +184,12 @@ public sealed class HunterSettings : ScriptableObject
     public float FreshReachSeconds => freshReachSeconds;
 
     public float MaxHealth => maxHealth;
+
+    public float DeathLingerSeconds => deathLingerSeconds;
+    public float RespawnDelaySeconds => respawnDelaySeconds;
+    public float RespawnMinDistanceFromPlayer => respawnMinDistanceFromPlayer;
+    public bool RespawnAvoidPlayerView => respawnAvoidPlayerView;
+    public float RespawnRetrySeconds => respawnRetrySeconds;
     public float ShotAlertSeconds => shotAlertSeconds;
 
     public float ClosedDoorExtraCost => closedDoorExtraCost;
