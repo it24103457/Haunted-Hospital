@@ -20,6 +20,8 @@ MonoBehaviour:
   ignoreOwnSounds: 1
   memoryTimeConstant: 12
   memoryCapacity: 8
+  memoryMergeRadius: 2
+  forgetBelowScore: 0.1
   retargetMargin: 0.25
   investigateThreshold: 1.5
   gunshotImportance: 1
@@ -59,4 +61,4 @@ MonoBehaviour:
   investigateSpeed: 1
   searchSpeed: 0.8
   chaseSpeed: 1.4
-  enableDebugLogging: 1
+  enableDebugLogging: 0

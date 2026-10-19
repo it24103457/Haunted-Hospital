@@ -33,6 +33,12 @@ public sealed class HunterSettings : ScriptableObject
     [Tooltip("How many remembered noises are kept. The lowest score is dropped first.")]
     [SerializeField, Range(1, 32)] private int memoryCapacity = 8;
 
+    [Tooltip("A noise this close (metres) to one already remembered updates that memory instead of adding a new one. Stops footsteps from filling all slots.")]
+    [SerializeField, Min(0f)] private float memoryMergeRadius = 2f;
+
+    [Tooltip("A remembered noise whose score has faded below this is forgotten.")]
+    [SerializeField, Min(0f)] private float forgetBelowScore = 0.1f;
+
     [Tooltip("A new noise only replaces the current target if its score is this much higher (0.25 = 25%).")]
     [SerializeField, Range(0f, 1f)] private float retargetMargin = 0.25f;
 
@@ -164,6 +170,8 @@ public sealed class HunterSettings : ScriptableObject
     public float MemoryTimeConstant => memoryTimeConstant;
     public int MemoryCapacity => memoryCapacity;
     public float RetargetMargin => retargetMargin;
+    public float MemoryMergeRadius => memoryMergeRadius;
+    public float ForgetBelowScore => forgetBelowScore;
     public float InvestigateThreshold => investigateThreshold;
 
     public float PatrolWaitSeconds => patrolWaitSeconds;

@@ -41,6 +41,9 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     // A point the Hunter should face instead of facing where it walks, or null for none.
     public Vector3? LookTarget { get; private set; }
 
+    // The tuning numbers, shared with HunterEars so they are only assigned once.
+    public HunterSettings Settings => settings;
+
     public float Health { get; private set; }
     public float MaxHealth => settings != null ? settings.MaxHealth : 0f;
 
