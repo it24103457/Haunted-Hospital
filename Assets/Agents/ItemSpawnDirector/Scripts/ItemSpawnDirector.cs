@@ -79,6 +79,10 @@ public class ItemSpawnDirector : MonoBehaviour
     [Tooltip("Metres: no item spawns closer than this to the player (0 = off). Relaxes when no marker qualifies, and logs it.")]
     [SerializeField, Min(0f)] private float minSpawnDistance = 8f;
 
+    [Header("Spread")]
+    [Tooltip("Respawns pick among this many of the most-isolated free markers (ranked by distance to the nearest other item), then choose at random - so replacements spread out instead of clustering.")]
+    [SerializeField, Min(1)] private int spreadTopCount = 3;
+
     [Header("Respawn")]
     [Tooltip("Seconds before a replacement appears after the player picks an item up.")]
     [SerializeField] private float respawnDelay = 10f;
@@ -363,14 +367,15 @@ public class ItemSpawnDirector : MonoBehaviour
         return true;
     }
 
-    // Picks a free marker from the pool, honouring the distance rule, relaxing it once if needed.
+    // Picks a free marker from the pool, honouring the distance rule, relaxing it once if needed,
+    // and spreading the pick away from the existing supply (most-isolated candidates win).
     private Transform PickMarker(List<Transform> pool)
     {
         var candidates = new List<Transform>();
         foreach (Transform m in pool)
             if (!occupied.ContainsValue(m) && PassesDistance(m)) candidates.Add(m);
 
-        if (candidates.Count > 0) return candidates[Random.Range(0, candidates.Count)];
+        if (candidates.Count > 0) return PickSpread(candidates);
 
         if (!DistanceEnabled) return null; // pool really is exhausted
 
@@ -382,7 +387,56 @@ public class ItemSpawnDirector : MonoBehaviour
 
         distanceRelaxations++;
         Log($"no marker is {minSpawnDistance}m away from the player - relaxing the distance rule for this spawn.");
-        return candidates[Random.Range(0, candidates.Count)];
+        return PickSpread(candidates);
+    }
+
+    // How isolated a free marker is: the distance to the nearest OTHER occupied item (higher =
+    // more spread out). The spread objective is to maximise this.
+    private float SpreadScore(Transform marker)
+    {
+        float nearest = float.MaxValue;
+        foreach (Transform taken in occupied.Values)
+        {
+            float d = Vector3.Distance(marker.position, taken.position);
+            if (d < nearest) nearest = d;
+        }
+        return nearest == float.MaxValue ? 0f : nearest;
+    }
+
+    // Ranks candidates by how isolated they are and picks at random among the top spreadTopCount,
+    // so respawns spread out without always crowding the same corner.
+    private Transform PickSpread(List<Transform> candidates)
+        => PickMostIsolated(candidates, OccupiedPositions(), spreadTopCount);
+
+    private List<Vector3> OccupiedPositions()
+    {
+        var pts = new List<Vector3>();
+        foreach (Transform t in occupied.Values) pts.Add(t.position);
+        return pts;
+    }
+
+    // Pure spread pick: returns one of the top 'topN' candidates by isolation from 'obstacles'
+    // (highest SpreadScore wins). Public so tests can verify the ranking directly.
+    public static Transform PickMostIsolated(List<Transform> candidates, IList<Vector3> obstacles, int topN)
+    {
+        if (candidates == null || candidates.Count == 0) return null;
+
+        candidates.Sort((a, b) => IsolationOf(b.position, obstacles).CompareTo(IsolationOf(a.position, obstacles)));
+        int top = Mathf.Clamp(topN, 1, candidates.Count);
+        return candidates[Random.Range(0, top)];
+    }
+
+    // Distance from a point to the nearest obstacle (0 when there are none).
+    public static float IsolationOf(Vector3 point, IList<Vector3> obstacles)
+    {
+        if (obstacles == null || obstacles.Count == 0) return 0f;
+        float nearest = float.MaxValue;
+        foreach (Vector3 o in obstacles)
+        {
+            float d = Vector3.Distance(point, o);
+            if (d < nearest) nearest = d;
+        }
+        return nearest;
     }
 
     private bool PassesDistance(Transform marker)

@@ -26,6 +26,8 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     [SerializeField] private float expectedStolenDelay = 20f;
     [Tooltip("Matches the director's Min Spawn Distance.")]
     [SerializeField] private float expectedMinDistance = 8f;
+    [Tooltip("Metres a respawned item must keep to its nearest other item (spread objective).")]
+    [SerializeField] private float expectedSpreadDistance = 5f;
     [Tooltip("How many items the initial layout should have placed (0 = don't check the total).")]
     [SerializeField] private int expectedInitialTotal = 9;
 
@@ -64,6 +66,9 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     [ContextMenu("Test: Solver Unit")]
     public void Test_SolverUnit() => Run(Test_SolverUnitRoutine(), "SolverUnit");
 
+    [ContextMenu("Test: Spread Ranking")]
+    public void Test_SpreadRanking() => Run(Test_SpreadRankingRoutine(), "SpreadRanking");
+
     [ContextMenu("Test: Desperation Floor")]
     public void Test_DesperationFloor() => Run(Test_DesperationFloorRoutine(), "DesperationFloor");
 
@@ -73,6 +78,9 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     [ContextMenu("Test: Cleared Room Becomes Reachable")]
     public void Test_ClearedRoomBecomesReachable() => Run(Test_ClearedRoomBecomesReachableRoutine(), "ClearedRoomBecomesReachable");
 
+    [ContextMenu("Test: Respawn Spreads Out")]
+    public void Test_RespawnSpreadsOut() => Run(Test_RespawnSpreadsOutRoutine(), "RespawnSpreadsOut");
+
     [ContextMenu("Run All Tests")]
     public void RunAllTests() => Run(TestAllRoutine(), "AllTests");
 
@@ -80,6 +88,7 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     private IEnumerator TestAllRoutine()
     {
         yield return Test_SolverUnitRoutine();
+        yield return Test_SpreadRankingRoutine();
         yield return Test_InitialPlacementRoutine();
         yield return Test_DynamicCapsRoutine();
         yield return Test_CapEnforcementRoutine();
@@ -90,6 +99,7 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         yield return Test_CapOneForcesReachableRoutine();
         yield return Test_ClearedRoomBecomesReachableRoutine();
         yield return Test_DistanceWindowRoutine();
+        yield return Test_RespawnSpreadsOutRoutine();
     }
 
     // The tests
@@ -138,6 +148,52 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         Destroy(b.gameObject);
         Destroy(c.gameObject);
         yield break;
+    }
+
+    // The spread ranking in isolation: PickMostIsolated returns one of the top-N most isolated
+    // candidates (isolation = distance to the nearest obstacle). With topN=1 it must always return
+    // the single most isolated marker, and it must never return the least-isolated one when a
+    // better option exists - so respawns genuinely prefer open ground over a cluster.
+    private IEnumerator Test_SpreadRankingRoutine()
+    {
+        if (!Guard()) yield break;
+
+        // Synthetic markers on a line; a single obstacle at the origin makes isolation = |x|.
+        Transform far = NewSyntheticMarker("spreadFar");   far.position = new Vector3(20f, 0f, 0f);
+        Transform mid = NewSyntheticMarker("spreadMid");   mid.position = new Vector3(10f, 0f, 0f);
+        Transform near = NewSyntheticMarker("spreadNear"); near.position = new Vector3(2f, 0f, 0f);
+        var obstacles = new List<Vector3> { Vector3.zero };
+
+        Check(Mathf.Abs(ItemSpawnDirector.IsolationOf(far.position, obstacles) - 20f) < 0.01f,
+            "isolation is the distance to the nearest obstacle");
+        Check(Mathf.Abs(ItemSpawnDirector.IsolationOf(near.position, obstacles) - 2f) < 0.01f,
+            "a nearer candidate scores lower isolation");
+
+        bool alwaysFar = true, neverNear = true;
+        for (int i = 0; i < 25; i++)
+        {
+            if (ItemSpawnDirector.PickMostIsolated(Shuffled(far, mid, near), obstacles, 1) != far) alwaysFar = false;
+            if (ItemSpawnDirector.PickMostIsolated(Shuffled(far, mid, near), obstacles, 2) == near) neverNear = false;
+        }
+        Check(alwaysFar, "with topN=1 the spread pick always returns the single most isolated marker");
+        Check(neverNear, "with topN=2 the spread pick never returns the least isolated marker");
+
+        Destroy(far.gameObject);
+        Destroy(mid.gameObject);
+        Destroy(near.gameObject);
+        yield break;
+    }
+
+    // Fisher-Yates shuffle of the given markers into a fresh list.
+    private List<Transform> Shuffled(params Transform[] items)
+    {
+        var list = new List<Transform>(items);
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+        }
+        return list;
     }
 
     // The director placed the agreed initial layout: the right total, an even per-type split,
@@ -481,6 +537,54 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         if (controller != null) controller.enabled = true;
     }
 
+    // Respawns spread out: a replacement lands away from the existing supply, not on top of a
+    // cluster. After normalizing, one whole type is collected and every returned item must keep
+    // at least expectedSpreadDistance to its nearest other item (the spread objective).
+    private IEnumerator Test_RespawnSpreadsOutRoutine()
+    {
+        if (!Guard()) yield break;
+        PlayerStats player = FindPlayer();
+        if (!Require(player != null, "a PlayerStats exists")) yield break;
+
+        PlayerSnapshot before = SnapshotPlayer(player);
+        yield return NormalizeSupply(player);
+
+        // Pick the type with the most items alive and collect all of it; every replacement that
+        // fires afterwards is measured.
+        PickupType type = PickupType.Health;
+        int aliveNow = -1;
+        foreach (PickupType t in new[] { PickupType.Health, PickupType.Ammo, PickupType.Sanity })
+            if (director.AliveCount(t) > aliveNow) { aliveNow = director.AliveCount(t); type = t; }
+        if (!Require(aliveNow >= 1, "an item exists to collect"))
+        {
+            RestorePlayer(player, before);
+            yield break;
+        }
+
+        CollectAll(type, false);
+        yield return new WaitForSeconds(expectedPlayerDelay + 2f);
+
+        int restored = director.AliveCount(type);
+        if (!Require(restored >= 1, $"the {type} supply came back after the respawn delay"))
+        {
+            RestorePlayer(player, before);
+            yield break;
+        }
+
+        bool allSpread = true;
+        foreach (PickupInteractable p in AllItems())
+        {
+            if (p == null || p.IsCollected || p.Type != type || director == null || !director.IsReserved(p)) continue;
+            float nn = NearestOtherItemDistance(p);
+            Log($"respawn spread: {type} nearest-neighbour {nn:0.00}m");
+            if (nn < expectedSpreadDistance) allSpread = false;
+        }
+        Check(allSpread,
+            $"every respawned {type} kept at least {expectedSpreadDistance}m to its nearest other item");
+
+        RestorePlayer(player, before);
+    }
+
     // The cap plateaus and the reachability floor together, in both directions. Normal plateau:
     // stats at/above the threshold -> cap 2 -> up to two replacements of the collected type, at
     // least one of them on a reachable marker (floor = max(1, cap-1) = 1). Very-low plateau: stat
@@ -790,6 +894,21 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
             if (m != null && director.IsReachableMarker(m.name)) reachable++;
         }
         return reachable;
+    }
+
+    // The distance from an item to the nearest OTHER alive, director-managed item (the ExitKey is
+    // scene-placed and ignored) - i.e. how isolated the item ended up.
+    private float NearestOtherItemDistance(PickupInteractable item)
+    {
+        float nearest = float.MaxValue;
+        foreach (PickupInteractable q in AllItems())
+        {
+            if (q == null || q == item || q.IsCollected || director == null || !director.IsReserved(q)) continue;
+            if (q.Type == PickupType.ExitKey) continue;
+            float d = Vector3.Distance(item.transform.position, q.transform.position);
+            if (d < nearest) nearest = d;
+        }
+        return nearest == float.MaxValue ? 0f : nearest;
     }
 
     // The first item that was not in the given snapshot - a director replacement.
