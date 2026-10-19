@@ -758,3 +758,30 @@ Sound: Assets/Audio/World/Backgorund_Sounds/18_Fluorescent_Starter_Failure.wav, 
 9. Inspect the Objectives component's debug menu to test Begin Escape/Win if a complete objective run is inconvenient. These states must suppress new scares.
 10. If nothing happens, use Event Eligibility's existing preview menu and inspect rejected reasons. Check current room, observation age, player signal readiness, light availability and cooldowns. Do not force missing signals to safe.
 11. No Play-mode tests or effect previews were run during implementation. MainHospital is not updated by this setup.
+
+## Commit 14 — local blackout execution
+
+DirectorBlackoutExecutor adds local blackouts to the live decision loop alongside flicker and Rest. The planner considers only effects with configured, enabled executors. Both light effects use the same event memory and target reservation: only one Director event can run at a time. Manual search previews still execute nothing.
+
+The existing ED_LocalBlackout definition remains at duration 4 seconds, cooldown 100 seconds and predicted pressure increase 0.22. Duration includes a 0.35-second smooth fade out, 2.9 seconds fully off and a 0.75-second smooth recovery. Only the selected anchor's enabled Director lights are affected. Original intensities are captured each time and restored on completion or cancellation. Essential lights and fixture materials are unchanged. Baked light contributions cannot be removed by changing realtime light intensity.
+
+BlackoutAudio is a separate 3D AudioSource under EnvironmentDirector using 19_Electrical_Relay_Clicks.wav, volume 0.35, min distance 2m, max distance 18m, linear falloff, no loop or play on awake. Playback begins at the first affected light and stops when the effect ends. Audio does not emit a gameplay gunfire/noise event.
+
+The blackout cancels and restores lights immediately when the player changes room, shoots, takes damage, dies, opens the keypad, starts escaping, pauses, or receives Hunter danger/unavailable signals. Missing or stale observations, invalid targets, disabled audio and lost reservations also cancel. The temporary Hunter source remains replaceable by a real adapter.
+
+### Manual testing — to be performed by the user
+
+1. Open EnvironmentDirector_Test outside Play mode and select EnvironmentDirector.
+2. Confirm Director Decision Loop > Blackout Executor references the local Director Blackout Executor. Confirm the blackout component has all six shared references plus Sound and Blackout Sound. Expand the root to find BlackoutAudio.
+3. Enter Play mode. Keep Manual Hunter Source enabled/available, Danger Active off and Freeze Timestamp off. Keep the player alive, close the keypad and stop shooting.
+4. Enter a room with an enabled Director light group and wait past the initial 12-second global interval. Inspect the decision loop and blackout Status. Rest or flicker may be selected first; a blackout is not guaranteed on a fixed timer.
+5. When selected, Status should progress through Fading out, Blackout and Restoring. The whole effect lasts about four seconds. Essential lights must remain constant; Director lights must return to their individual original intensities. Expect relay sound from the room.
+6. Check Event Memory records local_blackout as delivered/completed and Target Reservations clears afterward. Blackout cannot repeat until its 100-second cooldown expires; global spacing and other restrictions can delay it further.
+7. To focus on blackout during this Play session only, disable the Director Flicker Executor component. Do not disable its GameObject, which would disable the whole Director. The planner will choose between blackout and Rest; it can still rest. Re-enable flicker afterward. Avoid changing shared event assets to force a result.
+8. During a blackout, leave the room or shoot. Lights should restore immediately, audio stop, reservation clear and memory record cancellation. You can repeat using keypad entry, mock Hunter Danger Active or disabling only Director Blackout Executor.
+9. After restoring safe signals, both effects should become eligible again subject to cooldowns. They must never run concurrently.
+10. If the room remains bright with Director intensities at zero, inspect Essential illumination and baked lighting separately. Do not remove the Essential layer to force darkness.
+11. If no event starts, inspect Event Eligibility rejection reasons, observation signal readiness, current room, cooldowns and planner status. This implementation does not guarantee a particular scare frequency.
+12. Stop Play mode to discard temporary component toggles. No gameplay testing was run during implementation.
+
+Suggested commit: feat(director): add local blackouts with relay audio and safe light restoration

@@ -50,7 +50,7 @@ namespace HauntedHospital.EnvironmentAI
         }
 
         // Captures live context without writing preview fields; future scheduling can call this.
-        public DirectorSearchPlan BuildLivePlan(DirectorFlickerExecutor executor = null)
+        public DirectorSearchPlan BuildLivePlan(DirectorFlickerExecutor executor = null, DirectorBlackoutExecutor blackoutExecutor = null)
         {
             var failed = new DirectorSearchPlan { stopReason = "Requires Play mode and valid references" };
             if (!Application.isPlaying || !isActiveAndEnabled || prediction == null || desiredTension == null ||
@@ -65,12 +65,12 @@ namespace HauntedHospital.EnvironmentAI
             eligibility.CollectPlanningCandidates(options);
             var actions = new List<DirectorPlanningAction>();
             foreach (var option in options)
-                if (option.eligible && !option.IsRest && (executor == null || executor.Supports(option.definition))) actions.Add(new DirectorPlanningAction
+                if (option.eligible && !option.IsRest && ((executor == null && blackoutExecutor == null) || (executor != null && executor.Supports(option.definition)) || (blackoutExecutor != null && blackoutExecutor.Supports(option.definition)))) actions.Add(new DirectorPlanningAction
                 { definition = option.definition, anchor = option.anchor,
                     anchorId = option.anchor.AnchorId, roomId = option.anchor.Room.RoomId });
             return DirectorGreedyPlanner.Search(source, actions, new List<DirectorEventRecord>(eventMemory.History),
                 desiredTension.DesiredTension, now, false, directorSettings, tensionSettings, scoringSettings,
-                scoreWholeTrajectory: executor != null);
+                scoreWholeTrajectory: executor != null || blackoutExecutor != null);
         }
 
         [ContextMenu("Preview Live Search (Play mode, no effects)")]
