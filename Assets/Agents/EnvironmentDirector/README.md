@@ -839,3 +839,26 @@ Supersedes the earlier local-blackout and three-second flicker descriptions:
 7. Repeat an event and inspect the search score's repetition penalty. It should remember repeats beyond the 100-second blackout cooldown. Consecutive repeats are possible but disadvantaged.
 8. During a light effect, shoot or activate mock Hunter danger: audio stops, lights restore, reservation clears. Death, victory, missing signals, pause or disabling the executor also stop effects.
 9. No gameplay or automated tests were run. Shared event/scoring settings affect other scenes that reference these assets; scene wiring changes are confined to EnvironmentDirector_Test.
+
+## Commit 16 — spatial whispers with four-voice rotation
+
+DirectorWhisperExecutor adds the whisper action to automatic live planning. It plays the selected clip at an existing eligible whisper anchor with spatial falloff, original pitch, and no looping. It uses Wisper_01.mp3, Wisper_02.mp3, wisper_03.mp3 and wisper_04.wav from Assets/Audio/World/Voices.
+
+Each completed whisper consumes one entry from a shuffled four-clip cycle shared across all anchors. All four finish once before a new shuffled cycle begins; the first clip of a new cycle cannot immediately repeat the last clip of the previous cycle. A safety interruption retains the unfinished clip for the next eligible whisper. The cycle resets on a new Play session.
+
+Live prediction and the reservation use the selected clip's complete length plus a 0.15-second scheduling lead. The event asset stores the longest duration as a fallback. Existing defaults remain: 55-second whisper cooldown, 2–8m eligibility range, predicted pressure increase 0.14, plus global spacing and safety restrictions. The planner still chooses between supported events and Rest using tension, repetition and weighted near-best selection; whispers are not forced into an event order.
+
+WhisperAudio is a child of EnvironmentDirector in EnvironmentDirector_Test. It uses 3D audio, 2m minimum / 14m maximum linear falloff and volume 0.7. Crossing rooms does not truncate the clip; sound stays at its anchor and becomes quieter with distance. Shooting, danger, damage recovery, keypad interaction, death, victory, pause, missing signals or disabling the executor cancels it and clears the reservation. No Hunter gameplay-noise event is emitted.
+
+### User testing steps (not run by the assistant)
+1. Open EnvironmentDirector_Test outside Play mode and allow compilation to finish. Select EnvironmentDirector. Confirm Director Whisper Executor has all four Voice Clips, the WhisperAudio source and its four system references. Confirm Decision Loop references Whisper Executor.
+2. Enter Play mode with a living player and valid player signals; keep the Hunter mock available and danger off. Avoid shooting or keypad use.
+3. Walk near an existing whisper anchor (2–8m). Watch the Decision Loop and Whisper Executor Status. The planner may select another event or Rest; selection is not immediate or guaranteed.
+4. To focus on whispers for this session, disable only Flicker Executor, Blackout Executor and Phone Executor components during Play mode. Keep Whisper Executor, the Decision Loop and other Director components enabled.
+5. When whisper starts, Current Voice shows the chosen filename and Current Duration shows its full length plus 0.15 seconds. Listen for complete playback and check Event Memory records whisper completion and clears its active event/reservation.
+6. Allow four events to finish, noting Current Voice. Every clip should occur once. Completed In Cycle runs 1,2,3,0 and Completed Cycles reaches 1. A fifth begins a fresh shuffled cycle. Allow at least the 55-second whisper cooldown after each event, plus any planner delay.
+7. Walk across a room boundary while staying close enough to hear: playback continues at its original anchor. Shoot during a separate event: playback should cancel, and the unfinished clip should be retained for a later safe whisper.
+8. If no whisper occurs, inspect Planner Preview Live Candidates or the Event Eligibility preview. Check distance, compatible/active anchors, observation freshness, safety signals and cooldowns.
+9. Stop Play mode to discard temporary executor toggles. No Play-mode or automated tests were run. MainHospital scene wiring is unchanged; shared whisper event settings also apply wherever that asset is referenced.
+
+Suggested commit: feat(director): add spatial whispers with shuffled four-voice cycles

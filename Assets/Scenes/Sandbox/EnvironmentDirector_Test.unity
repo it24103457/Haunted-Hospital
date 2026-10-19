@@ -26570,6 +26570,7 @@ GameObject:
   - component: {fileID: 593751883}
   - component: {fileID: 593751885}
   - component: {fileID: 593751886}
+  - component: {fileID: 593751887}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26596,6 +26597,7 @@ Transform:
   - {fileID: 107853987}
   - {fileID: 291971503}
   - {fileID: 840204360}
+  - {fileID: 850297611}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &593751868
@@ -27256,6 +27258,7 @@ MonoBehaviour:
   executor: {fileID: 593751883}
   blackoutExecutor: {fileID: 593751885}
   phoneExecutor: {fileID: 593751886}
+  whisperExecutor: {fileID: 593751887}
   decisionInterval: 1
   maximumObservationAge: 0.5
   status: Waiting for Play mode
@@ -27372,6 +27375,35 @@ MonoBehaviour:
   ringVolume: 0.4
   voiceVolume: 0.7
   gapSeconds: 0.2
+  status: Idle
+  running: 0
+  currentVoice: 
+  currentDuration: 0
+  completedInCycle: 0
+  completedCycles: 0
+--- !u!114 &593751887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5a7a6601b26c74b8a7314435332b51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorWhisperExecutor
+  eligibility: {fileID: 593751876}
+  reservations: {fileID: 593751877}
+  memory: {fileID: 593751872}
+  observation: {fileID: 593751871}
+  voiceSource: {fileID: 850297610}
+  voiceClips:
+  - {fileID: 8300000, guid: d266a4d3057f17848a0291bc7f283e05, type: 3}
+  - {fileID: 8300000, guid: eb1af540acc1d7c4686842b610307ce2, type: 3}
+  - {fileID: 8300000, guid: fe77d2b141b38c346a6af5437741836c, type: 3}
+  - {fileID: 8300000, guid: a2d527107ad5a2147b94bfc3b028620a, type: 3}
+  voiceVolume: 0.7
   status: Idle
   running: 0
   currentVoice: 
@@ -38098,6 +38130,135 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8220767262371725302, guid: 15193da7d76b8dc4aac54e06db8f74b9, type: 3}
   m_PrefabInstance: {fileID: 849497640}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &850297609
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 850297611}
+  - component: {fileID: 850297610}
+  m_Layer: 0
+  m_Name: WhisperAudio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!82 &850297610
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 850297609}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 0
+  MinDistance: 2
+  MaxDistance: 14
+  Pan2D: 0
+  rolloffMode: 1
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &850297611
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 850297609}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 593751867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &855096103
 GameObject:
   m_ObjectHideFlags: 0
