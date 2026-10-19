@@ -862,3 +862,26 @@ WhisperAudio is a child of EnvironmentDirector in EnvironmentDirector_Test. It u
 9. Stop Play mode to discard temporary executor toggles. No Play-mode or automated tests were run. MainHospital scene wiring is unchanged; shared whisper event settings also apply wherever that asset is referenced.
 
 Suggested commit: feat(director): add spatial whispers with shuffled four-voice cycles
+
+## Commit 17 — hospital loudspeaker announcements
+
+DirectorAnnouncementExecutor adds hospital_announcement to automatic planning alongside flicker, blackout, phone and whisper. It uses the existing Loudspeaker anchors and their referenced scene speaker positions. AnnouncementAudio is a child of EnvironmentDirector in EnvironmentDirector_Test with spatial audio, 4m minimum / 28m maximum linear falloff, no looping, no Doppler, pitch 1 and playback volume 0.7. It inherits the phone voice source's mixer route when one is assigned.
+
+The four supplied clips are Loud_speaker_01.mp3, Lound_speaker_02.mp3, Loudspeaker_03.wav and Loud_speaker_04.wav in Assets/Audio/World/Voices. Each completed announcement consumes one entry from a shuffled four-clip cycle shared across speakers. Every clip completes once before reshuffling, and a new cycle cannot immediately repeat the previous cycle's last clip. Safety cancellation retains the unfinished clip for a later eligible event. A new Play session resets the cycle.
+
+The selected clip plays fully; live prediction and reservation use its length plus a 0.15-second scheduling lead. The event definition stores the longest clip duration plus that lead for fallback previews. The existing 90-second announcement cooldown, 0–18m target range and 0.12 predicted pressure remain. The planner still evaluates tension, repetition, eligibility and weighted near-best choice; announcements are not forced into an event order. No other Director event executes concurrently.
+
+Moving across a room boundary does not stop a sentence; sound remains at the selected speaker and attenuates with distance. Shooting, immediate Hunter danger, damage recovery, keypad interaction, death, victory, pause, missing/stale signals, loss of the anchor/reservation, or disabling the executor cancels playback. Cancellation stops audio, records the outcome and releases the target. This event does not publish Hunter gameplay-noise signals and does not broadcast through every hospital speaker simultaneously.
+
+### User testing steps (not run by the assistant)
+1. Open EnvironmentDirector_Test outside Play mode and let compilation finish. Select EnvironmentDirector. Check Director Announcement Executor has four Voice Clips, AnnouncementAudio, Eligibility, Reservations, Memory and Observation assigned. Check Decision Loop's Announcement Executor reference.
+2. Enter Play mode with a living player and valid observations. Keep Hunter mock available with danger off; avoid firing or entering the keypad.
+3. Move within 18m of a registered, active loudspeaker. The planner can choose hospital_announcement when safe and appropriate. Inspect its Live Candidates or Event Eligibility preview if it does not start.
+4. To isolate announcements during this Play session, temporarily disable only Flicker Executor, Blackout Executor, Phone Executor and Whisper Executor components. Leave the Director GameObject, planner and Announcement Executor enabled. Rest remains possible.
+5. Watch Current Voice, Current Duration and Status. Listen for the complete clip from the selected speaker. Moving across a room boundary should not stop it; moving farther away should make it quieter.
+6. Let four announcements complete and note the filenames. Each should occur once. Completed In Cycle runs 1,2,3,0 and Completed Cycles becomes 1. The fifth starts a fresh shuffled cycle. Allow at least the 90-second announcement cooldown after completion, plus any planner delay.
+7. During a separate event, shoot or activate mock Hunter danger. Confirm playback stops and the reservation clears. When another safe event becomes available, the interrupted clip should be retried.
+8. Stop Play mode to discard temporary executor toggles. Test mixed events with all five executors enabled. They should not overlap or follow a mandatory fixed order.
+9. No Play-mode or automated tests were run during implementation. MainHospital scene wiring is unchanged; shared announcement settings apply in other scenes referencing the same asset.
+
+Suggested commit: feat(director): add spatial loudspeaker announcements with shuffled voice cycles

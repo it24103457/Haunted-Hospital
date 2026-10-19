@@ -15,6 +15,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorBlackoutExecutor blackoutExecutor;
         [SerializeField] private DirectorPhoneExecutor phoneExecutor;
         [SerializeField] private DirectorWhisperExecutor whisperExecutor;
+        [SerializeField] private DirectorAnnouncementExecutor announcementExecutor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 1f;
         [SerializeField, Min(0.02f)] private float maximumObservationAge = 0.5f;
         [Header("Runtime decisions and execution")]
@@ -40,7 +41,7 @@ namespace HauntedHospital.EnvironmentAI
             if (Time.time < nextDecisionAt) return;
             nextDecisionAt = Time.time + decisionInterval;
             planningAttempts++;
-            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor, whisperExecutor);
+            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor, whisperExecutor, announcementExecutor);
             decisionAvailable = false;
             recommendedAction = "None";
             if (latestPlan == null || !latestPlan.valid || latestPlan.manualOnly || latestPlan.steps.Count == 0)
@@ -59,7 +60,8 @@ namespace HauntedHospital.EnvironmentAI
             if (!decision.IsRest && ((executor != null && executor.Supports(decision.definition) && executor.TryStart(decision)) ||
                 (blackoutExecutor != null && blackoutExecutor.Supports(decision.definition) && blackoutExecutor.TryStart(decision)) ||
                 (phoneExecutor != null && phoneExecutor.Supports(decision.definition) && phoneExecutor.TryStart(decision)) ||
-                (whisperExecutor != null && whisperExecutor.Supports(decision.definition) && whisperExecutor.TryStart(decision))))
+                (whisperExecutor != null && whisperExecutor.Supports(decision.definition) && whisperExecutor.TryStart(decision)) ||
+                (announcementExecutor != null && announcementExecutor.Supports(decision.definition) && announcementExecutor.TryStart(decision))))
             { decisionAvailable = false; status = "Executing " + decision.Label; }
         }
 
@@ -105,3 +107,4 @@ namespace HauntedHospital.EnvironmentAI
         private static bool Finite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
     }
 }
+
