@@ -18,13 +18,13 @@ namespace HauntedHospital.EnvironmentAI
             public DirectorPlanStep step;
             public DirectorPlanningState state;
             public List<DirectorEventRecord> history;
-            public float eventPenalty, anchorPenalty, priority;
+            public float eventPenalty, anchorPenalty, priority, trackingScore;
         }
 
         public static DirectorSearchPlan Search(DirectorPlanningState source,
             IReadOnlyList<DirectorPlanningAction> suppliedActions, IReadOnlyList<DirectorEventRecord> history,
             float desiredTension, float sampledAt, bool manualOnly, DirectorSettings director,
-            DirectorTensionSettings tension, DirectorScoringSettings scoring)
+            DirectorTensionSettings tension, DirectorScoringSettings scoring, bool scoreWholeTrajectory = false)
         {
             var result = new DirectorSearchPlan { manualOnly = manualOnly, sampledAt = sampledAt,
                 desiredTension = desiredTension, stopReason = "Invalid search inputs" };
@@ -91,7 +91,11 @@ namespace HauntedHospital.EnvironmentAI
                         anchorPenalty = current.anchorPenalty + score.anchorRepetitionPenalty };
                     // Retain repetition penalties across Rest: waiting must not erase the
                     // earlier cost of selecting a repetitive scare in this branch.
-                    child.priority = score.targetDifference + score.overshootPenalty + child.eventPenalty + child.anchorPenalty;
+                    child.trackingScore = (scoreWholeTrajectory ? current.trackingScore : 0f) +
+                        score.targetDifference + score.overshootPenalty;
+                    // Live replanning scores intermediate states too, preventing a useful
+                    // scare being pushed to the last step on every one-second replan.
+                    child.priority = child.trackingScore + child.eventPenalty + child.anchorPenalty;
                     if (!Finite(child.priority)) continue;
                     child.step = new DirectorPlanStep { action = action, predictedState = next,
                         localScore = score, branchScore = child.priority };

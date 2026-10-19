@@ -735,3 +735,26 @@ The current branch still leaves recent gunfire, keypad interaction and victory u
 12. Leave Play mode. Runtime changes to simulation toggles are not saved; deliberately configure the test scene outside Play mode if you want different starting values.
 
 No test was run automatically. The manual source belongs in the sandbox until replaced with the real Hunter adapter. Full automatic scare execution is a later milestone.
+
+## Commit 13 — player signals and local flicker execution
+
+New DirectorPlayerSignals subscribes to PlayerWeapon.Fired, reads ObjectiveState readiness/keypad/escape/win/pause, and supplies the observer. The first six seconds after binding conservatively count as gunfire recovery (the configured GunfireRecoverySeconds), because earlier shots cannot be inferred. Missing/disabled weapon or objectives remain Unavailable. Escape-in-progress and pause suppress scares through the ending signal.
+
+DirectorFlickerExecutor is the first supported executor. DecisionLoop filters automatic planning to supported effects; manual previews can still inspect the full catalogue. A live plan with an executor now scores target error/overshoot across all predicted steps, retaining repetition penalties, so repeated planning does not indefinitely defer a beneficial event to its last step. Manual commit-11 calculations retain their previous endpoint scoring.
+
+The executor reserves and revalidates the target, captures enabled Director light intensities, starts a 3D electrical clip, flickers for the event's duration, and restores intensities before recording completion and releasing the target. Essential lights are excluded. No gameplay noise event is emitted by the sound. Turning off the executor, losing required signals, entering keypad interaction, shooting, damage, death, an ending, pause or leaving the room cancels the effect and restores lights. The clip uses the first affected light's position. Fixture materials are not animated in this milestone.
+
+Sound: Assets/Audio/World/Backgorund_Sounds/18_Fluorescent_Starter_Failure.wav, volume 0.35, 3D, 2m minimum / 18m maximum, no loop. Existing event defaults: duration 3 seconds, type cooldown 45 seconds after completion, global gap 12 seconds. There is no guaranteed event count: safety, pressure and availability still govern decisions.
+
+### User checks (not run by the assistant)
+1. Open EnvironmentDirector_Test. Confirm one Objectives object has ObjectiveState; Player Signals references PlayerWeapon and that ObjectiveState.
+2. Select EnvironmentDirector. Verify the Decision Loop has its Flicker Executor reference, and the executor has both light roots, memory, reservations, observation, eligibility, Audio Source and sound clip.
+3. Enter Play mode. Hunter mock should be explicitly enabled, available, danger off, timestamp unfrozen.
+4. With a living healthy player, walk into a room with an enabled Director light group. Stop shooting and close the keypad. After the initial recovery/global interval, watch Decision Loop and Flicker Executor status. A selected flicker should last about 3 seconds with spatial electrical sound, then return to the original intensity.
+5. Check Event Memory records one delivered/completed event, and Target Reservations clears. Expect at least the 45-second flicker cooldown before another flicker; other eligibility conditions can delay it further.
+6. Fire a real shot, open/close the keypad, and toggle mock Hunter danger. Observation should reflect the real player signals and simulated Hunter signal. Flickers should be suppressed or cancelled as appropriate.
+7. During flickering, leave the room or disable Flicker Executor: lights must restore, audio stop and reservation clear. Re-enable afterward.
+8. Verify Essential lights keep their original brightness throughout.
+9. Inspect the Objectives component's debug menu to test Begin Escape/Win if a complete objective run is inconvenient. These states must suppress new scares.
+10. If nothing happens, use Event Eligibility's existing preview menu and inspect rejected reasons. Check current room, observation age, player signal readiness, light availability and cooldowns. Do not force missing signals to safe.
+11. No Play-mode tests or effect previews were run during implementation. MainHospital is not updated by this setup.

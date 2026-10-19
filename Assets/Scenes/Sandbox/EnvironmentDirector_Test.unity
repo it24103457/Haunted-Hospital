@@ -26308,6 +26308,8 @@ GameObject:
   - component: {fileID: 593751880}
   - component: {fileID: 593751882}
   - component: {fileID: 593751881}
+  - component: {fileID: 593751884}
+  - component: {fileID: 593751883}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26330,6 +26332,7 @@ Transform:
   m_Children:
   - {fileID: 1971155455}
   - {fileID: 995207998}
+  - {fileID: 831224137}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &593751868
@@ -26400,6 +26403,7 @@ MonoBehaviour:
   roomTracker: {fileID: 593751869}
   settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
   hunterSource: {fileID: 593751881}
+  playerSignals: {fileID: 593751884}
   maximumHunterSignalAge: 0.5
   observationInterval: 0.1
   referencesValid: 0
@@ -26983,6 +26987,7 @@ MonoBehaviour:
   observation: {fileID: 593751871}
   eligibility: {fileID: 593751876}
   eventMemory: {fileID: 593751872}
+  executor: {fileID: 593751883}
   decisionInterval: 1
   maximumObservationAge: 0.5
   status: Waiting for Play mode
@@ -27010,6 +27015,44 @@ MonoBehaviour:
     finalScore: 0
     steps: []
     expansionTrace: []
+--- !u!114 &593751883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 525532d8e5cfacb4a85f2ebd7d748266, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorFlickerExecutor
+  eligibility: {fileID: 593751876}
+  reservations: {fileID: 593751877}
+  memory: {fileID: 593751872}
+  observation: {fileID: 593751871}
+  directorLightsRoot: {fileID: 777421387}
+  essentialLightsRoot: {fileID: 781570378}
+  sound: {fileID: 831224136}
+  flickerSound: {fileID: 8300000, guid: 3d6c212784a9e614a9599a604cc28672, type: 3}
+  volume: 0.35
+  status: Idle
+  running: 0
+--- !u!114 &593751884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0ceeeb9bdfcce84491599133677c679, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorPlayerSignals
+  weapon: {fileID: 2023644988}
+  objectives: {fileID: 915155110}
+  settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0
@@ -36502,6 +36545,135 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5349333540248936859, guid: c415010622054344baa73e7c0ef7e0bb, type: 3}
   m_PrefabInstance: {fileID: 829919757}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &831224135
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 831224137}
+  - component: {fileID: 831224136}
+  m_Layer: 0
+  m_Name: FlickerAudio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!82 &831224136
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 831224135}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.35
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 0
+  MinDistance: 2
+  MaxDistance: 18
+  Pan2D: 0
+  rolloffMode: 1
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &831224137
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 831224135}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 593751867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &833079336
 GameObject:
   m_ObjectHideFlags: 0
@@ -39406,6 +39578,52 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 473738483}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &915155109
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 915155111}
+  - component: {fileID: 915155110}
+  m_Layer: 0
+  m_Name: Objectives
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &915155110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 915155109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd3c580845ea6d648bd33971b0367ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectiveState
+  totalClues: 4
+  logChanges: 0
+--- !u!4 &915155111
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 915155109}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &921953887
 GameObject:
@@ -88807,6 +89025,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
+--- !u!114 &2023644988 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2493747791160392726, guid: 749ad97935ae40d45b4ace60a850e0ae, type: 3}
+  m_PrefabInstance: {fileID: 2023644987}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1fa99bf458968c4586623a30c705559, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeapon
 --- !u!1 &2023706992
 GameObject:
   m_ObjectHideFlags: 0
@@ -94423,3 +94652,4 @@ SceneRoots:
   - {fileID: 1315418771}
   - {fileID: 1163882920}
   - {fileID: 593751867}
+  - {fileID: 915155111}

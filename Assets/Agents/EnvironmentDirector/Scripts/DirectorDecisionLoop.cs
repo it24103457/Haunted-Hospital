@@ -11,6 +11,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorObservation observation;
         [SerializeField] private DirectorEventEligibility eligibility;
         [SerializeField] private DirectorEventMemory eventMemory;
+        [SerializeField] private DirectorFlickerExecutor executor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 1f;
         [SerializeField, Min(0.02f)] private float maximumObservationAge = 0.5f;
         [Header("Runtime decisions only - no effects executed")]
@@ -36,7 +37,7 @@ namespace HauntedHospital.EnvironmentAI
             if (Time.time < nextDecisionAt) return;
             nextDecisionAt = Time.time + decisionInterval;
             planningAttempts++;
-            latestPlan = planner.BuildLivePlan();
+            latestPlan = planner.BuildLivePlan(executor);
             decisionAvailable = false;
             recommendedAction = "None";
             if (latestPlan == null || !latestPlan.valid || latestPlan.manualOnly || latestPlan.steps.Count == 0)
@@ -51,7 +52,9 @@ namespace HauntedHospital.EnvironmentAI
                 if (!check.eligible) { status = "First action currently blocked: " + check.reason; return; }
             }
             decisionAvailable = true;
-            status = decision.IsRest ? "Rest recommended; inspect eligibility for blocked event reasons" : "Event recommended; execution not implemented";
+            status = decision.IsRest ? "Rest recommended; inspect eligibility for blocked event reasons" : "Event recommended";
+            if (!decision.IsRest && executor != null && executor.TryStart(decision))
+            { decisionAvailable = false; status = "Executing " + decision.Label; }
         }
 
         // Future executors must still reserve and validate immediately before starting an effect.
