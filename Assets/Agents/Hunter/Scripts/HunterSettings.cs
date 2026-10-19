@@ -56,6 +56,12 @@ public sealed class HunterSettings : ScriptableObject
     [Tooltip("How close to a point counts as having arrived.")]
     [SerializeField, Min(0.1f)] private float arrivalRadius = 1f;
 
+    [Tooltip("A new patrol point is at least this many metres (straight line) from where the Hunter stands, so it does not shuffle on the spot.")]
+    [SerializeField, Min(0f)] private float patrolMinLegDistance = 6f;
+
+    [Tooltip("Give up on a patrol point after this long (stuck, or the way is blocked) and pick another.")]
+    [SerializeField, Min(5f)] private float patrolLegTimeoutSeconds = 45f;
+
     [Tooltip("How long the Hunter searches a spot before giving up and returning to Patrol.")]
     [SerializeField, Min(1f)] private float searchSeconds = 10f;
 
@@ -144,6 +150,8 @@ public sealed class HunterSettings : ScriptableObject
 
     public float PatrolWaitSeconds => patrolWaitSeconds;
     public float ArrivalRadius => arrivalRadius;
+    public float PatrolMinLegDistance => patrolMinLegDistance;
+    public float PatrolLegTimeoutSeconds => patrolLegTimeoutSeconds;
     public float SearchSeconds => searchSeconds;
     public float SearchRadius => searchRadius;
 

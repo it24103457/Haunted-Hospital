@@ -30,6 +30,8 @@ MonoBehaviour:
   otherImportance: 0.3
   patrolWaitSeconds: 3
   arrivalRadius: 1
+  patrolMinLegDistance: 6
+  patrolLegTimeoutSeconds: 45
   searchSeconds: 10
   searchRadius: 8
   chaseLoudness: 12
@@ -52,4 +54,4 @@ MonoBehaviour:
   investigateSpeed: 1
   searchSpeed: 0.8
   chaseSpeed: 1.4
-  enableDebugLogging: 0
+  enableDebugLogging: 1
