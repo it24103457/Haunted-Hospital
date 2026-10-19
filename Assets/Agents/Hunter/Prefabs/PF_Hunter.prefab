@@ -65,6 +65,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7951111364613086873, guid: 3c7a91e5d24b48f6a0e15c8b7d2f4601, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7586693674257101541}
+    - targetCorrespondingSourceObject: {fileID: 7951111364613086873, guid: 3c7a91e5d24b48f6a0e15c8b7d2f4601, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3474505245421508225}
+    - targetCorrespondingSourceObject: {fileID: 7951111364613086873, guid: 3c7a91e5d24b48f6a0e15c8b7d2f4601, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9118794244612130211}
   m_SourcePrefab: {fileID: 100100000, guid: 3c7a91e5d24b48f6a0e15c8b7d2f4601, type: 3}
 --- !u!1 &4438504610639599568 stripped
 GameObject:
@@ -107,6 +113,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HunterBrain
   settings: {fileID: 11400000, guid: 49eba9494bc564042a2212d6f3223ab8, type: 2}
   graph: {fileID: 0}
+  player: {fileID: 0}
+  playerCamera: {fileID: 0}
   spawnPointPrefix: HunterSpawn
   spawnOnStart: 1
 --- !u!114 &7586693674257101541
@@ -123,3 +131,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HunterTestMover
   passDistance: 0.5
   turnSpeed: 240
+--- !u!114 &3474505245421508225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4438504610639599568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d6a614c947228b458bb9671a49ba582, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HunterEars
+  graph: {fileID: 0}
+--- !u!114 &9118794244612130211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4438504610639599568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bef675fcfc845a34fb263f8ed314288e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HunterDebugView
+  showMemory: 1
