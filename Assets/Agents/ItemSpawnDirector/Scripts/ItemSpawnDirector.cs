@@ -18,12 +18,12 @@ using UnityEngine;
  *         Stolen Respawn Delay, a player pickup waits Respawn Delay.
  *  PickupInteractable.AnyReleased (Thief shot, item dropped): the spot is NOT freed - the dropped
  *         item still occupies it and counts toward its type's cap, so nothing duplicates.
- *  Every replacement respects the dynamic cap: cap(type) = Lerp(min, max, need), where need is how
- *         far the player is from full health / sanity / reserve ammo - read fresh at respawn time,
- *         never latched. Existing items are never despawned when a cap shrinks; caps only gate
- *         future spawns. A respawn also keeps the reachability floor: while fewer than cap-1 of the
- *         type's alive items sit on reachable (not barricaded-intact) markers, replacements go only
- *         onto reachable markers.
+ *  Every replacement respects the dynamic cap: a binary plateau - veryLowCount while the matching
+ *         stat is below its veryLowThreshold (default 30% of its max), normalCount at or above it
+ *         (default 1 and 2). The cap is read fresh at respawn time, never latched. Existing items
+ *         are never despawned when a cap shrinks; caps only gate future spawns. A respawn also
+ *         keeps the reachability floor: while fewer than max(1, cap-1) of the type's alive items sit
+ *         on reachable (not barricaded-intact) markers, replacements go only onto reachable markers.
  *
  * It only uses PickupInteractable's and PlayerStats' public APIs, so it can replace ThiefTestSpawner
  * without any Thief changes. Drop it on an empty GameObject in your own scene copy.
@@ -39,14 +39,18 @@ public class ItemSpawnDirector : MonoBehaviour
         public int sanity = 1;
     }
 
-    // Per-type dynamic cap range (min at full stat, max at empty stat).
+    // Per-type binary cap: two plateaus with one threshold between them. While the matching stat
+    // sits below the very-low threshold the count drops to veryLowCount ("scarce when desperate");
+    // at or above the threshold it stays at normalCount. Exactly the threshold counts as normal.
     [System.Serializable]
     private class SupplyCap
     {
-        [Tooltip("How many of this type may exist even when the player is at full.")]
-        public int min = 1;
-        [Tooltip("How many of this type may exist when the player needs it most.")]
-        public int max = 3;
+        [Tooltip("How many of this type may exist while the player's stat is below the very-low threshold.")]
+        public int veryLowCount = 1;
+        [Tooltip("How many of this type may exist once the stat is at/above the very-low threshold.")]
+        public int normalCount = 2;
+        [Tooltip("Fraction of the stat's max below which the count drops to the very-low count (0-1).")]
+        [Range(0f, 1f)] public float veryLowThreshold = 0.3f;
     }
 
     [Header("Items")]
@@ -82,11 +86,11 @@ public class ItemSpawnDirector : MonoBehaviour
     [SerializeField] private float stolenRespawnDelay = 20f;
 
     [Header("Dynamic caps (replacements only)")]
-    [Tooltip("Cap replacements by how much the player needs each stat. Off = always the per-type max. The initial layout is never capped.")]
+    [Tooltip("Cap replacements by how much the player needs each stat: the very-low count while the stat is below its threshold, the normal count otherwise. Off = always the normal count. The initial layout is never capped.")]
     [SerializeField] private bool useDynamicCaps = true;
-    [SerializeField] private SupplyCap healthCap = new SupplyCap { min = 1, max = 3 };
-    [SerializeField] private SupplyCap ammoCap = new SupplyCap { min = 1, max = 3 };
-    [SerializeField] private SupplyCap sanityCap = new SupplyCap { min = 1, max = 3 };
+    [SerializeField] private SupplyCap healthCap = new SupplyCap();
+    [SerializeField] private SupplyCap ammoCap = new SupplyCap();
+    [SerializeField] private SupplyCap sanityCap = new SupplyCap();
 
     [Header("Player")]
     [Tooltip("Used for the distance rule and the stat need. Found automatically when empty.")]
@@ -309,11 +313,11 @@ public class ItemSpawnDirector : MonoBehaviour
         {
             List<PickupType> eligible = new List<PickupType>();
             foreach (PickupType t in supplyTypes)
-                if (AliveCount(t) < RangeFor(t).max) eligible.Add(t);
+                if (AliveCount(t) < RangeFor(t).normalCount) eligible.Add(t);
 
             if (eligible.Count == 0)
             {
-                Log($"initial fill stopped at {placed}: every type already at its max.");
+                Log($"initial fill stopped at {placed}: every type is at its normal count.");
                 break;
             }
 
@@ -468,26 +472,27 @@ public class ItemSpawnDirector : MonoBehaviour
     {
         SupplyCap range = RangeFor(type);
         if (range == null) return 0;
-        if (!useDynamicCaps || player == null) return range.max;
+        if (!useDynamicCaps || player == null) return range.normalCount;
 
-        float need;
+        float frac;
         switch (type)
         {
             case PickupType.Health:
-                need = 1f - player.Health / Mathf.Max(1f, player.MaxHealth);
+                frac = player.Health / Mathf.Max(1f, player.MaxHealth);
                 break;
             case PickupType.Ammo:
-                need = 1f - player.ReserveAmmo / Mathf.Max(1f, player.MaxReserveAmmo);
+                frac = player.ReserveAmmo / Mathf.Max(1f, player.MaxReserveAmmo);
                 break;
             case PickupType.Sanity:
-                need = 1f - player.Sanity / Mathf.Max(1f, player.MaxSanity);
+                frac = player.Sanity / Mathf.Max(1f, player.MaxSanity);
                 break;
             default:
-                return range.max;
+                return range.normalCount;
         }
 
-        int cap = Mathf.RoundToInt(Mathf.Lerp(range.min, range.max, Mathf.Clamp01(need)));
-        return Mathf.Clamp(cap, range.min, range.max);
+        // Binary plateau: scarce (veryLowCount) only while the stat is below the threshold;
+        // normal (normalCount) at or above it. Exactly the threshold counts as NOT very low.
+        return frac < range.veryLowThreshold ? range.veryLowCount : range.normalCount;
     }
 
     private SupplyCap RangeFor(PickupType type)
@@ -514,13 +519,15 @@ public class ItemSpawnDirector : MonoBehaviour
 
     // Helpers
 
-    // The replacement's marker pool for this type. The reachability floor keeps at least cap-1 of
-    // the type's alive items on reachable markers; while that floor is broken, only reachable
-    // markers qualify. The cap is read now, at fire time - it is never latched from an earlier
-    // moment. With the floor met (or impossible to meet), every free marker is legal.
+    // The replacement's marker pool for this type. The reachability floor is max(1, cap-1): at
+    // least cap-1 of the type's alive items must sit on reachable markers, and never fewer than
+    // one - so at cap 1 the single slot is forced onto a reachable marker. While that floor is
+    // broken, only reachable markers qualify. The cap is read now, at fire time - it is never
+    // latched from an earlier moment. With the floor met (or impossible to meet), every free
+    // marker is legal.
     private List<Transform> ChooseRespawnPool(PickupType type)
     {
-        int floor = Mathf.Max(0, ComputeCap(type) - 1);
+        int floor = Mathf.Max(1, ComputeCap(type) - 1);
         int reachableAlive = AliveOnReachable(type);
         if (reachableAlive >= floor) return FreeMarkers(markers);
 
@@ -616,9 +623,9 @@ public class ItemSpawnDirector : MonoBehaviour
 
     private void OnValidate()
     {
-        ClampRange(healthCap);
-        ClampRange(ammoCap);
-        ClampRange(sanityCap);
+        ClampCap(healthCap);
+        ClampCap(ammoCap);
+        ClampCap(sanityCap);
         barricadedCounts.health = Mathf.Max(0, barricadedCounts.health);
         barricadedCounts.ammo = Mathf.Max(0, barricadedCounts.ammo);
         barricadedCounts.sanity = Mathf.Max(0, barricadedCounts.sanity);
@@ -627,11 +634,12 @@ public class ItemSpawnDirector : MonoBehaviour
         ordinaryCounts.sanity = Mathf.Max(0, ordinaryCounts.sanity);
     }
 
-    private static void ClampRange(SupplyCap range)
+    private static void ClampCap(SupplyCap cap)
     {
-        if (range == null) return;
-        range.max = Mathf.Max(0, range.max);
-        range.min = Mathf.Clamp(range.min, 0, range.max);
+        if (cap == null) return;
+        cap.normalCount = Mathf.Max(0, cap.normalCount);
+        cap.veryLowCount = Mathf.Clamp(cap.veryLowCount, 0, cap.normalCount);
+        cap.veryLowThreshold = Mathf.Clamp01(cap.veryLowThreshold);
     }
 
     // Right-click the component header in the Inspector during play mode.

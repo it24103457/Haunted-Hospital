@@ -12,7 +12,8 @@ using UnityEngine;
  * which is exactly the sequence the player's E pickup and the Thief use, so no Thief is required.
  *
  * Delays and the minimum distance are matched to the director's settings; adjust them if you tune
- * the director. RunAllTests runs everything in a sensible order (about 1.5 minutes).
+ * the director. Caps are the binary plateaus (1 while a stat is very low, 2 otherwise).
+ * RunAllTests runs everything in a sensible order (a few minutes).
  */
 public class ItemSpawnDirectorTestHarness : MonoBehaviour
 {
@@ -66,8 +67,8 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     [ContextMenu("Test: Desperation Floor")]
     public void Test_DesperationFloor() => Run(Test_DesperationFloorRoutine(), "DesperationFloor");
 
-    [ContextMenu("Test: Cap One Allows Barricade")]
-    public void Test_CapOneAllowsBarricade() => Run(Test_CapOneAllowsBarricadeRoutine(), "CapOneAllowsBarricade");
+    [ContextMenu("Test: Cap One Forces Reachable")]
+    public void Test_CapOneForcesReachable() => Run(Test_CapOneForcesReachableRoutine(), "CapOneForcesReachable");
 
     [ContextMenu("Test: Cleared Room Becomes Reachable")]
     public void Test_ClearedRoomBecomesReachable() => Run(Test_ClearedRoomBecomesReachableRoutine(), "ClearedRoomBecomesReachable");
@@ -86,7 +87,7 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         yield return Test_PlayerCollectRespawnRoutine();
         yield return Test_StolenRespawnRoutine();
         yield return Test_DesperationFloorRoutine();
-        yield return Test_CapOneAllowsBarricadeRoutine();
+        yield return Test_CapOneForcesReachableRoutine();
         yield return Test_ClearedRoomBecomesReachableRoutine();
         yield return Test_DistanceWindowRoutine();
     }
@@ -181,26 +182,52 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     }
 
     // A player pickup (TryClaim + Remove) frees the spot and brings a replacement after ~10s.
-    // The player is pushed to low stats first so every cap sits at its maximum and the respawn
-    // is guaranteed; the original stats are restored afterwards. Arrival is tracked on the total
-    // supply, because a replacement may be any type that is under its cap.
+    // Premise under the binary caps: stats sit above the very-low threshold (every cap = the
+    // normal count, 2) and the collected type is first settled at its cap, so the timed
+    // collection drops it below the cap and exactly one replacement is allowed through. The
+    // original stats are restored afterwards.
     private IEnumerator Test_PlayerCollectRespawnRoutine()
     {
         if (!Guard()) yield break;
         PlayerStats player = FindPlayer();
         if (!Require(player != null, "a PlayerStats exists")) yield break;
 
-        PickupInteractable item = FindAnyItem();
-        if (!Require(item != null, "an item exists to collect")) yield break;
+        PickupInteractable seed = FindAnyItem();
+        if (!Require(seed != null, "an item exists to collect")) yield break;
+        PickupType type = seed.Type;
 
-        PickupType type = item.Type;
+        PlayerSnapshot snapshot = SnapshotPlayer(player);
+        SetAllFracsNormal(player);
+
+        // Settle the type at its cap first: collect everything, let every queued replacement fire
+        // in one burst, then take the timed collection. We only need the seed type to land in the
+        // usable range 1..cap (over cap would block a respawn; 0 would leave nothing to collect).
+        int cap = director.CurrentCap(type);
+        CollectAll(type, false);
+        yield return new WaitForSeconds(expectedPlayerDelay + 2f);
+        int settled = director.AliveCount(type);
+        if (!Require(settled >= 1 && settled <= cap,
+            $"{type} settled at its cap ({settled} of cap {cap}) with an item left to collect"))
+        {
+            RestorePlayer(player, snapshot);
+            yield break;
+        }
+
         int before = director.AliveCount(type);
         int totalBefore = TotalAlive();
-        PlayerSnapshot snapshot = SnapshotPlayer(player);
-        PushPlayerToLowStats(player);
+        PickupInteractable item = FindItemOfType(type);
+        if (!Require(item != null, $"a {type} item exists to collect"))
+        {
+            RestorePlayer(player, snapshot);
+            yield break;
+        }
         float t0 = Time.time;
 
-        if (!Require(SimulatePlayerCollect(item), "the item accepted the player collection")) yield break;
+        if (!Require(SimulatePlayerCollect(item), "the item accepted the player collection"))
+        {
+            RestorePlayer(player, snapshot);
+            yield break;
+        }
         Check(director.AliveCount(type) == before - 1,
             $"{type} count dropped to {director.AliveCount(type)} immediately after collection");
 
@@ -216,24 +243,50 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     }
 
     // A stolen delivery (TryClaim + MarkStolen + Remove) brings the replacement much later (~20s).
-    // Stats are pushed low first for the same reason as above.
+    // Same premise as the player test: normal plateaus and the type settled at its cap first
+    // (via player collections, which settle at the 10s delay), then the timed steal.
     private IEnumerator Test_StolenRespawnRoutine()
     {
         if (!Guard()) yield break;
         PlayerStats player = FindPlayer();
         if (!Require(player != null, "a PlayerStats exists")) yield break;
 
-        PickupInteractable item = FindAnyItem();
-        if (!Require(item != null, "an item exists to be stolen")) yield break;
+        PickupInteractable seed = FindAnyItem();
+        if (!Require(seed != null, "an item exists to be stolen")) yield break;
+        PickupType type = seed.Type;
 
-        PickupType type = item.Type;
+        PlayerSnapshot snapshot = SnapshotPlayer(player);
+        SetAllFracsNormal(player);
+
+        // Same usable range as the player test: settle the seed type into 1..cap so the timed
+        // steal drops it below the cap and a replacement is guaranteed. Player collections settle
+        // at the 10s delay, so one wait covers the whole burst.
+        int cap = director.CurrentCap(type);
+        CollectAll(type, false);
+        yield return new WaitForSeconds(expectedPlayerDelay + 2f);
+        int settled = director.AliveCount(type);
+        if (!Require(settled >= 1 && settled <= cap,
+            $"{type} settled at its cap ({settled} of cap {cap}) with an item left to steal"))
+        {
+            RestorePlayer(player, snapshot);
+            yield break;
+        }
+
         int before = director.AliveCount(type);
         int totalBefore = TotalAlive();
-        PlayerSnapshot snapshot = SnapshotPlayer(player);
-        PushPlayerToLowStats(player);
+        PickupInteractable item = FindItemOfType(type);
+        if (!Require(item != null, $"a {type} item exists to be stolen"))
+        {
+            RestorePlayer(player, snapshot);
+            yield break;
+        }
         float t0 = Time.time;
 
-        if (!Require(SimulateStolenCollect(item), "the item accepted the steal")) yield break;
+        if (!Require(SimulateStolenCollect(item), "the item accepted the steal"))
+        {
+            RestorePlayer(player, snapshot);
+            yield break;
+        }
         Check(director.AliveCount(type) == before - 1,
             $"{type} count dropped to {director.AliveCount(type)} immediately after the steal");
 
@@ -250,8 +303,8 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
             $"stolen respawn ({elapsed:0.0}s) is clearly longer than the player delay ({expectedPlayerDelay}s)");
     }
 
-    // With the player healed to full (so the cap sits at its minimum), draining a type and
-    // collecting everything lets only cap-many replacements through - never the full count back.
+    // With the player healed to full the cap sits at its normal count (2); collecting everything
+    // then lets exactly cap-many replacements through - never the full count back.
     private IEnumerator Test_CapEnforcementRoutine()
     {
         if (!Guard()) yield break;
@@ -260,6 +313,7 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
 
         player.Heal(player.MaxHealth);
         int capAtFull = director.CurrentCap(PickupType.Health);
+        Check(capAtFull == 2, $"at full health the health cap is the normal count ({capAtFull})");
 
         var collected = new List<PickupInteractable>();
         foreach (PickupInteractable p in AllItems())
@@ -281,29 +335,69 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
             $"health supply settled exactly on the cap: {director.AliveCount(PickupType.Health)} alive, cap {capAtFull}");
         if (capAtFull >= collected.Count)
             Log("TEST INFO: the cap equals the collected count, so this run cannot exceed it anyway - " +
-                "lower healthCap.min to make the check bite harder");
+                "lower the very-low count to make the check bite harder");
     }
 
-    // CurrentCap follows the player's health: minimum at full health, higher when badly hurt.
+    // The cap is a binary plateau: the normal count while the stat is at/above the very-low
+    // threshold (30% by default), the very-low count below it - read fresh for every stat type.
+    // Exactly 30% counts as NOT very low (cap 2).
     private IEnumerator Test_DynamicCapsRoutine()
     {
         if (!Guard()) yield break;
         PlayerStats player = FindPlayer();
         if (!Require(player != null, "a PlayerStats exists")) yield break;
 
-        float originalHealth = player.Health;
+        PlayerSnapshot snapshot = SnapshotPlayer(player);
 
-        player.Heal(player.MaxHealth);
-        int capFull = director.CurrentCap(PickupType.Health);
+        // Health: full and just above the threshold -> normal count; just below -> very-low count.
+        SetStatFrac(player, PickupType.Health, 1f);
+        Check(director.CurrentCap(PickupType.Health) == 2,
+            $"health cap is the normal count at full health ({director.CurrentCap(PickupType.Health)})");
 
-        player.TakeDamage(new DamageInfo(player.MaxHealth * 0.9f, gameObject, player.transform.position));
-        int capHurt = director.CurrentCap(PickupType.Health);
+        SetStatFrac(player, PickupType.Health, 0.31f);
+        Check(director.CurrentCap(PickupType.Health) == 2,
+            $"health cap is the normal count at 31% health ({director.CurrentCap(PickupType.Health)})");
 
-        Check(capHurt >= capFull,
-            $"health cap tracks need: {capFull} at full health, {capHurt} at 10% health");
+        SetStatFrac(player, PickupType.Health, 0.29f);
+        Check(director.CurrentCap(PickupType.Health) == 1,
+            $"health cap is the very-low count at 29% health ({director.CurrentCap(PickupType.Health)})");
 
-        // Put the health back so later tests see the original state.
-        if (player.Health < originalHealth) player.Heal(originalHealth - player.Health);
+        SetStatFrac(player, PickupType.Health, 0.10f);
+        Check(director.CurrentCap(PickupType.Health) == 1,
+            $"health cap is the very-low count at 10% health ({director.CurrentCap(PickupType.Health)})");
+
+        // Sanity: same plateaus.
+        SetStatFrac(player, PickupType.Sanity, 1f);
+        Check(director.CurrentCap(PickupType.Sanity) == 2,
+            $"sanity cap is the normal count at full sanity ({director.CurrentCap(PickupType.Sanity)})");
+
+        SetStatFrac(player, PickupType.Sanity, 0.25f);
+        Check(director.CurrentCap(PickupType.Sanity) == 1,
+            $"sanity cap is the very-low count at 25% sanity ({director.CurrentCap(PickupType.Sanity)})");
+
+        // Ammo: plateaus plus the exact threshold - 30% of the reserve is integer-exact here,
+        // so equality can be checked without float luck (guarded, in case a scene's max differs).
+        SetStatFrac(player, PickupType.Ammo, 1f);
+        Check(director.CurrentCap(PickupType.Ammo) == 2,
+            $"ammo cap is the normal count at a full reserve ({director.CurrentCap(PickupType.Ammo)})");
+
+        SetStatFrac(player, PickupType.Ammo, 0.30f);
+        float atThreshold = player.ReserveAmmo / Mathf.Max(1f, player.MaxReserveAmmo);
+        if (Mathf.Abs(atThreshold - 0.3f) < 1e-4f)
+            Check(director.CurrentCap(PickupType.Ammo) == 2,
+                $"exactly 30% reserve counts as NOT very low (cap {director.CurrentCap(PickupType.Ammo)}, {player.ReserveAmmo}/{player.MaxReserveAmmo})");
+        else
+            Log($"TEST INFO: reserve granularity misses 30% exactly ({player.ReserveAmmo}/{player.MaxReserveAmmo} = {atThreshold:0.0000}) - threshold equality check skipped");
+
+        SetStatFrac(player, PickupType.Ammo, 0.25f);
+        Check(director.CurrentCap(PickupType.Ammo) == 1,
+            $"ammo cap is the very-low count at 25% reserve ({director.CurrentCap(PickupType.Ammo)})");
+
+        SetStatFrac(player, PickupType.Ammo, 0f);
+        Check(director.CurrentCap(PickupType.Ammo) == 1,
+            $"ammo cap is the very-low count at an empty reserve ({director.CurrentCap(PickupType.Ammo)})");
+
+        RestorePlayer(player, snapshot);
     }
 
     // A stolen item that is dropped (TryClaim + MarkStolen + Release) keeps its spot and never
@@ -335,8 +429,9 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     }
 
     // After a collection, the replacement spawns at least expectedMinDistance away from the player,
-    // even when the player stands right on a marker. Stats are pushed low first so the respawn is
-    // guaranteed (at full stats the caps can correctly block it).
+    // even when the player stands right on a marker. The whole type is collected (alive 0 sits
+    // under any cap, so a replacement is guaranteed no matter where the stat plateaus are), the
+    // player is parked first, and the first new item in the world is checked.
     private IEnumerator Test_DistanceWindowRoutine()
     {
         if (!Guard()) yield break;
@@ -348,13 +443,14 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
             if (p != null) items.Add(p);
         if (!Require(items.Count > 0, "there is an item to collect")) yield break;
 
+        PickupInteractable seed = FindAnyItem();
+        if (!Require(seed != null, "a director-owned item exists to collect")) yield break;
+        PickupType type = seed.Type;
+
         // Park the player on some marker, so nearby spots are obviously too close.
         Transform[] markers = FindMarkers();
         if (!Require(markers.Length > 0, "there are markers in the scene")) yield break;
         Transform target = markers[UnityEngine.Random.Range(0, markers.Length)];
-
-        PlayerSnapshot snapshot = SnapshotPlayer(player);
-        PushPlayerToLowStats(player);
 
         Vector3 originalPosition = player.transform.position;
         CharacterController controller = player.GetComponentInChildren<CharacterController>();
@@ -362,20 +458,15 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         player.transform.position = target.position;
         if (controller != null) controller.enabled = true;
 
-        PickupInteractable collected = FindAnyItem();
-        int totalBefore = TotalAlive();
-        SimulatePlayerCollect(collected);
+        CollectAll(type, false);
 
         bool arrived = false;
-        yield return WaitUntil(() => TotalAlive() >= totalBefore, expectedPlayerDelay + 5f, v => arrived = v);
+        yield return WaitUntil(() => AnyNewItem(items) != null, expectedPlayerDelay + 5f, v => arrived = v);
         Check(arrived, $"a replacement appeared while the player was parked on a marker");
 
         if (arrived)
         {
-            PickupInteractable replacement = null;
-            foreach (PickupInteractable p in AllItems())
-                if (p != null && !items.Contains(p)) { replacement = p; break; }
-
+            PickupInteractable replacement = AnyNewItem(items);
             if (Require(replacement != null, "the replacement was found in the world"))
             {
                 float distance = Vector3.Distance(replacement.transform.position, player.transform.position);
@@ -388,12 +479,13 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         if (controller != null) controller.enabled = false;
         player.transform.position = originalPosition;
         if (controller != null) controller.enabled = true;
-        RestorePlayer(player, snapshot);
     }
 
-    // The reachability floor at work: ammo drained (cap opens to 3), every ammo box collected,
-    // then drained again so the queued replacements all fire under the open cap. At least
-    // cap-1 of the restored supply must sit on markers that are not behind an intact barricade.
+    // The cap plateaus and the reachability floor together, in both directions. Normal plateau:
+    // stats at/above the threshold -> cap 2 -> up to two replacements of the collected type, at
+    // least one of them on a reachable marker (floor = max(1, cap-1) = 1). Very-low plateau: stat
+    // below the threshold -> cap 1 ("scarce when desperate") -> exactly one replacement, also on
+    // a reachable marker.
     private IEnumerator Test_DesperationFloorRoutine()
     {
         if (!Guard()) yield break;
@@ -402,61 +494,109 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
 
         PlayerSnapshot before = SnapshotPlayer(player);
 
-        player.TryUseAmmo(player.ReserveAmmo);
-        int cap = director.CurrentCap(PickupType.Ammo);
-        Check(cap >= 2, $"ammo cap opens up when the reserve is empty (cap {cap})");
+        // Normalize first so nothing is under cap diverting the replacements we are about to
+        // queue; then pick the type with the most items alive as the subject.
+        yield return NormalizeSupply(player);
 
-        int ammoBefore = director.AliveCount(PickupType.Ammo);
-        foreach (PickupInteractable p in AllItems())
-            if (p != null && p.Type == PickupType.Ammo && !p.IsCollected) SimulatePlayerCollect(p);
-        Check(director.AliveCount(PickupType.Ammo) == 0, "every ammo box is collected");
+        PickupType type = PickupType.Health;
+        int aliveNow = -1;
+        foreach (PickupType t in new[] { PickupType.Health, PickupType.Ammo, PickupType.Sanity })
+        {
+            if (director.AliveCount(t) > aliveNow) { aliveNow = director.AliveCount(t); type = t; }
+        }
+        if (!Require(aliveNow >= 1, "at least one item is alive to collect"))
+        {
+            RestorePlayer(player, before);
+            yield break;
+        }
 
-        player.TryUseAmmo(player.ReserveAmmo); // keep the cap open while replacements fire
+        // Plateau 1 - normal: cap 2, floor 1.
+        int capNormal = director.CurrentCap(type);
+        Check(capNormal == 2, $"normal plateau: cap is the normal count ({capNormal})");
+
+        int initial = director.AliveCount(type);
+        int expectNormal = Mathf.Min(initial, capNormal);
+        CollectAll(type, false);
 
         bool arrived = false;
-        yield return WaitUntil(() => director.AliveCount(PickupType.Ammo) >= ammoBefore, 25f, v => arrived = v);
-        Check(arrived, $"ammo supply restored to {ammoBefore} (found {director.AliveCount(PickupType.Ammo)})");
+        yield return WaitUntil(() => director.AliveCount(type) >= expectNormal,
+            expectedPlayerDelay + 5f, v => arrived = v);
+        Check(arrived, $"supply restored under the normal cap ({director.AliveCount(type)} of {expectNormal} expected)");
 
         if (arrived)
         {
-            int floor = Mathf.Min(Mathf.Max(0, director.CurrentCap(PickupType.Ammo) - 1), ammoBefore);
-            int reachable = 0;
-            foreach (PickupInteractable p in AllItems())
-            {
-                if (p == null || p.Type != PickupType.Ammo || !director.IsReserved(p)) continue;
-                Transform m = NearestMarker(p.transform.position);
-                if (m != null && director.IsReachableMarker(m.name)) reachable++;
-            }
-            Check(reachable >= floor,
-                $"ammo on reachable markers: {reachable} of {ammoBefore} (floor {floor} at cap {director.CurrentCap(PickupType.Ammo)})");
+            Check(director.AliveCount(type) == expectNormal,
+                $"supply settled exactly on the normal cap: {director.AliveCount(type)} alive, expected {expectNormal}");
+            Check(CountReachable(type) >= 1,
+                $"{type} on reachable markers: {CountReachable(type)} of {director.AliveCount(type)} " +
+                $"(floor {Mathf.Max(1, director.CurrentCap(type) - 1)} at cap {director.CurrentCap(type)})");
+        }
+
+        // Plateau 2 - very low: cap 1, floor 1. Exactly one box comes back, and it must be reachable.
+        SetStatFrac(player, type, 0.05f);
+        int capLow = director.CurrentCap(type);
+        Check(capLow == 1, $"very-low plateau: cap drops to the very-low count ({capLow})");
+
+        CollectAll(type, false);
+        arrived = false;
+        yield return WaitUntil(() => director.AliveCount(type) >= 1, expectedPlayerDelay + 5f, v => arrived = v);
+        Check(arrived, "one replacement came back under the very-low cap");
+        if (arrived)
+        {
+            Check(director.AliveCount(type) == 1,
+                $"supply settled on the very-low cap: {director.AliveCount(type)} alive, cap {director.CurrentCap(type)}");
+            Check(CountReachable(type) >= 1,
+                $"the single {type} sits on a reachable marker " +
+                $"(floor {Mathf.Max(1, director.CurrentCap(type) - 1)} at cap {director.CurrentCap(type)})");
         }
 
         RestorePlayer(player, before);
     }
 
-    // Over-tightening guard for the floor: at full stats the cap is 1 and the floor is 0, so a
-    // replacement may legitimately land behind an intact barricade - the suite only requires
-    // that the single slot is restored, wherever it lands.
-    private IEnumerator Test_CapOneAllowsBarricadeRoutine()
+    // Premise inversion for the binary caps: cap 1 now means the stat is BELOW the threshold
+    // (drive it low - scarce when desperate), and the floor at cap 1 is max(1, cap-1) = 1 - so
+    // the single restored slot must land on a reachable marker (the old "any marker is legal"
+    // behaviour is gone). The repeat cycles guard against over-tightening: the slot always comes
+    // back, exactly once, never blocked and never duplicated.
+    private IEnumerator Test_CapOneForcesReachableRoutine()
     {
         if (!Guard()) yield break;
         PlayerStats player = FindPlayer();
         if (!Require(player != null, "a PlayerStats exists")) yield break;
 
         PlayerSnapshot before = SnapshotPlayer(player);
-        player.AddAmmo(player.MaxReserveAmmo); // true full stats, so the cap really sits at its minimum
-        Check(director.CurrentCap(PickupType.Ammo) == 1,
-            $"ammo cap sits at its minimum at full stats (cap {director.CurrentCap(PickupType.Ammo)})");
+
+        // Normalize so nothing is under cap diverting replacements; then pick the type with the
+        // most items alive and push that type's stat below the threshold.
+        yield return NormalizeSupply(player);
+
+        PickupType type = PickupType.Health;
+        int aliveNow = -1;
+        foreach (PickupType t in new[] { PickupType.Health, PickupType.Ammo, PickupType.Sanity })
+        {
+            if (director.AliveCount(t) > aliveNow) { aliveNow = director.AliveCount(t); type = t; }
+        }
+        if (!Require(aliveNow >= 1, "an item exists for the cap-one cycles")) yield break;
+
+        SetStatFrac(player, type, 0.05f);
+        Check(director.CurrentCap(type) == 1,
+            $"{type} cap sits at the very-low count with the stat at 5% ({director.CurrentCap(type)})");
 
         for (int cycle = 1; cycle <= 3; cycle++)
         {
-            foreach (PickupInteractable p in AllItems())
-                if (p != null && p.Type == PickupType.Ammo && !p.IsCollected) SimulatePlayerCollect(p);
-            Check(director.AliveCount(PickupType.Ammo) == 0, $"cycle {cycle}: every ammo box is collected");
+            CollectAll(type, false);
+            Check(director.AliveCount(type) == 0, $"cycle {cycle}: every {type} item is collected");
 
             bool arrived = false;
-            yield return WaitUntil(() => director.AliveCount(PickupType.Ammo) >= 1, 15f, v => arrived = v);
-            Check(arrived, $"cycle {cycle}: the single slot was restored under cap 1 (floor 0 - any marker is legal)");
+            yield return WaitUntil(() => director.AliveCount(type) >= 1, 15f, v => arrived = v);
+            Check(arrived, $"cycle {cycle}: the single slot was restored under cap 1");
+            if (arrived)
+            {
+                Check(director.AliveCount(type) == 1,
+                    $"cycle {cycle}: exactly one {type} alive, never more (cap 1)");
+                Check(CountReachable(type) >= 1,
+                    $"cycle {cycle}: the single {type} sits on a reachable marker (floor 1 forces reachable-only)");
+            }
         }
 
         RestorePlayer(player, before);
@@ -556,8 +696,7 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
 
     // Simulates exactly what the real systems do, in PickupInteractable's own order.
 
-    // Drives the player to near-empty stats so every dynamic cap sits at its maximum and a
-    // replacement is always allowed; the original values can be restored afterwards.
+    // The player's stats as they were, so a test can put them back afterwards.
     private struct PlayerSnapshot
     {
         public float Health;
@@ -568,18 +707,15 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
     private static PlayerSnapshot SnapshotPlayer(PlayerStats p)
         => new PlayerSnapshot { Health = p.Health, Sanity = p.Sanity, Ammo = p.ReserveAmmo };
 
-    private void PushPlayerToLowStats(PlayerStats p)
+    // Puts the stats back exactly - up when the test drained them, down when it raised them.
+    private void RestorePlayer(PlayerStats p, PlayerSnapshot s)
     {
-        if (p.Health > 1f) p.TakeDamage(new DamageInfo(p.Health - 1f, gameObject, p.transform.position));
-        if (p.Sanity > 0f) p.DrainSanity(p.Sanity);
-        if (p.ReserveAmmo > 0) p.TryUseAmmo(p.ReserveAmmo);
-    }
-
-    private static void RestorePlayer(PlayerStats p, PlayerSnapshot s)
-    {
-        if (p.Health < s.Health) p.Heal(s.Health - p.Health);
-        if (p.Sanity < s.Sanity) p.AddSanity(s.Sanity - p.Sanity);
-        if (p.ReserveAmmo < s.Ammo) p.AddAmmo(s.Ammo - p.ReserveAmmo);
+        if (p.Health > s.Health) p.TakeDamage(new DamageInfo(p.Health - s.Health, gameObject, p.transform.position));
+        else if (p.Health < s.Health) p.Heal(s.Health - p.Health);
+        if (p.Sanity > s.Sanity) p.DrainSanity(p.Sanity - s.Sanity);
+        else if (p.Sanity < s.Sanity) p.AddSanity(s.Sanity - p.Sanity);
+        if (p.ReserveAmmo > s.Ammo) p.TryUseAmmo(p.ReserveAmmo - s.Ammo);
+        else if (p.ReserveAmmo < s.Ammo) p.AddAmmo(s.Ammo - p.ReserveAmmo);
     }
 
     private static bool SimulatePlayerCollect(PickupInteractable item)
@@ -621,6 +757,96 @@ public class ItemSpawnDirectorTestHarness : MonoBehaviour
         foreach (PickupInteractable p in AllItems())
             if (p != null && !p.IsCollected && director != null && director.IsReserved(p)) return p;
         return null;
+    }
+
+    // The first live, reserved item of that type.
+    private PickupInteractable FindItemOfType(PickupType type)
+    {
+        foreach (PickupInteractable p in AllItems())
+            if (p != null && !p.IsCollected && director != null && director.IsReserved(p) && p.Type == type) return p;
+        return null;
+    }
+
+    // Collects every live item of the type through the public pickup API; returns how many.
+    private int CollectAll(PickupType type, bool stolen)
+    {
+        int taken = 0;
+        foreach (PickupInteractable p in AllItems())
+        {
+            if (p == null || p.IsCollected || p.Type != type || director == null || !director.IsReserved(p)) continue;
+            if (stolen ? SimulateStolenCollect(p) : SimulatePlayerCollect(p)) taken++;
+        }
+        return taken;
+    }
+
+    // How many alive, reserved items of the type sit on reachable (not sealed) markers.
+    private int CountReachable(PickupType type)
+    {
+        int reachable = 0;
+        foreach (PickupInteractable p in AllItems())
+        {
+            if (p == null || p.Type != type || director == null || !director.IsReserved(p)) continue;
+            Transform m = NearestMarker(p.transform.position);
+            if (m != null && director.IsReachableMarker(m.name)) reachable++;
+        }
+        return reachable;
+    }
+
+    // The first item that was not in the given snapshot - a director replacement.
+    private static PickupInteractable AnyNewItem(HashSet<PickupInteractable> known)
+    {
+        foreach (PickupInteractable p in AllItems())
+            if (p != null && !known.Contains(p)) return p;
+        return null;
+    }
+
+    // Makes the world deterministic before a test that asserts exact counts: put stats on the
+    // normal plateau, collect everything, and let one full burst of replacements fire. Every
+    // type that had enough collected items tops back up to its cap, so nothing is left under
+    // cap diverting the next test's replacements.
+    private IEnumerator NormalizeSupply(PlayerStats player)
+    {
+        SetAllFracsNormal(player);
+        foreach (PickupType t in new[] { PickupType.Health, PickupType.Ammo, PickupType.Sanity })
+            CollectAll(t, false);
+        yield return new WaitForSeconds(expectedPlayerDelay + 2f);
+    }
+
+    // Drives one stat to a fraction of its maximum (up or down), so a cap plateau is exact.
+    private void SetStatFrac(PlayerStats p, PickupType type, float frac)
+    {
+        switch (type)
+        {
+            case PickupType.Health:
+            {
+                float target = p.MaxHealth * frac;
+                if (p.Health > target) p.TakeDamage(new DamageInfo(p.Health - target, gameObject, p.transform.position));
+                else if (p.Health < target) p.Heal(target - p.Health);
+                break;
+            }
+            case PickupType.Sanity:
+            {
+                float target = p.MaxSanity * frac;
+                if (p.Sanity > target) p.DrainSanity(p.Sanity - target);
+                else if (p.Sanity < target) p.AddSanity(target - p.Sanity);
+                break;
+            }
+            case PickupType.Ammo:
+            {
+                int target = Mathf.RoundToInt(p.MaxReserveAmmo * frac);
+                if (p.ReserveAmmo > target) p.TryUseAmmo(p.ReserveAmmo - target);
+                else if (p.ReserveAmmo < target) p.AddAmmo(target - p.ReserveAmmo);
+                break;
+            }
+        }
+    }
+
+    // Every stat comfortably above the very-low threshold: all caps sit at the normal count (2).
+    private void SetAllFracsNormal(PlayerStats p)
+    {
+        SetStatFrac(p, PickupType.Health, 0.6f);
+        SetStatFrac(p, PickupType.Sanity, 0.6f);
+        SetStatFrac(p, PickupType.Ammo, 0.6f);
     }
 
     private static Transform NewSyntheticMarker(string name)
