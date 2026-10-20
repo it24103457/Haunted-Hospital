@@ -44,6 +44,9 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     // The tuning numbers, shared with HunterEars so they are only assigned once.
     public HunterSettings Settings => settings;
 
+    /// <summary>Walks routes (doors included). Used by Patrol now, and by Investigate and Chase later.</summary>
+    public HunterNavigator Navigator => navigator;
+
     public float Health { get; private set; }
     public float MaxHealth => settings != null ? settings.MaxHealth : 0f;
 
@@ -77,9 +80,9 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private readonly List<WaypointNode> candidates = new List<WaypointNode>();
     private readonly List<Transform> spawnMarkers = new List<Transform>();
     private readonly List<Transform> allowedMarkers = new List<Transform>();
-    private NavMeshPath scratchPath;
     private NavMeshAgent agent;
     private NavMeshQueryFilter navFilter;
+    private HunterNavigator navigator;
 
     // The body: what gets switched off on death and back on at respawn.
     private Renderer[] renderers;
@@ -104,7 +107,6 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
-        scratchPath = new NavMeshPath();
 
         // Path checks use the Hunter's own agent type, the one the hospital NavMesh is baked for.
         navFilter = new NavMeshQueryFilter { areaMask = NavMesh.AllAreas };
@@ -137,6 +139,8 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         else
             IsReady = true;
 
+        if (IsReady) navigator = new HunterNavigator(settings, graph, transform, gameObject, SetPath);
+
         // Without the player the Hunter still works; it just cannot keep respawns away from them.
         if (IsReady && player == null)
             Debug.LogWarning("[Hunter] No PlayerStats found, so respawns cannot avoid the player.", this);
@@ -150,6 +154,8 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private void Update()
     {
         if (!IsReady) return;
+
+        if (IsActive) navigator.Tick();
 
         switch (State)
         {
@@ -187,6 +193,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         Health = settings.MaxHealth;
         MoveTo(position);
 
+        navigator.Stop();
         hasPatrolDestination = false;
         patrolWaitUntil = 0f;
         reportedNoPatrolPoint = false;
@@ -289,26 +296,33 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
             return;
         }
 
-        Vector3 offset = patrolDestination - transform.position;
-        offset.y = 0f;
+        switch (navigator.Status)
+        {
+            case HunterNavStatus.Arrived:
+                // Arrived: stand still for a moment, then choose the next point.
+                hasPatrolDestination = false;
+                patrolWaitUntil = Time.time + settings.PatrolWaitSeconds;
+                break;
 
-        if (offset.magnitude <= settings.ArrivalRadius)
-        {
-            // Arrived: stand still for a moment, then choose the next point.
-            hasPatrolDestination = false;
-            SetPath(null);
-            patrolWaitUntil = Time.time + settings.PatrolWaitSeconds;
-        }
-        else if (Time.time - patrolLegStart > settings.PatrolLegTimeoutSeconds)
-        {
-            // Stuck, or the way is blocked: give up on this point.
-            hasPatrolDestination = false;
-            SetPath(null);
-            patrolWaitUntil = Time.time;
+            case HunterNavStatus.Failed:
+            case HunterNavStatus.Idle:
+                // The way is blocked (a door that will not open, say): choose another point.
+                hasPatrolDestination = false;
+                patrolWaitUntil = Time.time;
+                break;
+
+            default:
+                if (Time.time - patrolLegStart > settings.PatrolLegTimeoutSeconds)
+                {
+                    navigator.Stop();
+                    hasPatrolDestination = false;
+                    patrolWaitUntil = Time.time;
+                }
+                break;
         }
     }
 
-    // Picks a random Normal node that is far enough away and reachable on the NavMesh.
+    // Picks a random Normal node that is far enough away and that the navigator can find a full route to.
     private void PickPatrolDestination()
     {
         candidates.Clear();
@@ -323,13 +337,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
             if (offset.magnitude >= minDistance) candidates.Add(node);
         }
 
-        // Start from the nearest NavMesh point, so a root that sits slightly off the mesh does not fail every check.
-        Vector3 from = transform.position;
-        bool startOnMesh = NavMesh.SamplePosition(from, out NavMeshHit startHit, 2f, navFilter);
-        if (startOnMesh) from = startHit.position;
-
         int totalCandidates = candidates.Count;
-        int noPath = 0, partial = 0;
 
         // Try a handful of random candidates, which is cheaper than checking all of them.
         for (int attempt = 0; attempt < 12 && candidates.Count > 0; attempt++)
@@ -338,23 +346,19 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
             WaypointNode node = candidates[i];
             candidates.RemoveAt(i);
 
-            if (!NavMesh.CalculatePath(from, node.Position, navFilter, scratchPath)) { noPath++; continue; }
-            if (scratchPath.status != NavMeshPathStatus.PathComplete) { partial++; continue; }
+            // Patrol only goes where it can really get to, so no partial routes.
+            if (!navigator.GoTo(node.Position, false)) continue;
 
-            patrolDestination = node.Position;
             hasPatrolDestination = true;
             patrolLegStart = Time.time;
-            SetPath(new[] { patrolDestination });
             return;
         }
 
-        // Nothing reachable right now (doors shut, no far node). Try again in a moment, and say so only once.
+        // Nothing reachable right now (doors locked, no far node). Try again in a moment, and say so only once.
         if (!reportedNoPatrolPoint && settings.EnableDebugLogging)
         {
-            Debug.Log($"[Hunter] No reachable patrol point found; will keep trying. " +
-                      $"Agent on NavMesh: {(agent != null && agent.isOnNavMesh)}, start snapped to NavMesh: {startOnMesh}, " +
-                      $"far Normal nodes: {totalCandidates}, no path: {noPath}, blocked/partial path: {partial}, " +
-                      $"agent type: {navFilter.agentTypeID}, position: {transform.position}.", this);
+            Debug.Log($"[Hunter] No reachable patrol point found; will keep trying. Far Normal nodes: {totalCandidates}, " +
+                      $"position: {transform.position}.", this);
             reportedNoPatrolPoint = true;
         }
         patrolWaitUntil = Time.time + 1f;
@@ -379,6 +383,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     {
         hasPatrolDestination = false;
         LookTarget = null;
+        navigator.Stop();
         SetPath(null);          // while the agent is still on, so the mover stops it cleanly
         SetState(HunterState.Dead);
 
