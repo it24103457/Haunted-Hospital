@@ -7178,7 +7178,7 @@ MonoBehaviour:
   anchorId: operating_room1_apparition
   targetType: 4
   room: {fileID: 1982063169}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -9736,6 +9736,135 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 193995239}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &194523543
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 194523545}
+  - component: {fileID: 194523544}
+  m_Layer: 0
+  m_Name: KnockAudio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!82 &194523544
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194523543}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 0
+  MinDistance: 2
+  MaxDistance: 16
+  Pan2D: 0
+  rolloffMode: 1
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &194523545
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194523543}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 593751867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &197424087
 GameObject:
   m_ObjectHideFlags: 0
@@ -14636,7 +14765,7 @@ MonoBehaviour:
   anchorId: icutreatment_apparition
   targetType: 4
   room: {fileID: 1401266457}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -18657,7 +18786,7 @@ MonoBehaviour:
   anchorId: west_cross_corridor_apparition
   targetType: 4
   room: {fileID: 1079402014}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -22296,7 +22425,7 @@ MonoBehaviour:
   anchorId: main_corridor_apparition
   targetType: 4
   room: {fileID: 1075120826}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -22577,7 +22706,7 @@ MonoBehaviour:
   anchorId: main_corridor_office_apparition
   targetType: 4
   room: {fileID: 1874273240}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -24245,7 +24374,7 @@ MonoBehaviour:
   anchorId: diagnostics_tests_apparition
   targetType: 4
   room: {fileID: 675527886}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -26572,6 +26701,8 @@ GameObject:
   - component: {fileID: 593751886}
   - component: {fileID: 593751887}
   - component: {fileID: 593751888}
+  - component: {fileID: 593751889}
+  - component: {fileID: 593751890}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -26600,6 +26731,7 @@ Transform:
   - {fileID: 840204360}
   - {fileID: 850297611}
   - {fileID: 1535860359}
+  - {fileID: 194523545}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &593751868
@@ -26728,6 +26860,10 @@ MonoBehaviour:
     effectDelivered: 0
     debugRecord: 0
   history: []
+  phoneClipsCompleted: 0
+  whisperClipsCompleted: 0
+  announcementClipsCompleted: 0
+  completedVoiceCycles: 0
 --- !u!114 &593751873
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27262,6 +27398,8 @@ MonoBehaviour:
   phoneExecutor: {fileID: 593751886}
   whisperExecutor: {fileID: 593751887}
   announcementExecutor: {fileID: 593751888}
+  knockExecutor: {fileID: 593751889}
+  apparitionExecutor: {fileID: 593751890}
   decisionInterval: 1
   maximumObservationAge: 0.5
   status: Waiting for Play mode
@@ -27442,6 +27580,61 @@ MonoBehaviour:
   currentDuration: 0
   completedInCycle: 0
   completedCycles: 0
+--- !u!114 &593751889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3301f354637fc0a42a6957d0229eb7d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorKnockExecutor
+  eligibility: {fileID: 593751876}
+  reservations: {fileID: 593751877}
+  memory: {fileID: 593751872}
+  observation: {fileID: 593751871}
+  knockSource: {fileID: 194523544}
+  knockClips:
+  - {fileID: 8300000, guid: 2fb969dd6f60e224eb8bc341b1081d55, type: 3}
+  knockVolume: 0.7
+  status: Idle
+  running: 0
+  currentClip: 
+  currentDuration: 0
+  completedInCycle: 0
+  completedCycles: 0
+--- !u!114 &593751890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc05a2b0e2955b348b14ab9420ee68f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorApparitionExecutor
+  eligibility: {fileID: 593751876}
+  reservations: {fileID: 593751877}
+  memory: {fileID: 593751872}
+  observation: {fileID: 593751871}
+  registry: {fileID: 593751870}
+  directorLightsRoot: {fileID: 777421387}
+  essentialLightsRoot: {fileID: 781570378}
+  apparitionPrefab: {fileID: 900768257839125500, guid: 742e37250fc42954ca11099e7638e3f9, type: 3}
+  idleClip: {fileID: 7400000, guid: a39a06641c4469f4596e197c420676a3, type: 2}
+  joltClip: {fileID: 7400000, guid: c9784888cc05be744813c5542e9a5411, type: 2}
+  poseClip: {fileID: 7400000, guid: 70710d3065af6ba458133759360f3771, type: 2}
+  revealIntensity: 0.7
+  status: Idle
+  running: 0
+  currentAnimation: 
+  targetRoom: 
+  affectedLights: 0
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0
@@ -53070,7 +53263,7 @@ MonoBehaviour:
   anchorId: main_corridor_upper_apparition
   targetType: 4
   room: {fileID: 565158560}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:
@@ -67576,7 +67769,7 @@ MonoBehaviour:
   anchorId: general_ward_apparition
   targetType: 4
   room: {fileID: 1850134937}
-  availableForSelection: 0
+  availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
   directorLights:

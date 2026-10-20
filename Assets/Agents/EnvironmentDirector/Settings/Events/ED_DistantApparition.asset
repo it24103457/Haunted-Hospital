@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventDefinition
   eventId: distant_apparition
   eventType: 7
-  availableForSelection: 0
-  duration: 2
+  availableForSelection: 1
+  duration: 11.04
   cooldown: 120
   intensity: 2
   predictedTensionIncrease: 0.25

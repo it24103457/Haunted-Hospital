@@ -885,3 +885,49 @@ Moving across a room boundary does not stop a sentence; sound remains at the sel
 9. No Play-mode or automated tests were run during implementation. MainHospital scene wiring is unchanged; shared announcement settings apply in other scenes referencing the same asset.
 
 Suggested commit: feat(director): add spatial loudspeaker announcements with shuffled voice cycles
+
+## Commit 18 - Spatial knocking event
+
+`DirectorKnockExecutor` plays `Assets/Audio/World/Sounds_Scary/Knoking_door.wav` from an eligible existing Knock anchor. The decision loop and planner include this executor and use the full clip duration plus a 0.15-second scheduling lead. Existing knock settings retain the 45-second cooldown, 2-10 metre selection distance and 0.1 predicted pressure increase. Repetition scoring still applies; a knock is not forced into a fixed event order.
+
+The executor supports one or more distinct clips. With one clip, later knock events reuse it. If more clips are assigned before Play mode, it shuffles them and completes each once per cycle, avoiding an immediate boundary repeat when possible. Cancelled sequences remain available to retry.
+
+Scene setup: DirectorKnockExecutor on EnvironmentDirector, KnockAudio child (3D linear falloff, minimum 2 m, maximum 16 m), shared eligibility/reservations/memory/observation references and decision-loop reference. A room change alone does not stop audio. Existing safety signals, pause, lost reservation or disabled components cancel playback and release the event. This is an audio effect: it does not animate doors or emit gameplay noise to the Hunter.
+
+Manual testing (not run by the assistant):
+1. Open EnvironmentDirector_Test and enter Play mode. Select EnvironmentDirector and confirm the Knock Executor has KnockAudio, the clip and its shared references assigned.
+2. Walk within 2-10 metres of a Knock anchor in a room with eligible targets. Let the planner choose an event. Check the executor status for Scheduled/Playing and then Completed; the complete recording should play once.
+3. Turn and walk away while it plays: sound remains at its selected anchor and fades with distance. Crossing a room boundary alone should not stop it.
+4. To isolate this event temporarily, disable the Flicker, Blackout, Phone, Whisper and Announcement executor components during Play mode. Leave the decision loop, observation, eligibility and Knock executor enabled, and keep the manual Hunter source safe. The planner can still choose Rest and must obey cooldowns.
+5. For blocked events inspect eligibility reasons, player safety signals, distance and cooldown. Confirm another Director event does not overlap. Pause or trigger an unsafe player state and confirm playback stops and the reservation releases.
+6. Stop Play mode to restore the temporary executor toggles. No tests or Play-mode runs were performed during implementation.
+
+## Commit 19 - Animated apparition with a room-local blackout
+
+DirectorApparitionExecutor uses PF_Apparition_Woman at an eligible visible apparition anchor (existing 6-18 m range and 120-second cooldown). It captures the Director lights assigned to that anchor's room through the registry's authored light groups. Essential lights are excluded. After a 0.4-second fade and 0.25-second dark pause, it reveals the woman facing the player's position, keeping her existing prefab scale and import-axis rotation. A small temporary blue-tinted, shadowless spotlight reveals the figure while the room's Director lights remain dark.
+
+Every completed appearance plays UnsettlingIdle (6 seconds), BodyJolt (1.4 seconds), and PulsePose (2 seconds), with short blends. The existing prefab voice plays once alongside the sequence. DirectorApparitionVoice now supports playing the voice without independently triggering Jolt; its existing preview command still triggers Jolt. Duration is calculated from the longer of the complete voice and the complete animation sequence, plus blackout and recovery timing (currently 11.04 seconds). Safety interruptions can stop a sequence early.
+
+The figure remains stationary, and spawned colliders/obstacles are disabled. When the sequence finishes it disappears and the captured light intensities restore over 0.75 seconds. Cancellation immediately restores lights, stops voice, removes the runtime figure and releases the event reservation. Walking into another room alone does not cancel the event. It uses the existing safety signals, including the mock Hunter source until live Hunter integration is available. The separate hospital-wide blackout retains its own executor.
+
+Changed files: DirectorApparitionExecutor.cs (new), DirectorApparitionVoice.cs, DirectorDecisionLoop.cs, DirectorPlannerPreview.cs, DirectorEventEligibility.cs (visibility check exposed for reveal-time revalidation), ED_DistantApparition.asset and EnvironmentDirector_Test.unity. No persistent Editor scripts were added. MainHospital and the source apparition prefab are unchanged.
+
+Manual testing for the user (no tests or Play-mode runs performed by the assistant):
+1. Open EnvironmentDirector_Test. Select EnvironmentDirector and confirm Director Apparition Executor has the woman prefab, three clips, shared references and both light roots assigned.
+2. Enter Play mode. Keep the mock Hunter safe and look towards an apparition anchor from 6-18 metres away. If necessary temporarily disable the six other effect executors in Play mode, keeping the decision loop and observations enabled. The planner can still choose Rest and obeys cooldowns.
+3. Inspect the executor's Status, Target Room, Affected Lights and Current Animation. On selection only that target room's Director lights should fade; Essential lights and unrelated rooms' lights should remain as they were.
+4. Confirm the woman appears facing your starting position at an appropriate scale, stays in place, and visibly passes through UnsettlingIdle, BodyJolt and PulsePose. Listen for her full existing voice. Check her feet, wall clearance and visibility at the authored anchor; these visual placements still need your Play-mode review.
+5. Confirm she disappears and the original light brightness returns after about 11 seconds. The runtime Director_Apparition object and its reveal light should be removed.
+6. During another appearance, pause, shoot, take damage or activate a dangerous Hunter mock state. Confirm prompt cancellation, voice stop, figure removal and restored lights. Resume safe play and confirm the Director can select later events after its cooldowns.
+7. Stop Play mode to discard temporary executor toggles. Do not save disabled executors from an isolation test.
+
+## Shared voice-content cycle and apparition availability correction
+
+Phone calls, whispers and hospital announcements now share a completion cycle in DirectorEventMemory. Completed, delivered phone events count toward 3 distinct phone lines, whispers toward 4 and announcements toward 4. Their existing shuffled clip bags ensure each line plays once. After a category reaches its quota, eligibility excludes it from live execution and planning, and BeginEvent also refuses it. Once all three quotas are complete, all counters reset together for the next cycle. Cancelled, failed and debug events do not advance the cycle; diagnostic-history trimming cannot erase the counters. Counts reset when starting a new Play session. Knocks, flickers, blackouts and apparitions are unaffected by this restriction. A category that cannot currently be reached waits until the player visits an eligible location; finishing the other categories does not bypass it. Existing safety checks, cooldowns and heuristic scoring still select among the available events.
+
+The apparition definition and executor were enabled, but all eight authored apparition anchors still had Available For Selection disabled. This made every apparition candidate ineligible regardless of score. Enabled all eight in EnvironmentDirector_Test, confirming that each has a room and matching Director light-group references, and that the apparition executor is connected with its required references. Visibility, distance, safety and cooldown requirements remain in effect. No gameplay tests were run.
+
+Manual verification:
+- Start a fresh Play session. Inspect Event Memory > Shared voice cycle. Finish three phone events: Phone Clips Completed should reach 3 and further phone candidates should report voice clips exhausted. Interrupted clips should not advance the count.
+- Complete all four whispers and all four announcements in any interleaving. The final completion should increment Completed Voice Cycles and reset all three counters together; phone/whisper/announcement become selectable again subject to cooldowns. Knocks and visual events remain selectable throughout.
+- Inspect any apparition anchor (for example EA_main_corridor_apparition): Available For Selection should now be enabled. From 6-18 metres away, face its location and use the existing live eligibility preview if needed. A candidate can now become eligible rather than always saying anchor unavailable. The planner may still choose another event or Rest.
