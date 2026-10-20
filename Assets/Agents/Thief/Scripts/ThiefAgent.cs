@@ -716,14 +716,24 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     /*
      * Runs every frame during a trip. On reaching the end of a segment it either finishes the trip,
-     * opens and waits at a door, or carries on past a barricade. After the door wait it resumes the trip.
+     * opens and waits at a door, or carries on past a barricade. After the door wait it resumes the trip;
+     * a door closed during the wait is opened again, or ends the trip as blocked if it is now locked.
      * A door that has already finished swinging open is walked straight through without stopping.
      */
     private void TickTrip()
     {
         if (State == ThiefState.WaitAtDoor)
         {
-            if (!DoorReady(checkpoint.Door)) return;
+            // A door shut again during the wait (by the player) is opened again and the wait starts over.
+            Door door = checkpoint.Door;
+            if (door != null && !door.IsOpen)
+            {
+                if (door.IsLocked) TripBlocked = true;
+                else BeginOpening(door);
+                return;
+            }
+
+            if (!DoorReady(door)) return;
 
             SetState(tripState);
             PublishNextSegment();
@@ -993,11 +1003,14 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         SetState(ThiefState.WaitAtDoor);
     }
 
-    // True once the door is passable and the wait has passed. The only place that decides when to walk on.
+    /*
+     * True once the wait has passed and the door has finished swinging open. The only place that decides when to walk on.
+     * A door being swung shut still counts as open until it is fully closed, so it is never walked into while closing.
+     */
     private bool DoorReady(Door door)
     {
         if (door == null) return true;
-        return door.IsOpen && Time.time >= doorReadyTime;
+        return door.IsFullyOpen && Time.time >= doorReadyTime;
     }
 
     // True when the Thief stands within arriveDistance of the last point of its published path.
