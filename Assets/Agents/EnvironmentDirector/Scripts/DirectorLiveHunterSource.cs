@@ -6,6 +6,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorLiveHunterSource : DirectorHunterSignalSource
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindHunter(MonoBehaviour target) { hunter = target; }
+
         [Tooltip("Same-scene component implementing IHunterStatus, normally HunterBrain.")]
         [SerializeField] private MonoBehaviour hunter;
         [SerializeField] private string status = "Waiting for Hunter";

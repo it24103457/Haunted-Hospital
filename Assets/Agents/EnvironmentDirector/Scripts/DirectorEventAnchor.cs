@@ -10,6 +10,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorEventAnchor : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindTargets(Transform source, Light[] lights) { sourceObject = source; directorLights = lights; }
+
         [SerializeField] private string anchorId;
         [SerializeField] private DirectorTargetType targetType;
         [SerializeField] private DirectorRoomZone room;

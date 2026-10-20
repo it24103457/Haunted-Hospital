@@ -30,6 +30,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorEventMemory : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindPlayer(PlayerStats target) { playerStats = target; }
+
         [Header("Configuration")]
         [SerializeField]
         private DirectorSettings directorSettings;

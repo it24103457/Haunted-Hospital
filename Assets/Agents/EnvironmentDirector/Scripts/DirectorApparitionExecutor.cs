@@ -8,6 +8,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorApparitionExecutor : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindLighting(Transform director, Transform essential) { directorLightsRoot = director; essentialLightsRoot = essential; }
+
         [SerializeField] private DirectorEventEligibility eligibility;
         [SerializeField] private DirectorTargetReservations reservations;
         [SerializeField] private DirectorEventMemory memory;
