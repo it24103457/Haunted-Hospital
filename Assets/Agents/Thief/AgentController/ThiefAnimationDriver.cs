@@ -39,17 +39,32 @@ public class ThiefAnimationDriver : MonoBehaviour
         { ThiefState.Dead, "Death" },
     };
 
+    [Header("Vanish Polish")]
+    [Tooltip("Seconds into Delivering before the ghost dissolve begins (stashPause is 3s, so ~2.2s gives 0.8s of smooth vanish).")]
+    [SerializeField] private float vanishFadeDelay = 2.2f;
+
+    [Tooltip("Duration of the smooth sink/fade out before vanishing.")]
+    [SerializeField] private float vanishFadeDuration = 0.8f;
+
     private ThiefAgent thief;
     private NavMeshAgent agent;
     private Coroutine hideRoutine;
     private Coroutine grabHold;
+    private Coroutine vanishRoutine;
     private float grabTime = float.NegativeInfinity;
+    private Vector3 modelBaseLocalPos;
+    private Vector3 modelBaseLocalScale = Vector3.one;
 
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
         agent = GetComponent<NavMeshAgent>();
         if (animator == null && model != null) animator = model.GetComponentInChildren<Animator>();
+        if (model != null)
+        {
+            modelBaseLocalPos = model.localPosition;
+            modelBaseLocalScale = model.localScale;
+        }
     }
 
     private void OnEnable()
@@ -62,6 +77,8 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         thief.OnStateChanged -= HandleStateChanged;
         thief.OnSpawned -= HandleSpawned;
+        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
+        ResetModelTransform();
     }
 
     private void Update()
@@ -88,9 +105,11 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
+        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
 
         if (state == ThiefState.Dead)
         {
+            ResetModelTransform();
             if (model != null) model.gameObject.SetActive(true);
             if (animator != null)
             {
@@ -102,6 +121,12 @@ public class ThiefAnimationDriver : MonoBehaviour
         }
 
         if (state == ThiefState.Inactive || state == ThiefState.Vanished || animator == null) return;
+
+        if (state == ThiefState.Delivering)
+        {
+            ResetModelTransform();
+            vanishRoutine = StartCoroutine(SmoothVanishAfterDelivery());
+        }
 
         if (StateClips.TryGetValue(state, out string clip))
         {
@@ -123,10 +148,42 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
+        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
+        ResetModelTransform();
         grabTime = float.NegativeInfinity;
         if (animator == null) return;
         animator.speed = 1f;
         animator.CrossFadeInFixedTime("Locomotion", Fade);
+    }
+
+    private IEnumerator SmoothVanishAfterDelivery()
+    {
+        if (vanishFadeDelay > 0f)
+            yield return new WaitForSeconds(vanishFadeDelay);
+
+        if (model == null) yield break;
+
+        float elapsed = 0f;
+        while (elapsed < vanishFadeDuration)
+        {
+            if (model == null || thief.State != ThiefState.Delivering) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / vanishFadeDuration);
+            model.localPosition = Vector3.Lerp(modelBaseLocalPos, modelBaseLocalPos - Vector3.up * 0.9f, t);
+            model.localScale = Vector3.Lerp(modelBaseLocalScale, new Vector3(modelBaseLocalScale.x * 0.1f, modelBaseLocalScale.y * 0.01f, modelBaseLocalScale.z * 0.1f), t);
+            yield return null;
+        }
+
+        vanishRoutine = null;
+    }
+
+    private void ResetModelTransform()
+    {
+        if (model != null)
+        {
+            model.localPosition = modelBaseLocalPos;
+            model.localScale = modelBaseLocalScale;
+        }
     }
 
     private IEnumerator ResumeLocomotionAfterGrab(float wait)

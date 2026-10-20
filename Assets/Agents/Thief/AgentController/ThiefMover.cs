@@ -24,12 +24,16 @@ public class ThiefMover : MonoBehaviour
     [Tooltip("Speed to rotate towards the item upon arrival.")]
     [SerializeField] private float faceItemTurnSpeed = 12f;
 
+    [Tooltip("Speed to turn towards the stash container upon arrival.")]
+    [SerializeField] private float faceStashTurnSpeed = 10f;
+
     private ThiefAgent thief;
     private NavMeshAgent agent;
     private float baseSpeed;
     private readonly List<Vector3> path = new List<Vector3>();
     private int index;
     private Coroutine grabPauseRoutine;
+    private Coroutine deliverTurnRoutine;
     private bool isPausedForGrab;
 
     private void Awake()
@@ -48,6 +52,7 @@ public class ThiefMover : MonoBehaviour
         {
             thief.OnPathChanged += FollowPath;
             thief.OnItemStolen += HandleItemStolen;
+            thief.OnStateChanged += HandleStateChanged;
             thief.OnDied += HandleCancelGrab;
             thief.OnVanished += HandleCancelGrab;
         }
@@ -59,10 +64,21 @@ public class ThiefMover : MonoBehaviour
         {
             thief.OnPathChanged -= FollowPath;
             thief.OnItemStolen -= HandleItemStolen;
+            thief.OnStateChanged -= HandleStateChanged;
             thief.OnDied -= HandleCancelGrab;
             thief.OnVanished -= HandleCancelGrab;
         }
         HandleCancelGrab();
+        if (deliverTurnRoutine != null) { StopCoroutine(deliverTurnRoutine); deliverTurnRoutine = null; }
+    }
+
+    private void HandleStateChanged(ThiefState state)
+    {
+        if (state == ThiefState.Delivering)
+        {
+            if (deliverTurnRoutine != null) StopCoroutine(deliverTurnRoutine);
+            deliverTurnRoutine = StartCoroutine(FaceStashDelivery());
+        }
     }
 
     private void HandleItemStolen(PickupInteractable item)
@@ -78,8 +94,78 @@ public class ThiefMover : MonoBehaviour
             StopCoroutine(grabPauseRoutine);
             grabPauseRoutine = null;
         }
+        if (deliverTurnRoutine != null)
+        {
+            StopCoroutine(deliverTurnRoutine);
+            deliverTurnRoutine = null;
+        }
         isPausedForGrab = false;
         if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
+    }
+
+    private IEnumerator FaceStashDelivery()
+    {
+        if (agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        Transform stashTarget = FindNearestStashObject();
+        if (stashTarget != null)
+        {
+            Vector3 dir = stashTarget.position - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+                float elapsed = 0f;
+                while (elapsed < 0.4f)
+                {
+                    elapsed += Time.deltaTime;
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * faceStashTurnSpeed);
+                    yield return null;
+                }
+            }
+        }
+        deliverTurnRoutine = null;
+    }
+
+    private Transform FindNearestStashObject()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, 3.5f);
+        Transform closest = null;
+        float minDist = float.MaxValue;
+        foreach (var col in colliders)
+        {
+            string n = col.name.ToLower();
+            if (n.Contains("stash") || n.Contains("bag") || n.Contains("basket") || n.Contains("droppoint"))
+            {
+                float d = Vector3.Distance(transform.position, col.transform.position);
+                if (d < minDist)
+                {
+                    minDist = d;
+                    closest = col.transform;
+                }
+            }
+        }
+        if (closest != null) return closest;
+
+        Transform[] all = FindObjectsByType<Transform>(FindObjectsInactive.Exclude);
+        foreach (var t in all)
+        {
+            string n = t.name.ToLower();
+            if (n.Contains("stash") || n.Contains("bag") || n.Contains("basket") || n.Contains("droppoint"))
+            {
+                float d = Vector3.Distance(transform.position, t.position);
+                if (d < 3.5f && d < minDist)
+                {
+                    minDist = d;
+                    closest = t;
+                }
+            }
+        }
+        return closest;
     }
 
     private IEnumerator HoldForGrab(PickupInteractable item)
