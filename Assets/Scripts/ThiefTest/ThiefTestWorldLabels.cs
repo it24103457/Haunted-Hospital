@@ -34,11 +34,13 @@ public class ThiefTestWorldLabels : MonoBehaviour
     private float nextItemRefresh;
     private GUIStyle style;
 
+    // The camera these labels are drawn through.
     private void Awake()
     {
         view = GetComponent<Camera>();
     }
 
+    // Tracks dropped items through the pickup events, because an item doesn't remember that it was dropped.
     private void OnEnable()
     {
         PickupInteractable.AnyReleased += MarkDropped;
@@ -46,6 +48,7 @@ public class ThiefTestWorldLabels : MonoBehaviour
         PickupInteractable.AnyCollected += ClearDropped;
     }
 
+    // Stops tracking, so a disabled overlay is never called by the pickup events.
     private void OnDisable()
     {
         PickupInteractable.AnyReleased -= MarkDropped;
@@ -53,6 +56,7 @@ public class ThiefTestWorldLabels : MonoBehaviour
         PickupInteractable.AnyCollected -= ClearDropped;
     }
 
+    // A dropped item keeps its Dropped label until it is stolen or collected again.
     private void MarkDropped(PickupInteractable item) => dropped.Add(item);
     private void ClearDropped(PickupInteractable item) => dropped.Remove(item);
 
@@ -63,6 +67,7 @@ public class ThiefTestWorldLabels : MonoBehaviour
         barricades = FindObjectsByType<ThiefTestBreakableBarricade>(FindObjectsInactive.Exclude);
     }
 
+    // Refreshes the item list a few times a second instead of every frame, to keep the search cheap.
     private void Update()
     {
         if (Time.time < nextItemRefresh) return;
@@ -71,6 +76,7 @@ public class ThiefTestWorldLabels : MonoBehaviour
         items = FindObjectsByType<PickupInteractable>(FindObjectsInactive.Exclude);
     }
 
+    // Draws a label over every door, barricade and item, coloured by its current state or type.
     private void OnGUI()
     {
         if (doors == null) return;

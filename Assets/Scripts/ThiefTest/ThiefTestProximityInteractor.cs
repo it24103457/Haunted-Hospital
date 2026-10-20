@@ -22,6 +22,7 @@ public class ThiefTestProximityInteractor : MonoBehaviour
     private IInteractable current;
     private GUIStyle promptStyle;
 
+    // Sets up its own E key binding and makes every barricade breakable before play starts.
     private void Awake()
     {
         playerInteractor = GetComponent<PlayerInteractor>();
@@ -43,20 +44,24 @@ public class ThiefTestProximityInteractor : MonoBehaviour
         }
     }
 
+    // Takes over from the normal PlayerInteractor, so one E press never interacts twice.
     private void OnEnable()
     {
         playerInteractor.enabled = false;
         interactAction.Enable();
     }
 
+    // Hands interaction back to the normal PlayerInteractor.
     private void OnDisable()
     {
         interactAction.Disable();
         if (playerInteractor != null) playerInteractor.enabled = true;
     }
 
+    // Frees the input action, because actions created in code are not cleaned up automatically.
     private void OnDestroy() => interactAction.Dispose();
 
+    // Picks the closest interactable each frame and uses it when E is pressed.
     private void Update()
     {
         current = FindClosest();
