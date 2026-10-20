@@ -4,8 +4,8 @@ using UnityEngine;
  * Feeds the HUD from the game. Health, ammo and sanity come from PlayerStats' change events, and the starting values are
  * shown straight away. Ammo is the reserve the player carries against the most they can carry; the magazine comes from the
  * player's PlayerWeapon (rounds loaded against the magazine size), so it drops with each shot and refills on reload.
- * The key icon fills a quarter for each code digit found, and stays solid while PlayerStats says the player holds the
- * exit key (ExitKeyChanged, starting from whether the key is already held).
+ * The key icon's outline draws in a quarter for each code digit found; it fills (with its pickup animation) once
+ * PlayerStats says the player holds the exit key (ExitKeyChanged, starting from whether the key is already held).
  * Code digits: whenever ObjectiveState reports a change (a clue paper being read is one), every paper that has been read
  * puts its digit into the slot for its position in the code. This only reads public members that already exist on the
  * papers and ObjectiveState, so it works without any changes to them.
@@ -78,7 +78,7 @@ public class PlayerHudBinder : MonoBehaviour
 
     /*
      * Puts the digit of every clue paper the player has read into its slot (slots already showing that digit don't flash
-     * again), and fills the key icon by the share of the four positions found.
+     * again), and draws the key icon's outline by the share of the four positions found.
      */
     private void ShowReadClues()
     {
