@@ -105,6 +105,8 @@ namespace HauntedHospital.EnvironmentAI
             if (definition.RequiredTarget == DirectorTargetType.DirectorLightGroup &&
                 anchor.Room != roomTracker.CurrentRoom) return "Lighting must target the player's current room";
             if (!eventMemory.IsReady) return "Event memory unavailable";
+            if (eventMemory.VoiceCycleExhausted(definition.EventType))
+                return "Voice clips exhausted this cycle; waiting for phone, whisper and announcement clips to finish";
             if (eventMemory.EventActive) return "Another event is active";
             if (!planning && !eventMemory.GlobalIntervalReady) return "Global event spacing";
             if (!planning && eventMemory.CooldownRemaining(definition.EventId) > 0f) return "Event type cooldown";
@@ -121,7 +123,7 @@ namespace HauntedHospital.EnvironmentAI
             return null;
         }
 
-        private bool IsVisible(DirectorEventAnchor anchor)
+        public bool IsVisible(DirectorEventAnchor anchor)
         {
             if (playerCamera == null || !playerCamera.isActiveAndEnabled || roomTracker.Player == null ||
                 !playerCamera.transform.IsChildOf(roomTracker.Player)) return false;

@@ -16,6 +16,8 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorPhoneExecutor phoneExecutor;
         [SerializeField] private DirectorWhisperExecutor whisperExecutor;
         [SerializeField] private DirectorAnnouncementExecutor announcementExecutor;
+        [SerializeField] private DirectorKnockExecutor knockExecutor;
+        [SerializeField] private DirectorApparitionExecutor apparitionExecutor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 1f;
         [SerializeField, Min(0.02f)] private float maximumObservationAge = 0.5f;
         [Header("Runtime decisions and execution")]
@@ -41,7 +43,7 @@ namespace HauntedHospital.EnvironmentAI
             if (Time.time < nextDecisionAt) return;
             nextDecisionAt = Time.time + decisionInterval;
             planningAttempts++;
-            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor, whisperExecutor, announcementExecutor);
+            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor, whisperExecutor, announcementExecutor, knockExecutor, apparitionExecutor);
             decisionAvailable = false;
             recommendedAction = "None";
             if (latestPlan == null || !latestPlan.valid || latestPlan.manualOnly || latestPlan.steps.Count == 0)
@@ -61,7 +63,9 @@ namespace HauntedHospital.EnvironmentAI
                 (blackoutExecutor != null && blackoutExecutor.Supports(decision.definition) && blackoutExecutor.TryStart(decision)) ||
                 (phoneExecutor != null && phoneExecutor.Supports(decision.definition) && phoneExecutor.TryStart(decision)) ||
                 (whisperExecutor != null && whisperExecutor.Supports(decision.definition) && whisperExecutor.TryStart(decision)) ||
-                (announcementExecutor != null && announcementExecutor.Supports(decision.definition) && announcementExecutor.TryStart(decision))))
+                (announcementExecutor != null && announcementExecutor.Supports(decision.definition) && announcementExecutor.TryStart(decision)) ||
+                (knockExecutor != null && knockExecutor.Supports(decision.definition) && knockExecutor.TryStart(decision)) ||
+                (apparitionExecutor != null && apparitionExecutor.Supports(decision.definition) && apparitionExecutor.TryStart(decision))))
             { decisionAvailable = false; status = "Executing " + decision.Label; }
         }
 
