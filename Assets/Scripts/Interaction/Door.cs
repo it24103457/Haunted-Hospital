@@ -23,6 +23,12 @@ public class Door : MonoBehaviour, IInteractable
     [SerializeField] private float openSpeed = 120f;
     [SerializeField] private bool isLocked;
 
+    [Header("Noise")]
+    [Tooltip("How loud it is when the PLAYER closes this door (a slam). 0 = silent.")]
+    [SerializeField, Min(0f)] private float closeLoudness = NoiseLevels.DoorSlam;
+    [Tooltip("How loud it is when the PLAYER opens this door. 0 = silent. Doors opened by agents make no noise.")]
+    [SerializeField, Min(0f)] private float openLoudness = 0f;
+
     private Rigidbody leafBody;
     private Vector3 closedLocalPosition;
     private Quaternion closedLocalRotation;
@@ -64,6 +70,10 @@ public class Door : MonoBehaviour, IInteractable
 
         isOpen = !isOpen;
         if (isOpen) SetObstacle(false); // AI can path through as soon as it starts opening
+
+        float loudness = isOpen ? openLoudness : closeLoudness;
+        if (loudness > 0f && leaf != null)
+            Noise.Emit(leaf.position, loudness, NoiseType.DoorSlam, interactor != null ? interactor.gameObject : null);
     }
 
     // Call this from a key/lever/pickup later.
@@ -71,16 +81,28 @@ public class Door : MonoBehaviour, IInteractable
 
     // Public API for the AI agents (Thief / Hunter).
 
-    // True once the door is passable.
+    // True once the door is passable (from the moment it starts opening).
     public bool IsOpen => passable;
+
+    // True only once the door has finished swinging, so the doorway is clear to walk through.
+    public bool IsFullyOpen => isOpen && Mathf.Approximately(currentAngle, openAngle);
+
+    // Who last asked for this door to open (an agent), or null. Handy for debugging two agents at one door.
+    public GameObject LastRequester { get; private set; }
 
     // True while the door can't be opened.
     public bool IsLocked => isLocked;
 
     // Opens the door.
-    public void Open()
+    public void Open() => Open(null);
+
+    // Opens the door on behalf of an agent. Asking for a door that is already opening is harmless.
+    public void Open(GameObject requester)
     {
-        if (leaf == null || isLocked || isOpen) return;
+        if (leaf == null || isLocked) return;
+
+        if (requester != null) LastRequester = requester;
+        if (isOpen) return;
 
         isOpen = true;
         SetObstacle(false);
