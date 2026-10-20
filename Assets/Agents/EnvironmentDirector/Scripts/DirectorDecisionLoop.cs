@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HauntedHospital.EnvironmentAI
 {
-    /// <summary>Repeated planning only. Does not reserve anchors, execute effects or record events.</summary>
+    /// <summary>Plans repeatedly and dispatches supported effects to their executors.</summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(200)]
     public sealed class DirectorDecisionLoop : MonoBehaviour
@@ -11,9 +11,16 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorObservation observation;
         [SerializeField] private DirectorEventEligibility eligibility;
         [SerializeField] private DirectorEventMemory eventMemory;
+        [SerializeField] private DirectorFlickerExecutor executor;
+        [SerializeField] private DirectorBlackoutExecutor blackoutExecutor;
+        [SerializeField] private DirectorPhoneExecutor phoneExecutor;
+        [SerializeField] private DirectorWhisperExecutor whisperExecutor;
+        [SerializeField] private DirectorAnnouncementExecutor announcementExecutor;
+        [SerializeField] private DirectorKnockExecutor knockExecutor;
+        [SerializeField] private DirectorApparitionExecutor apparitionExecutor;
         [SerializeField, Min(0.1f)] private float decisionInterval = 1f;
         [SerializeField, Min(0.02f)] private float maximumObservationAge = 0.5f;
-        [Header("Runtime decisions only - no effects executed")]
+        [Header("Runtime decisions and execution")]
         [SerializeField] private string status = "Waiting for Play mode";
         [SerializeField] private int planningAttempts;
         [SerializeField] private float decidedAt;
@@ -36,7 +43,7 @@ namespace HauntedHospital.EnvironmentAI
             if (Time.time < nextDecisionAt) return;
             nextDecisionAt = Time.time + decisionInterval;
             planningAttempts++;
-            latestPlan = planner.BuildLivePlan();
+            latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor, whisperExecutor, announcementExecutor, knockExecutor, apparitionExecutor);
             decisionAvailable = false;
             recommendedAction = "None";
             if (latestPlan == null || !latestPlan.valid || latestPlan.manualOnly || latestPlan.steps.Count == 0)
@@ -51,7 +58,15 @@ namespace HauntedHospital.EnvironmentAI
                 if (!check.eligible) { status = "First action currently blocked: " + check.reason; return; }
             }
             decisionAvailable = true;
-            status = decision.IsRest ? "Rest recommended; inspect eligibility for blocked event reasons" : "Event recommended; execution not implemented";
+            status = decision.IsRest ? "Rest recommended; inspect eligibility for blocked event reasons" : "Event recommended";
+            if (!decision.IsRest && ((executor != null && executor.Supports(decision.definition) && executor.TryStart(decision)) ||
+                (blackoutExecutor != null && blackoutExecutor.Supports(decision.definition) && blackoutExecutor.TryStart(decision)) ||
+                (phoneExecutor != null && phoneExecutor.Supports(decision.definition) && phoneExecutor.TryStart(decision)) ||
+                (whisperExecutor != null && whisperExecutor.Supports(decision.definition) && whisperExecutor.TryStart(decision)) ||
+                (announcementExecutor != null && announcementExecutor.Supports(decision.definition) && announcementExecutor.TryStart(decision)) ||
+                (knockExecutor != null && knockExecutor.Supports(decision.definition) && knockExecutor.TryStart(decision)) ||
+                (apparitionExecutor != null && apparitionExecutor.Supports(decision.definition) && apparitionExecutor.TryStart(decision))))
+            { decisionAvailable = false; status = "Executing " + decision.Label; }
         }
 
         // Future executors must still reserve and validate immediately before starting an effect.
@@ -96,3 +111,4 @@ namespace HauntedHospital.EnvironmentAI
         private static bool Finite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
     }
 }
+

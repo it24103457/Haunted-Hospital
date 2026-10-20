@@ -27,6 +27,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorTargetType requiredTarget;
         [SerializeField, Min(0f)] private float minimumPlayerDistance = 2f;
         [SerializeField, Min(0f)] private float maximumPlayerDistance = 12f;
+        [Tooltip("Camera-facing requirement for non-apparition events. Apparitions always use same-room, unobstructed 360-degree sight in DirectorEventEligibility.")]
         [SerializeField] private bool requiresVisibility;
 
         [Header("Selection restrictions")]
@@ -105,12 +106,9 @@ namespace HauntedHospital.EnvironmentAI
                     $"{ExpectedTarget(eventType)}.");
             }
 
-            bool isApparition =
-                eventType == DirectorEventType.DistantApparition ||
-                eventType == DirectorEventType.LightPulseApparition;
-
-            if (isApparition && !requiresVisibility)
-                errors.Add($"{prefix}: Apparition events must require visibility.");
+            // Apparitions use mandatory same-room and unobstructed sight checks in
+            // DirectorEventEligibility, independent of camera-facing visibility.
+            // Do not reject their catalogue entries when requiresVisibility is false.
 
             if (intensity == DirectorEventIntensity.Strong &&
                 !blockDuringImmediateDanger)

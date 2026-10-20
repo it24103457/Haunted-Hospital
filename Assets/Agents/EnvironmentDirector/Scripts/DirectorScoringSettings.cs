@@ -13,6 +13,9 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField, Min(0f)] private float anchorRepetitionWeight = 0.10f;
         [SerializeField, Min(0.1f)] private float repetitionWindowSeconds = 90f;
 
+        [SerializeField, Range(0f, .5f)] private float liveChoiceTolerance = .16f;
+        public float LiveChoiceTolerance => liveChoiceTolerance;
+
         public float TargetDifferenceWeight => targetDifferenceWeight;
         public float OvershootWeight => overshootWeight;
         public float VulnerabilityOvershootMultiplier => vulnerabilityOvershootMultiplier;
@@ -23,7 +26,8 @@ namespace HauntedHospital.EnvironmentAI
         public bool IsValid() => NonNegative(targetDifferenceWeight) && targetDifferenceWeight > 0f &&
             NonNegative(overshootWeight) && NonNegative(vulnerabilityOvershootMultiplier) &&
             NonNegative(eventRepetitionWeight) && NonNegative(anchorRepetitionWeight) &&
-            NonNegative(repetitionWindowSeconds) && repetitionWindowSeconds >= 0.1f;
+            NonNegative(repetitionWindowSeconds) && repetitionWindowSeconds >= 0.1f &&
+            NonNegative(liveChoiceTolerance) && liveChoiceTolerance <= .5f;
 
         private static bool NonNegative(float value) => !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
     }

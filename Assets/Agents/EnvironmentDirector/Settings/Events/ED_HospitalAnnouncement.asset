@@ -15,7 +15,7 @@ MonoBehaviour:
   eventId: hospital_announcement
   eventType: 6
   availableForSelection: 1
-  duration: 6
+  duration: 20.526
   cooldown: 90
   intensity: 1
   predictedTensionIncrease: 0.12

@@ -15,6 +15,7 @@ MonoBehaviour:
   targetDifferenceWeight: 1
   overshootWeight: 1
   vulnerabilityOvershootMultiplier: 2
-  eventRepetitionWeight: 0.15
+  eventRepetitionWeight: 0.22
   anchorRepetitionWeight: 0.1
-  repetitionWindowSeconds: 90
+  repetitionWindowSeconds: 180
+  liveChoiceTolerance: 0.16

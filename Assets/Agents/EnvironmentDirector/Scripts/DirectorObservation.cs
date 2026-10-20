@@ -10,6 +10,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorRoomTracker roomTracker;
         [SerializeField] private DirectorSettings settings;
         [SerializeField] private DirectorHunterSignalSource hunterSource;
+        [SerializeField] private DirectorPlayerSignals playerSignals;
         [SerializeField, Min(0.02f)] private float maximumHunterSignalAge = 0.5f;
         [SerializeField, Min(0.02f)] private float observationInterval = 0.1f;
         [Header("Runtime observations (display only; overwritten on refresh)")]
@@ -149,9 +150,15 @@ namespace HauntedHospital.EnvironmentAI
                 (state == DirectorSignalState.Active || state == DirectorSignalState.Inactive))
                 hunter = state;
             snapshot = snapshot.WithHunterDanger(hunter);
+            if (playerSignals != null && playerSignals.gameObject.scene == gameObject.scene)
+            {
+                playerSignals.Read(playerTransform, out var gunfire, out var keypad, out var ending);
+                snapshot = snapshot.WithPlayerSignals(gunfire, keypad, ending);
+            }
             validationMessage = "Ready; Hunter: " + hunter +
                 (hunterSource is DirectorManualHunterSource ? " (manual simulation)" : "") +
-                "; gunfire, keypad and victory remain unavailable until connected";
+                "; gunfire: " + snapshot.RecentGunfire + "; keypad: " + snapshot.KeypadInteraction +
+                "; ending/pause: " + snapshot.Victory;
         }
 
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);

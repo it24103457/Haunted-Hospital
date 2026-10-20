@@ -735,3 +735,218 @@ The current branch still leaves recent gunfire, keypad interaction and victory u
 12. Leave Play mode. Runtime changes to simulation toggles are not saved; deliberately configure the test scene outside Play mode if you want different starting values.
 
 No test was run automatically. The manual source belongs in the sandbox until replaced with the real Hunter adapter. Full automatic scare execution is a later milestone.
+
+## Commit 13 — player signals and local flicker execution
+
+New DirectorPlayerSignals subscribes to PlayerWeapon.Fired, reads ObjectiveState readiness/keypad/escape/win/pause, and supplies the observer. The first six seconds after binding conservatively count as gunfire recovery (the configured GunfireRecoverySeconds), because earlier shots cannot be inferred. Missing/disabled weapon or objectives remain Unavailable. Escape-in-progress and pause suppress scares through the ending signal.
+
+DirectorFlickerExecutor is the first supported executor. DecisionLoop filters automatic planning to supported effects; manual previews can still inspect the full catalogue. A live plan with an executor now scores target error/overshoot across all predicted steps, retaining repetition penalties, so repeated planning does not indefinitely defer a beneficial event to its last step. Manual commit-11 calculations retain their previous endpoint scoring.
+
+The executor reserves and revalidates the target, captures enabled Director light intensities, starts a 3D electrical clip, flickers for the event's duration, and restores intensities before recording completion and releasing the target. Essential lights are excluded. No gameplay noise event is emitted by the sound. Turning off the executor, losing required signals, entering keypad interaction, shooting, damage, death, an ending, pause or leaving the room cancels the effect and restores lights. The clip uses the first affected light's position. Fixture materials are not animated in this milestone.
+
+Sound: Assets/Audio/World/Backgorund_Sounds/18_Fluorescent_Starter_Failure.wav, volume 0.35, 3D, 2m minimum / 18m maximum, no loop. Existing event defaults: duration 3 seconds, type cooldown 45 seconds after completion, global gap 12 seconds. There is no guaranteed event count: safety, pressure and availability still govern decisions.
+
+### User checks (not run by the assistant)
+1. Open EnvironmentDirector_Test. Confirm one Objectives object has ObjectiveState; Player Signals references PlayerWeapon and that ObjectiveState.
+2. Select EnvironmentDirector. Verify the Decision Loop has its Flicker Executor reference, and the executor has both light roots, memory, reservations, observation, eligibility, Audio Source and sound clip.
+3. Enter Play mode. Hunter mock should be explicitly enabled, available, danger off, timestamp unfrozen.
+4. With a living healthy player, walk into a room with an enabled Director light group. Stop shooting and close the keypad. After the initial recovery/global interval, watch Decision Loop and Flicker Executor status. A selected flicker should last about 3 seconds with spatial electrical sound, then return to the original intensity.
+5. Check Event Memory records one delivered/completed event, and Target Reservations clears. Expect at least the 45-second flicker cooldown before another flicker; other eligibility conditions can delay it further.
+6. Fire a real shot, open/close the keypad, and toggle mock Hunter danger. Observation should reflect the real player signals and simulated Hunter signal. Flickers should be suppressed or cancelled as appropriate.
+7. During flickering, leave the room or disable Flicker Executor: lights must restore, audio stop and reservation clear. Re-enable afterward.
+8. Verify Essential lights keep their original brightness throughout.
+9. Inspect the Objectives component's debug menu to test Begin Escape/Win if a complete objective run is inconvenient. These states must suppress new scares.
+10. If nothing happens, use Event Eligibility's existing preview menu and inspect rejected reasons. Check current room, observation age, player signal readiness, light availability and cooldowns. Do not force missing signals to safe.
+11. No Play-mode tests or effect previews were run during implementation. MainHospital is not updated by this setup.
+
+## Commit 14 — local blackout execution
+
+DirectorBlackoutExecutor adds local blackouts to the live decision loop alongside flicker and Rest. The planner considers only effects with configured, enabled executors. Both light effects use the same event memory and target reservation: only one Director event can run at a time. Manual search previews still execute nothing.
+
+The existing ED_LocalBlackout definition remains at duration 4 seconds, cooldown 100 seconds and predicted pressure increase 0.22. Duration includes a 0.35-second smooth fade out, 2.9 seconds fully off and a 0.75-second smooth recovery. Only the selected anchor's enabled Director lights are affected. Original intensities are captured each time and restored on completion or cancellation. Essential lights and fixture materials are unchanged. Baked light contributions cannot be removed by changing realtime light intensity.
+
+BlackoutAudio is a separate 3D AudioSource under EnvironmentDirector using 19_Electrical_Relay_Clicks.wav, volume 0.35, min distance 2m, max distance 18m, linear falloff, no loop or play on awake. Playback begins at the first affected light and stops when the effect ends. Audio does not emit a gameplay gunfire/noise event.
+
+The blackout cancels and restores lights immediately when the player changes room, shoots, takes damage, dies, opens the keypad, starts escaping, pauses, or receives Hunter danger/unavailable signals. Missing or stale observations, invalid targets, disabled audio and lost reservations also cancel. The temporary Hunter source remains replaceable by a real adapter.
+
+### Manual testing — to be performed by the user
+
+1. Open EnvironmentDirector_Test outside Play mode and select EnvironmentDirector.
+2. Confirm Director Decision Loop > Blackout Executor references the local Director Blackout Executor. Confirm the blackout component has all six shared references plus Sound and Blackout Sound. Expand the root to find BlackoutAudio.
+3. Enter Play mode. Keep Manual Hunter Source enabled/available, Danger Active off and Freeze Timestamp off. Keep the player alive, close the keypad and stop shooting.
+4. Enter a room with an enabled Director light group and wait past the initial 12-second global interval. Inspect the decision loop and blackout Status. Rest or flicker may be selected first; a blackout is not guaranteed on a fixed timer.
+5. When selected, Status should progress through Fading out, Blackout and Restoring. The whole effect lasts about four seconds. Essential lights must remain constant; Director lights must return to their individual original intensities. Expect relay sound from the room.
+6. Check Event Memory records local_blackout as delivered/completed and Target Reservations clears afterward. Blackout cannot repeat until its 100-second cooldown expires; global spacing and other restrictions can delay it further.
+7. To focus on blackout during this Play session only, disable the Director Flicker Executor component. Do not disable its GameObject, which would disable the whole Director. The planner will choose between blackout and Rest; it can still rest. Re-enable flicker afterward. Avoid changing shared event assets to force a result.
+8. During a blackout, leave the room or shoot. Lights should restore immediately, audio stop, reservation clear and memory record cancellation. You can repeat using keypad entry, mock Hunter Danger Active or disabling only Director Blackout Executor.
+9. After restoring safe signals, both effects should become eligible again subject to cooldowns. They must never run concurrently.
+10. If the room remains bright with Director intensities at zero, inspect Essential illumination and baked lighting separately. Do not remove the Essential layer to force darkness.
+11. If no event starts, inspect Event Eligibility rejection reasons, observation signal readiness, current room, cooldowns and planner status. This implementation does not guarantee a particular scare frequency.
+12. Stop Play mode to discard temporary component toggles. No gameplay testing was run during implementation.
+
+Suggested commit: feat(director): add local blackouts with relay audio and safe light restoration
+
+## Commit 15 — phone ringing followed by rotating voice lines
+
+DirectorPhoneExecutor is now a supported automatic effect alongside flicker and blackout. It reserves an eligible phone anchor, plays the full Phone ringing sound, waits 0.2 seconds, and plays one complete voice line through a second spatial AudioSource at the same phone. Two scheduled sources prevent ring/voice overlap. Pitch is 1 and Doppler is disabled. The event stays active until the selected clip ends; other Director events cannot overlap it.
+
+The three voices use a shuffled cycle: every line completes once before the next cycle begins, with no immediate repeat at a cycle boundary. The cycle is shared across all phones and resets when a new Play session begins. An interrupted line is retained for the next safe phone event. Current Voice, Current Duration, Completed In Cycle, Completed Cycles and Status appear on the executor.
+
+Imported audio from the external Projects/Sounds folder into Assets/Audio/World:
+- Backgorund_Sounds/Phone ringing sound.mp3: 20.193 seconds.
+- Voices/Phone_voice_01.mp3: 10.92 seconds; total event about 31.46 seconds.
+- Voices/Phone_voice_02.wav: 5 seconds; total event about 25.54 seconds.
+- Voices/Phone_voice_03.mp3: 7.68 seconds; total event about 28.22 seconds.
+- Backgorund_Sounds/Blackout sound.mp3: 3.48 seconds, replacing the previous blackout relay clip without changing four-second blackout timing.
+
+Totals include a 0.15-second audio scheduling lead and 0.2-second ring-to-voice gap. ED_PhoneRing's fallback duration covers the longest sequence. Live planning uses the selected line's actual duration via DirectorPlanningAction.durationOverride; future hypothetical phone actions use that same snapshot duration, and the planner captures a fresh duration on every real decision. Phone cooldown remains 60 seconds after the event finishes.
+
+PhoneRingAudio and PhoneVoiceAudio are children of EnvironmentDirector in EnvironmentDirector_Test. Both use spatial audio (2m minimum, 18m maximum, linear falloff), no looping and no Play On Awake. The executor sets volumes to 0.4 for ringing and 0.7 for voices. Walking across a room boundary does not cut playback, but walking away makes it quieter. Required safety interruptions (shooting, hunter danger, damage, keypad use, death, victory, pause, missing/stale signals, disabled target or executor) still cancel playback. This audio does not publish gameplay noise to the Hunter. No telephone pickup interaction or handset animation is added.
+
+### Manual checks for the user (not run by the assistant)
+1. Open EnvironmentDirector_Test, let Unity finish compilation, and select EnvironmentDirector.
+2. In Director Phone Executor, check Ring Clip and the three Voice Clips are assigned. Confirm its Ring Source and Voice Source reference the two separate child objects, and Decision Loop's Phone Executor reference is filled.
+3. Enter Play mode. Keep the Hunter mock available with danger inactive, the player alive, and avoid shooting or opening the keypad.
+4. For a focused phone check, disable ONLY the Director Flicker Executor and Director Blackout Executor components during Play mode. Leave Decision Loop, observation, eligibility, memory and Phone Executor enabled. Stop Play afterward to discard these temporary toggles.
+5. Stand in a room containing a registered phone, between 2 and 12 metres from it. Phone eligibility still depends on cooldowns, safety signals and the planner; there is no fixed guarantee of immediate playback. Use the existing Event Eligibility preview if needed to see rejection reasons.
+6. When phone_ring starts, watch Phone Executor Status. Expect about 20.2 seconds of ringing, a short gap, then the selected complete voice line. Current Duration should match approximately 25.54, 28.22 or 31.46 seconds. No other Director event should start during this sequence.
+7. Watch Current Voice and let three phone events complete. All three lines should be different. Completed In Cycle goes 1, 2, then 0, and Completed Cycles becomes 1. The fourth begins a new shuffled cycle. Allow at least the 60-second phone cooldown between completions and later starts; other rules can delay it further.
+8. Cross the room boundary during a voice: it should continue at the original phone, fading with distance. Stay near the phone when checking the entire sentence is audible.
+9. During a separate phone event, shoot or enable mock Hunter danger. Both sounds should stop, Event Memory should record cancellation, and the reservation should clear. After safety and cooldowns allow another phone event, the unfinished voice should be retried.
+10. Restore the light executor components, then check a blackout uses Blackout sound rather than the old relay clip, keeps Essential lights unchanged and restores Director lights afterward.
+11. Stop Play mode. MainHospital has not been updated by this setup. No automated tests or Play-mode tests were run.
+
+Suggested commit: feat(director): add sequenced phone voices and update blackout audio
+
+## Pacing revision after commit 15
+
+Supersedes the earlier local-blackout and three-second flicker descriptions:
+- Flicker lasts 10 seconds in its selected room. Electrical audio loops at original pitch and fades during the final 0.4 seconds, then stops. Walking out does not cancel it; safety interruptions still do.
+- Blackout lasts 30 seconds across all currently illuminated Director lights beneath the Director light root. Essential lights are excluded. It captures and restores each light's own intensity. Room changes no longer cancel it. Existing local_blackout ID/type are retained for serialized compatibility; the initiating local anchor still supplies eligibility/reservation context.
+- Blackout audio uses a serialized start offset measured from the first meaningful signal in the clip, with a short pre-roll. The original sound file remains intact; audio is preloaded and execution waits for loaded audio. The sound plays once at the start, not on a 30-second loop.
+- Live pressure is held while a delivered event is active, then decays afterward. Quiet time stays zero during a delivered effect. Prediction follows the same sustained-pressure rule. Phone predicted pressure increases to 0.18; its full voice-cycle timing is unchanged.
+- Repetition recency accumulates across delivered records (capped at 1). Window 180 seconds, event penalty weight 0.22, anchor weight 0.10. Repetition is penalized, not forbidden.
+- Live best-first search groups complete plans by their first event type and retains the best plan per type. It randomly selects among plans within 0.16 average score per search step of the best, weighted toward lower scores. Rest remains a candidate; missing targets, cooldowns and safety still apply. This prevents extra light anchors becoming extra lottery tickets. Manual previews remain deterministic. This is not an event rotation, and no fixed event frequency is guaranteed.
+- Global spacing remains 12 seconds after completion, with cooldowns of 45 seconds for flicker, 100 for blackout and 60 for phone. Strong repetition scoring can still lead to Rest. Automatic planner Live Candidates now refreshes with planning eligibility/rejection reasons; a planning-eligible event can still have a live cooldown.
+
+### User checks for this revision (not run by the assistant)
+1. In EnvironmentDirector_Test, enter Play mode with valid player signals and the Hunter mock safe. Keep all three executors enabled.
+2. When a flicker starts, time approximately 10 seconds; confirm audio covers the effect and stops with restoration. Walking away should not terminate the original room's effect.
+3. When blackout starts, walk between rooms: Director lighting should stay off throughout the hospital for about 30 seconds including fades, while Essential lighting remains. Confirm each room returns to its previous brightness.
+4. Check blackout audio starts with the fade-out rather than seconds later. The measured Blackout Sound Start Seconds field is adjustable if the desired dramatic transient is later than the detected sound onset.
+5. Stay within 2–12 metres of a registered phone for some decisions. Confirm complete ring then voice playback. Check several sessions for variety; identical order remains possible by chance and short sessions cannot prove a distribution.
+6. Inspect Planner Preview's Live Candidates if phone is absent. Distinguish unavailable targets/safety from cooldowns and score selection. No eligible phone means it cannot be selected.
+7. Repeat an event and inspect the search score's repetition penalty. It should remember repeats beyond the 100-second blackout cooldown. Consecutive repeats are possible but disadvantaged.
+8. During a light effect, shoot or activate mock Hunter danger: audio stops, lights restore, reservation clears. Death, victory, missing signals, pause or disabling the executor also stop effects.
+9. No gameplay or automated tests were run. Shared event/scoring settings affect other scenes that reference these assets; scene wiring changes are confined to EnvironmentDirector_Test.
+
+## Commit 16 — spatial whispers with four-voice rotation
+
+DirectorWhisperExecutor adds the whisper action to automatic live planning. It plays the selected clip at an existing eligible whisper anchor with spatial falloff, original pitch, and no looping. It uses Wisper_01.mp3, Wisper_02.mp3, wisper_03.mp3 and wisper_04.wav from Assets/Audio/World/Voices.
+
+Each completed whisper consumes one entry from a shuffled four-clip cycle shared across all anchors. All four finish once before a new shuffled cycle begins; the first clip of a new cycle cannot immediately repeat the last clip of the previous cycle. A safety interruption retains the unfinished clip for the next eligible whisper. The cycle resets on a new Play session.
+
+Live prediction and the reservation use the selected clip's complete length plus a 0.15-second scheduling lead. The event asset stores the longest duration as a fallback. Existing defaults remain: 55-second whisper cooldown, 2–8m eligibility range, predicted pressure increase 0.14, plus global spacing and safety restrictions. The planner still chooses between supported events and Rest using tension, repetition and weighted near-best selection; whispers are not forced into an event order.
+
+WhisperAudio is a child of EnvironmentDirector in EnvironmentDirector_Test. It uses 3D audio, 2m minimum / 14m maximum linear falloff and volume 0.7. Crossing rooms does not truncate the clip; sound stays at its anchor and becomes quieter with distance. Shooting, danger, damage recovery, keypad interaction, death, victory, pause, missing signals or disabling the executor cancels it and clears the reservation. No Hunter gameplay-noise event is emitted.
+
+### User testing steps (not run by the assistant)
+1. Open EnvironmentDirector_Test outside Play mode and allow compilation to finish. Select EnvironmentDirector. Confirm Director Whisper Executor has all four Voice Clips, the WhisperAudio source and its four system references. Confirm Decision Loop references Whisper Executor.
+2. Enter Play mode with a living player and valid player signals; keep the Hunter mock available and danger off. Avoid shooting or keypad use.
+3. Walk near an existing whisper anchor (2–8m). Watch the Decision Loop and Whisper Executor Status. The planner may select another event or Rest; selection is not immediate or guaranteed.
+4. To focus on whispers for this session, disable only Flicker Executor, Blackout Executor and Phone Executor components during Play mode. Keep Whisper Executor, the Decision Loop and other Director components enabled.
+5. When whisper starts, Current Voice shows the chosen filename and Current Duration shows its full length plus 0.15 seconds. Listen for complete playback and check Event Memory records whisper completion and clears its active event/reservation.
+6. Allow four events to finish, noting Current Voice. Every clip should occur once. Completed In Cycle runs 1,2,3,0 and Completed Cycles reaches 1. A fifth begins a fresh shuffled cycle. Allow at least the 55-second whisper cooldown after each event, plus any planner delay.
+7. Walk across a room boundary while staying close enough to hear: playback continues at its original anchor. Shoot during a separate event: playback should cancel, and the unfinished clip should be retained for a later safe whisper.
+8. If no whisper occurs, inspect Planner Preview Live Candidates or the Event Eligibility preview. Check distance, compatible/active anchors, observation freshness, safety signals and cooldowns.
+9. Stop Play mode to discard temporary executor toggles. No Play-mode or automated tests were run. MainHospital scene wiring is unchanged; shared whisper event settings also apply wherever that asset is referenced.
+
+Suggested commit: feat(director): add spatial whispers with shuffled four-voice cycles
+
+## Commit 17 — hospital loudspeaker announcements
+
+DirectorAnnouncementExecutor adds hospital_announcement to automatic planning alongside flicker, blackout, phone and whisper. It uses the existing Loudspeaker anchors and their referenced scene speaker positions. AnnouncementAudio is a child of EnvironmentDirector in EnvironmentDirector_Test with spatial audio, 4m minimum / 28m maximum linear falloff, no looping, no Doppler, pitch 1 and playback volume 0.7. It inherits the phone voice source's mixer route when one is assigned.
+
+The four supplied clips are Loud_speaker_01.mp3, Lound_speaker_02.mp3, Loudspeaker_03.wav and Loud_speaker_04.wav in Assets/Audio/World/Voices. Each completed announcement consumes one entry from a shuffled four-clip cycle shared across speakers. Every clip completes once before reshuffling, and a new cycle cannot immediately repeat the previous cycle's last clip. Safety cancellation retains the unfinished clip for a later eligible event. A new Play session resets the cycle.
+
+The selected clip plays fully; live prediction and reservation use its length plus a 0.15-second scheduling lead. The event definition stores the longest clip duration plus that lead for fallback previews. The existing 90-second announcement cooldown, 0–18m target range and 0.12 predicted pressure remain. The planner still evaluates tension, repetition, eligibility and weighted near-best choice; announcements are not forced into an event order. No other Director event executes concurrently.
+
+Moving across a room boundary does not stop a sentence; sound remains at the selected speaker and attenuates with distance. Shooting, immediate Hunter danger, damage recovery, keypad interaction, death, victory, pause, missing/stale signals, loss of the anchor/reservation, or disabling the executor cancels playback. Cancellation stops audio, records the outcome and releases the target. This event does not publish Hunter gameplay-noise signals and does not broadcast through every hospital speaker simultaneously.
+
+### User testing steps (not run by the assistant)
+1. Open EnvironmentDirector_Test outside Play mode and let compilation finish. Select EnvironmentDirector. Check Director Announcement Executor has four Voice Clips, AnnouncementAudio, Eligibility, Reservations, Memory and Observation assigned. Check Decision Loop's Announcement Executor reference.
+2. Enter Play mode with a living player and valid observations. Keep Hunter mock available with danger off; avoid firing or entering the keypad.
+3. Move within 18m of a registered, active loudspeaker. The planner can choose hospital_announcement when safe and appropriate. Inspect its Live Candidates or Event Eligibility preview if it does not start.
+4. To isolate announcements during this Play session, temporarily disable only Flicker Executor, Blackout Executor, Phone Executor and Whisper Executor components. Leave the Director GameObject, planner and Announcement Executor enabled. Rest remains possible.
+5. Watch Current Voice, Current Duration and Status. Listen for the complete clip from the selected speaker. Moving across a room boundary should not stop it; moving farther away should make it quieter.
+6. Let four announcements complete and note the filenames. Each should occur once. Completed In Cycle runs 1,2,3,0 and Completed Cycles becomes 1. The fifth starts a fresh shuffled cycle. Allow at least the 90-second announcement cooldown after completion, plus any planner delay.
+7. During a separate event, shoot or activate mock Hunter danger. Confirm playback stops and the reservation clears. When another safe event becomes available, the interrupted clip should be retried.
+8. Stop Play mode to discard temporary executor toggles. Test mixed events with all five executors enabled. They should not overlap or follow a mandatory fixed order.
+9. No Play-mode or automated tests were run during implementation. MainHospital scene wiring is unchanged; shared announcement settings apply in other scenes referencing the same asset.
+
+Suggested commit: feat(director): add spatial loudspeaker announcements with shuffled voice cycles
+
+## Commit 18 - Spatial knocking event
+
+`DirectorKnockExecutor` plays `Assets/Audio/World/Sounds_Scary/Knoking_door.wav` from an eligible existing Knock anchor. The decision loop and planner include this executor and use the full clip duration plus a 0.15-second scheduling lead. Existing knock settings retain the 45-second cooldown, 2-10 metre selection distance and 0.1 predicted pressure increase. Repetition scoring still applies; a knock is not forced into a fixed event order.
+
+The executor supports one or more distinct clips. With one clip, later knock events reuse it. If more clips are assigned before Play mode, it shuffles them and completes each once per cycle, avoiding an immediate boundary repeat when possible. Cancelled sequences remain available to retry.
+
+Scene setup: DirectorKnockExecutor on EnvironmentDirector, KnockAudio child (3D linear falloff, minimum 2 m, maximum 16 m), shared eligibility/reservations/memory/observation references and decision-loop reference. A room change alone does not stop audio. Existing safety signals, pause, lost reservation or disabled components cancel playback and release the event. This is an audio effect: it does not animate doors or emit gameplay noise to the Hunter.
+
+Manual testing (not run by the assistant):
+1. Open EnvironmentDirector_Test and enter Play mode. Select EnvironmentDirector and confirm the Knock Executor has KnockAudio, the clip and its shared references assigned.
+2. Walk within 2-10 metres of a Knock anchor in a room with eligible targets. Let the planner choose an event. Check the executor status for Scheduled/Playing and then Completed; the complete recording should play once.
+3. Turn and walk away while it plays: sound remains at its selected anchor and fades with distance. Crossing a room boundary alone should not stop it.
+4. To isolate this event temporarily, disable the Flicker, Blackout, Phone, Whisper and Announcement executor components during Play mode. Leave the decision loop, observation, eligibility and Knock executor enabled, and keep the manual Hunter source safe. The planner can still choose Rest and must obey cooldowns.
+5. For blocked events inspect eligibility reasons, player safety signals, distance and cooldown. Confirm another Director event does not overlap. Pause or trigger an unsafe player state and confirm playback stops and the reservation releases.
+6. Stop Play mode to restore the temporary executor toggles. No tests or Play-mode runs were performed during implementation.
+
+## Commit 19 - Animated apparition with a room-local blackout
+
+DirectorApparitionExecutor uses PF_Apparition_Woman at an eligible visible apparition anchor (existing 6-18 m range and 120-second cooldown). It captures the Director lights assigned to that anchor's room through the registry's authored light groups. Essential lights are excluded. After a 0.4-second fade and 0.25-second dark pause, it reveals the woman facing the player's position, keeping her existing prefab scale and import-axis rotation. A small temporary blue-tinted, shadowless spotlight reveals the figure while the room's Director lights remain dark.
+
+Every completed appearance plays UnsettlingIdle (6 seconds), BodyJolt (1.4 seconds), and PulsePose (2 seconds), with short blends. The existing prefab voice plays once alongside the sequence. DirectorApparitionVoice now supports playing the voice without independently triggering Jolt; its existing preview command still triggers Jolt. Duration is calculated from the longer of the complete voice and the complete animation sequence, plus blackout and recovery timing (currently 11.04 seconds). Safety interruptions can stop a sequence early.
+
+The figure remains stationary, and spawned colliders/obstacles are disabled. When the sequence finishes it disappears and the captured light intensities restore over 0.75 seconds. Cancellation immediately restores lights, stops voice, removes the runtime figure and releases the event reservation. Walking into another room alone does not cancel the event. It uses the existing safety signals, including the mock Hunter source until live Hunter integration is available. The separate hospital-wide blackout retains its own executor.
+
+Changed files: DirectorApparitionExecutor.cs (new), DirectorApparitionVoice.cs, DirectorDecisionLoop.cs, DirectorPlannerPreview.cs, DirectorEventEligibility.cs (visibility check exposed for reveal-time revalidation), ED_DistantApparition.asset and EnvironmentDirector_Test.unity. No persistent Editor scripts were added. MainHospital and the source apparition prefab are unchanged.
+
+Manual testing for the user (no tests or Play-mode runs performed by the assistant):
+1. Open EnvironmentDirector_Test. Select EnvironmentDirector and confirm Director Apparition Executor has the woman prefab, three clips, shared references and both light roots assigned.
+2. Enter Play mode. Keep the mock Hunter safe and look towards an apparition anchor from 6-18 metres away. If necessary temporarily disable the six other effect executors in Play mode, keeping the decision loop and observations enabled. The planner can still choose Rest and obeys cooldowns.
+3. Inspect the executor's Status, Target Room, Affected Lights and Current Animation. On selection only that target room's Director lights should fade; Essential lights and unrelated rooms' lights should remain as they were.
+4. Confirm the woman appears facing your starting position at an appropriate scale, stays in place, and visibly passes through UnsettlingIdle, BodyJolt and PulsePose. Listen for her full existing voice. Check her feet, wall clearance and visibility at the authored anchor; these visual placements still need your Play-mode review.
+5. Confirm she disappears and the original light brightness returns after about 11 seconds. The runtime Director_Apparition object and its reveal light should be removed.
+6. During another appearance, pause, shoot, take damage or activate a dangerous Hunter mock state. Confirm prompt cancellation, voice stop, figure removal and restored lights. Resume safe play and confirm the Director can select later events after its cooldowns.
+7. Stop Play mode to discard temporary executor toggles. Do not save disabled executors from an isolation test.
+
+## Shared voice-content cycle and apparition availability correction
+
+Phone calls, whispers and hospital announcements now share a completion cycle in DirectorEventMemory. Completed, delivered phone events count toward 3 distinct phone lines, whispers toward 4 and announcements toward 4. Their existing shuffled clip bags ensure each line plays once. After a category reaches its quota, eligibility excludes it from live execution and planning, and BeginEvent also refuses it. Once all three quotas are complete, all counters reset together for the next cycle. Cancelled, failed and debug events do not advance the cycle; diagnostic-history trimming cannot erase the counters. Counts reset when starting a new Play session. Knocks, flickers, blackouts and apparitions are unaffected by this restriction. A category that cannot currently be reached waits until the player visits an eligible location; finishing the other categories does not bypass it. Existing safety checks, cooldowns and heuristic scoring still select among the available events.
+
+The apparition definition and executor were enabled, but all eight authored apparition anchors still had Available For Selection disabled. This made every apparition candidate ineligible regardless of score. Enabled all eight in EnvironmentDirector_Test, confirming that each has a room and matching Director light-group references, and that the apparition executor is connected with its required references. Visibility, distance, safety and cooldown requirements remain in effect. No gameplay tests were run.
+
+Manual verification:
+- Start a fresh Play session. Inspect Event Memory > Shared voice cycle. Finish three phone events: Phone Clips Completed should reach 3 and further phone candidates should report voice clips exhausted. Interrupted clips should not advance the count.
+- Complete all four whispers and all four announcements in any interleaving. The final completion should increment Completed Voice Cycles and reset all three counters together; phone/whisper/announcement become selectable again subject to cooldowns. Knocks and visual events remain selectable throughout.
+- Inspect any apparition anchor (for example EA_main_corridor_apparition): Available For Selection should now be enabled. From 6-18 metres away, face its location and use the existing live eligibility preview if needed. A candidate can now become eligible rather than always saying anchor unavailable. The planner may still choose another event or Rest.
+
+## Expanded apparition locations and 360-degree sight rules
+
+Apparitions now require the player's tracked room to match the anchor room AND the player's actual position to remain inside that room's volume. A solid-collider raycast from the player camera to the apparition's torso must be clear; it ignores triggers and the player's own colliders, and does not require the point to be in the camera view. This rule applies to both apparition definitions during candidate selection. The existing apparition executor rechecks it immediately before reveal, so moving outside the room or behind an obstruction during the dark beat cancels the reveal and restores the room's lights. The player camera is never forced or locked, and PlayerController is unchanged.
+
+Anchor categories distinguish Both (the eight original shared points), NormalOnly and LightPulseOnly. The placement update adds five points of each exclusive category: eighteen physical points total, thirteen available to each variant. Nearby configuration reduces the minimum distance to 2.5 metres and turns off the camera-facing requirement for both event definitions. A point behind the player may qualify only if it is in the same room and the ray is clear. Solid walls, closed doors and furniture can block it. New placement candidates are selected on the existing NavMesh with a clear body capsule and an unobstructed nearby viewing position. This is placement preparation, not a Play-mode test or NavMesh rebake.
+
+The light-pulse event is still awaiting its executor implementation (commit 20); its five exclusive anchors and common selection settings are prepared without enabling the unfinished event. The normal apparition retains its existing animation, voice, local lighting sequence and cooldown.
+
+Manual checks: start EnvironmentDirector_Test, stand at least 2.5 metres from an anchor in its room and face away; the candidate should no longer report a camera-facing failure. Stand outside the room or put a solid door/wall between you and the anchor; it should be rejected. When a normal apparition triggers, confirm the camera remains under your control. Inspect an anchor's Apparition Kind to distinguish the shared and exclusive locations.
+
+## Fix: apparition visibility setting blocked the entire Director
+
+The 360-degree apparition update set requiresVisibility=false, but DirectorEventDefinition still required that flag for every apparition. DirectorSettings validates every catalogue entry before planning, so the obsolete rule rejected the whole catalogue and prevented all event planning, including audio and lighting. Removed that obsolete constraint and documented that apparition placement always uses the mandatory same-room and unobstructed 360-degree sight checks in DirectorEventEligibility. Other catalogue validation, safety restrictions and cooldowns are preserved. Start a fresh Play session after compilation to reinitialize any components disabled by the old startup validation error.
+
+## Normal apparition coverage across hospital rooms
+Added 15 NormalOnly apparition anchors in EnvironmentDirector_Test, retaining the existing 18 anchors. The normal apparition now has 28 compatible points across 28 distinct room/corridor zones; the five pulse-only anchors remain reserved for the future pulse executor (33 physical apparition anchors total). Each new position was selected on the existing NavMesh with body clearance and at least one unobstructed same-room viewing position beyond the 2.5 m minimum. Existing points, event timing, player controls, and selection rules were preserved.
+The five excluded zones are operating_service_shaft, elevator_service_strip, stair_footprint, north_service_alcove, and elevator: no Director light group is assigned and no candidate passed the current placement checks. These need suitable space/navigation and room lighting before a functional apparition point can be added. Registry validation passed after placement; no Play-mode test was run. More points increase location coverage, not a guarantee of selection during each room visit.
+
