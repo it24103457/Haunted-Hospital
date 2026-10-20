@@ -26,6 +26,10 @@ public class Door : MonoBehaviour, IInteractable
     [Header("Noise")]
     [Tooltip("How loud it is when the PLAYER closes this door (a slam). 0 = silent.")]
     [SerializeField, Min(0f)] private float closeLoudness = NoiseLevels.DoorSlam;
+    [Tooltip("How loud it is when the PLAYER closes this door while crouching. 0 = silent.")]
+    [SerializeField, Min(0f)] private float crouchCloseLoudness = 3f;
+    [Tooltip("The player counts as crouching when their CharacterController is shorter than this (standing is 1.8, crouching 0.9).")]
+    [SerializeField, Min(0f)] private float crouchingBelowHeight = 1.35f;
     [Tooltip("How loud it is when the PLAYER opens this door. 0 = silent. Doors opened by agents make no noise.")]
     [SerializeField, Min(0f)] private float openLoudness = 0f;
 
@@ -71,9 +75,18 @@ public class Door : MonoBehaviour, IInteractable
         isOpen = !isOpen;
         if (isOpen) SetObstacle(false); // AI can path through as soon as it starts opening
 
-        float loudness = isOpen ? openLoudness : closeLoudness;
+        float loudness = isOpen ? openLoudness : (IsCrouching(interactor) ? crouchCloseLoudness : closeLoudness);
         if (loudness > 0f && leaf != null)
             Noise.Emit(leaf.position, loudness, NoiseType.DoorSlam, interactor != null ? interactor.gameObject : null);
+    }
+
+    // Reads the crouch from the player's CharacterController, so PlayerController does not need to change.
+    private bool IsCrouching(PlayerInteractor interactor)
+    {
+        if (interactor == null) return false;
+
+        CharacterController body = interactor.GetComponentInParent<CharacterController>();
+        return body != null && body.height < crouchingBelowHeight;
     }
 
     // Call this from a key/lever/pickup later.

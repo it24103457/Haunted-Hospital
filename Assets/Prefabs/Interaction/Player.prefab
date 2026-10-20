@@ -154,6 +154,7 @@ GameObject:
   - component: {fileID: 2493747791160392726}
   - component: {fileID: 6671535720121805456}
   - component: {fileID: 2403969138491378414}
+  - component: {fileID: 3256512973424920835}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -341,6 +342,27 @@ MonoBehaviour:
   worldImpactColor: {r: 0.85, g: 0.82, b: 0.7, a: 1}
   targetImpactColor: {r: 0.8, g: 0.1, b: 0.1, a: 1}
   puffPoolSize: 12
+--- !u!114 &3256512973424920835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4871408159299711671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f5418005b8053b48aa750c8b70197d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerFootstepNoise
+  minMoveSpeed: 0.5
+  crouchMaxSpeed: 3
+  walkMaxSpeed: 5.25
+  crouchLoudness: 1.5
+  walkLoudness: 4
+  sprintLoudness: 10
+  crouchStride: 1
+  walkStride: 1.6
+  sprintStride: 2.2
 --- !u!1 &5548678712820400776
 GameObject:
   m_ObjectHideFlags: 0
