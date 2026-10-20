@@ -717,6 +717,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     /*
      * Runs every frame during a trip. On reaching the end of a segment it either finishes the trip,
      * opens and waits at a door, or carries on past a barricade. After the door wait it resumes the trip.
+     * A door that has already finished swinging open is walked straight through without stopping.
      */
     private void TickTrip()
     {
@@ -744,6 +745,12 @@ public class ThiefAgent : MonoBehaviour, IDamageable
             if (checkpoint.Door.IsLocked)
             {
                 TripBlocked = true;
+                return;
+            }
+
+            if (checkpoint.Door.IsFullyOpen)
+            {
+                PublishNextSegment();
                 return;
             }
 
@@ -978,7 +985,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
              Vector3.Distance(node.Position, transform.position) <= barricadeRecheckDistance));
     }
 
-    // Opens the door and waits doorOpenWait seconds, even if it was already open, so it has finished swinging.
+    // Opens the door and waits doorOpenWait seconds, also when it is already opening, so it has finished swinging.
     private void BeginOpening(Door door)
     {
         door.Open();
