@@ -1212,8 +1212,19 @@ MonoBehaviour:
   digitColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
   magazineTextColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
   keyColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
-  keyFlashColor: {r: 1, g: 1, b: 1, a: 1}
   keyGhostOpacity: 0.18
+  keyGoldColor: {r: 1, g: 0.76, b: 0.3, a: 1}
+  keyTraceSeconds: 0.9
+  keyFillLag: 0.15
+  keyGoldFadeSeconds: 0.8
+  keyShimmerClip: {fileID: 8300000, guid: 5a35c87d1d0e29a44a041aed6189135d, type: 3}
+  keyShimmerStart: 0.55
+  keyShimmerVolume: 0.8
+  acquiredText: KEY ACQUIRED
+  acquiredTextSize: 28
+  acquiredFadeInSeconds: 0.3
+  acquiredHoldSeconds: 1.6
+  acquiredFadeOutSeconds: 0.7
   margin: {x: 28, y: 28}
   iconSize: 30
   barWidth: 320

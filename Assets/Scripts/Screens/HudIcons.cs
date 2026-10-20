@@ -11,7 +11,7 @@ public static class HudIcons
 {
     private const int Size = 64;
     private const int KeySize = 128;
-    private const float KeyOutlineWidth = 0.06f;
+    private const float KeyOutlineWidth = 0.028f;
     // The key's shape is described at 1 and drawn this much larger, so it reaches out to the edges of its square.
     private const float KeyScale = 1.15f;
     private const int Samples = 4;

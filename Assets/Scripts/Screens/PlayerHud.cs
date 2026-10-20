@@ -7,9 +7,12 @@ using UnityEngine.UI;
  * an ammo and a sanity bar, each with its icon (heart, bullet, bottle) in the bar's colour; the ammo bar is the reserve
  * the player carries. To the right of the bars, "MAG" over the rounds loaded in the gun as a stacked fraction (loaded over
  * the magazine size), spanning from the top of the health bar to the bottom of the sanity bar.
- * The key icon is a drawn key outline that fills with off-white from the bottom up as the code digits are found, a quarter
- * per digit, so it is solid once the whole code is known; a faint copy of the whole key shows inside the outline, so the
- * unfilled part reads as empty at a glance. When the exit key itself is picked up it stays solid and flashes.
+ * The key icon starts as a faint copy of the key. Each code digit found draws in another quarter of the key's outline, from
+ * the bow towards the tip, so the outline is complete once the whole code is known. When the exit key itself is picked up,
+ * a warm gold line traces the outline from bow to tip with the solid key filling in just behind it, a glass shimmer plays
+ * (from the spike in the clip), and "KEY ACQUIRED" fades in above the code slots in gold, then turns off-white and stays
+ * for as long as the key is held; the gold on the key then fades back to
+ * the HUD's off-white, leaving the key solid.
  * It only draws what it is told through its public methods and knows nothing about the game; PlayerHudBinder feeds it.
  * The pieces are built in code when the HUD starts, inside the game screens' canvas, which scales from a 1080p layout,
  * so the HUD keeps the same proportions at any resolution. The HUD is put first in the canvas, so the pause, death,
@@ -35,10 +38,28 @@ public class PlayerHud : MonoBehaviour
 
     [Header("Key icon")]
     [SerializeField] private Color keyColor = new Color(0.82f, 0.82f, 0.78f, 1f);
-    [Tooltip("The colour the key flashes from when the exit key is picked up.")]
-    [SerializeField] private Color keyFlashColor = Color.white;
-    [Tooltip("Opacity of the faint whole key shown inside the outline before it fills.")]
+    [Tooltip("Opacity of the faint whole key shown before and behind the outline.")]
     [SerializeField, Range(0f, 1f)] private float keyGhostOpacity = 0.18f;
+
+    [Header("Key acquired")]
+    [SerializeField] private Color keyGoldColor = new Color(1f, 0.76f, 0.3f, 1f);
+    [Tooltip("Seconds for the gold line to trace the key from bow to tip.")]
+    [SerializeField, Min(0.05f)] private float keyTraceSeconds = 0.9f;
+    [Tooltip("Seconds the solid fill trails behind the gold line.")]
+    [SerializeField, Min(0f)] private float keyFillLag = 0.15f;
+    [Tooltip("Seconds for the gold to fade back to the normal colour once the trace is done.")]
+    [SerializeField, Min(0.05f)] private float keyGoldFadeSeconds = 0.8f;
+    [SerializeField] private AudioClip keyShimmerClip;
+    [Tooltip("Where in the clip to start, so the shimmer's spike plays straight away.")]
+    [SerializeField, Min(0f)] private float keyShimmerStart = 0.55f;
+    [SerializeField, Range(0f, 1f)] private float keyShimmerVolume = 0.8f;
+    [SerializeField] private string acquiredText = "KEY ACQUIRED";
+    [SerializeField] private float acquiredTextSize = 28f;
+    [SerializeField, Min(0.01f)] private float acquiredFadeInSeconds = 0.3f;
+    [Tooltip("Seconds the label stays gold before turning the normal colour.")]
+    [SerializeField, Min(0f)] private float acquiredHoldSeconds = 1.6f;
+    [Tooltip("Seconds the label takes to turn from gold to the normal colour; it then stays.")]
+    [SerializeField, Min(0.01f)] private float acquiredFadeOutSeconds = 0.7f;
 
     [Header("Layout (1080p units)")]
     [SerializeField] private Vector2 margin = new Vector2(28f, 28f);
@@ -63,10 +84,14 @@ public class PlayerHud : MonoBehaviour
     private RectTransform ammoFill;
     private TextMeshProUGUI magazineLoaded;
     private TextMeshProUGUI magazineSize;
+    private Image keyOutline;
+    private Image keyGoldOutline;
     private Image keyFill;
+    private TextMeshProUGUI acquiredLabel;
+    private AudioSource keyAudio;
     private bool keyHeld;
     private float keyProgress;
-    private float keyFlashStarted = float.NegativeInfinity;
+    private float keyAcquiredAt = float.NegativeInfinity;
     private RectTransform sanityFill;
     private readonly Image[] slotFills = new Image[SlotCount];
     private readonly TextMeshProUGUI[] slotDigits = new TextMeshProUGUI[SlotCount];
@@ -91,9 +116,30 @@ public class PlayerHud : MonoBehaviour
             slotFills[i].color = Color.Lerp(flashFill, slotFill, t);
         }
 
-        // The key fades from its flash colour back to its normal colour after being picked up.
-        float k = (Time.unscaledTime - keyFlashStarted) / flashSeconds;
-        if (k >= 0f && k <= 1f) keyFill.color = Color.Lerp(keyFlashColor, keyColor, k);
+        if (keyHeld) AnimateKeyAcquired(Time.unscaledTime - keyAcquiredAt);
+    }
+
+    /*
+     * The pickup animation, by seconds since the key was picked up: the gold outline draws from bow to tip, the solid fill
+     * follows keyFillLag behind, then the gold fades back to the normal key colour. The label fades in gold, holds, then
+     * turns the normal colour and stays.
+     */
+    private void AnimateKeyAcquired(float age)
+    {
+        float traceEnd = keyTraceSeconds + keyFillLag;
+        keyGoldOutline.fillAmount = Mathf.Clamp01(age / keyTraceSeconds);
+        keyFill.fillAmount = Mathf.Clamp01((age - keyFillLag) / keyTraceSeconds);
+
+        float fade = Mathf.Clamp01((age - traceEnd) / keyGoldFadeSeconds);
+        keyGoldOutline.color = new Color(keyGoldColor.r, keyGoldColor.g, keyGoldColor.b, keyGoldColor.a * (1f - fade));
+        keyFill.color = Color.Lerp(keyGoldColor, keyColor, fade);
+
+        // The label fades in gold, holds, then turns the normal colour and stays.
+        float alpha = Mathf.Clamp01(age / acquiredFadeInSeconds);
+        float toNormal = Mathf.Clamp01((age - acquiredFadeInSeconds - acquiredHoldSeconds) / acquiredFadeOutSeconds);
+        Color c = Color.Lerp(keyGoldColor, keyColor, toNormal);
+        c.a = alpha;
+        acquiredLabel.color = c;
     }
 
     // Bars: current against its maximum; values outside 0 to max are clamped.
@@ -110,27 +156,41 @@ public class PlayerHud : MonoBehaviour
         magazineSize.text = size.ToString();
     }
 
-    // How much of the key outline is filled, from 0 (outline only) to 1 (solid): the share of code digits found.
+    // How much of the key's outline is drawn, bow to tip, from 0 to 1: the share of code digits found.
     public void SetKeyProgress(float share)
     {
         keyProgress = Mathf.Clamp01(share);
-        UpdateKeyFill();
+        if (keyOutline != null) keyOutline.fillAmount = keyHeld ? 1f : keyProgress;
     }
 
-    // Holding the exit key keeps the icon solid; picking it up makes it flash.
+    // Picking up the exit key starts the gold trace, fill, shimmer and label; losing it returns the icon to the outline.
     public void SetKey(bool held)
     {
         if (!built || keyHeld == held) return;
 
         keyHeld = held;
-        if (held) keyFlashStarted = Time.unscaledTime;
-        else keyFill.color = keyColor;
-        UpdateKeyFill();
-    }
+        keyOutline.fillAmount = held ? 1f : keyProgress;
 
-    private void UpdateKeyFill()
-    {
-        if (keyFill != null) keyFill.fillAmount = keyHeld ? 1f : keyProgress;
+        if (held)
+        {
+            keyAcquiredAt = Time.unscaledTime;
+            // Started first and then moved to the spike, because a position set before Play can be reset by Play itself,
+            // which would play the clip's silent lead-in first.
+            if (keyShimmerClip != null)
+            {
+                keyAudio.clip = keyShimmerClip;
+                keyAudio.Play();
+                float start = Mathf.Min(keyShimmerStart, keyShimmerClip.length - 0.01f);
+                keyAudio.timeSamples = Mathf.Clamp((int)(start * keyShimmerClip.frequency), 0, keyShimmerClip.samples - 1);
+            }
+            return;
+        }
+
+        keyFill.fillAmount = 0f;
+        keyGoldOutline.fillAmount = 0f;
+        Color c = acquiredLabel.color;
+        c.a = 0f;
+        acquiredLabel.color = c;
     }
 
     // Code slots: position 1 to 4. A newly shown digit makes its slot flash.
@@ -203,6 +263,24 @@ public class PlayerHud : MonoBehaviour
         for (int i = 0; i < SlotCount; i++)
             Slot(root, i, new Vector2(codeX + i * (slotSize + slotGap), slotsY));
 
+        // "KEY ACQUIRED" sits just above the code slots, as wide as they are, hidden until the key is picked up.
+        float slotsWidth = SlotCount * slotSize + (SlotCount - 1) * slotGap;
+        acquiredLabel = NewText("KeyAcquired", root, acquiredText, acquiredTextSize, FontStyles.Normal, TextAlignmentOptions.Bottom);
+        acquiredLabel.color = new Color(keyGoldColor.r, keyGoldColor.g, keyGoldColor.b, 0f);
+        Place(acquiredLabel.rectTransform, new Vector2(codeX, slotsY + slotSize + 22f), new Vector2(slotsWidth, acquiredTextSize * 1.3f));
+
+        keyAudio = gameObject.AddComponent<AudioSource>();
+        keyAudio.playOnAwake = false;
+        keyAudio.spatialBlend = 0f;
+        keyAudio.volume = keyShimmerVolume;
+
+        // The clip is handed over and loaded now, so the first pickup plays at once instead of waiting for it to load.
+        if (keyShimmerClip != null)
+        {
+            keyAudio.clip = keyShimmerClip;
+            keyShimmerClip.LoadAudioData();
+        }
+
         for (int i = 0; i < SlotCount; i++) flashStarted[i] = float.NegativeInfinity;
         built = true;
     }
@@ -261,29 +339,36 @@ public class PlayerHud : MonoBehaviour
     }
 
     /*
-     * The key icon: the drawn key outline, a faint copy of the whole key inside it, and the solid key over both filling
-     * from the bottom up (a filled image), so the outline always shows and the fill rises as digits are found.
+     * The key icon, back to front: a faint copy of the whole key, the off-white outline drawn in as digits are found, the
+     * solid key (filled on pickup) and the gold outline that traces it on pickup. The drawn-in parts are filled images that
+     * grow from the bottom of the square, which on the diagonal key means from the bow towards the tip.
      */
     private void KeyIcon(RectTransform root, Vector2 position)
     {
-        Image outline = NewImage("KeyOutline", root, keyColor);
-        outline.sprite = HudIcons.KeyOutline;
-        outline.preserveAspect = true;
-        Place(outline.rectTransform, position, new Vector2(keySlotSize, keySlotSize));
+        Vector2 size = new Vector2(keySlotSize, keySlotSize);
 
         Image ghost = NewImage("KeyGhost", root, new Color(keyColor.r, keyColor.g, keyColor.b, keyColor.a * keyGhostOpacity));
         ghost.sprite = HudIcons.Key;
         ghost.preserveAspect = true;
-        Place(ghost.rectTransform, position, new Vector2(keySlotSize, keySlotSize));
+        Place(ghost.rectTransform, position, size);
 
-        keyFill = NewImage("KeyFill", root, keyColor);
-        keyFill.sprite = HudIcons.Key;
-        keyFill.preserveAspect = true;
-        keyFill.type = Image.Type.Filled;
-        keyFill.fillMethod = Image.FillMethod.Vertical;
-        keyFill.fillOrigin = (int)Image.OriginVertical.Bottom;
-        keyFill.fillAmount = 0f;
-        Place(keyFill.rectTransform, position, new Vector2(keySlotSize, keySlotSize));
+        keyOutline = KeyLayer(root, "KeyOutline", HudIcons.KeyOutline, keyColor, position, size);
+        keyFill = KeyLayer(root, "KeyFill", HudIcons.Key, keyColor, position, size);
+        keyGoldOutline = KeyLayer(root, "KeyGoldOutline", HudIcons.KeyOutline, keyGoldColor, position, size);
+    }
+
+    // One layer of the key icon that draws in from the bottom of its square, starting empty.
+    private Image KeyLayer(RectTransform root, string name, Sprite sprite, Color color, Vector2 position, Vector2 size)
+    {
+        Image layer = NewImage(name, root, color);
+        layer.sprite = sprite;
+        layer.preserveAspect = true;
+        layer.type = Image.Type.Filled;
+        layer.fillMethod = Image.FillMethod.Vertical;
+        layer.fillOrigin = (int)Image.OriginVertical.Bottom;
+        layer.fillAmount = 0f;
+        Place(layer.rectTransform, position, size);
+        return layer;
     }
 
     // One code slot: an off-white border around a semi-transparent box, with its digit centred.
