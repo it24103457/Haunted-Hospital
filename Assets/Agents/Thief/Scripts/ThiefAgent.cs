@@ -83,7 +83,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [SerializeField] private float standClearance = 0.4f;
     [Tooltip("Furthest an item's standing spot may be from the item, measured flat.")]
     [SerializeField] private float standSearchRadius = 1.5f;
-    [Tooltip("Remembered barricades within this distance are looked at again whenever the Thief stops.")]
+    [Tooltip("Remembered barricades and locked doors within this distance are looked at again whenever the Thief stops.")]
     [SerializeField] private float barricadeRecheckDistance = 3f;
 
     [Header("Steal loop")]
@@ -199,7 +199,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // Graph nodes at the Hunter spawn points, whose edges get the discount.
     private readonly HashSet<WaypointNode> hunterSpawnNodes = new HashSet<WaypointNode>();
 
-    // Barricade nodes this Thief has found intact. Planning treats every other barricade as passable.
+    // Barricade nodes this Thief has found intact and door nodes it has found locked. Planning treats every other one as passable.
     private readonly HashSet<WaypointNode> knownBlocked = new HashSet<WaypointNode>();
 
     /*
@@ -216,7 +216,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // True once the Thief stands at the end of its trip.
     private bool TripArrived { get; set; }
 
-    // True when a door on the route turned out to be locked, so the route needs replanning.
+    // True when a locked door or an intact barricade turned up on the route, so the route needs replanning.
     private bool TripBlocked { get; set; }
 
     // The player as seen at the most recent decision.
@@ -335,7 +335,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     /*
      * Killed: drops any carried item on the floor where the Thief fell, resting on the floor (collectable again through
-     * Release), forgets everything it learned (barricade memory), stops, disappears (model hidden, hitbox off) and comes
+     * Release), forgets everything it learned (remembered barricades and locked doors), stops, disappears (model hidden, hitbox off) and comes
      * back after a random time between deathRespawnDelayMin and deathRespawnDelayMax. Raises OnDied.
      */
     private void Die()
@@ -359,7 +359,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     /*
      * Brings the Thief into the level at a random Thief spawn: its first appearance and every return.
      * With restoreHealth it comes back at full health. It decides straight away and raises OnSpawned.
-     * Barricade memory is untouched here; only dying clears it.
+     * The memory of barricades and locked doors is untouched here; only dying clears it.
      */
     private void Appear(bool restoreHealth)
     {
@@ -379,7 +379,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     /*
      * After a stash delivery: disappears (model hidden, hitbox off) for a random time between
      * vanishRespawnDelayMin and vanishRespawnDelayMax, then reappears at a random Thief spawn.
-     * Unlike dying, it keeps its barricade memory. Raises OnVanished.
+     * Unlike dying, it keeps its memory of barricades and locked doors. Raises OnVanished.
      */
     private void Vanish()
     {
@@ -728,7 +728,11 @@ public class ThiefAgent : MonoBehaviour, IDamageable
             Door door = checkpoint.Door;
             if (door != null && !door.IsOpen)
             {
-                if (door.IsLocked) TripBlocked = true;
+                if (door.IsLocked)
+                {
+                    knownBlocked.Add(checkpoint);
+                    TripBlocked = true;
+                }
                 else BeginOpening(door);
                 return;
             }
@@ -742,7 +746,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         if (!ArrivedAtPathEnd()) return;
 
-        RecheckNearbyBarricades();
+        RecheckNearbyBlocked();
 
         if (checkpoint == null)
         {
@@ -754,6 +758,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         {
             if (checkpoint.Door.IsLocked)
             {
+                knownBlocked.Add(checkpoint);
                 TripBlocked = true;
                 return;
             }
@@ -979,20 +984,28 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         return stashes.Count > 0;
     }
 
-    // Barricade memory
+    // Barricade and locked door memory
 
     /*
-     * Looks again at remembered barricades close to where the Thief has stopped, and forgets any that are
-     * no longer intact, so routes through them open up again. Barricades it can't see stay remembered.
+     * Looks again at remembered barricades and locked doors close to where the Thief has stopped, and forgets any
+     * that are no longer in the way (a barricade broken, a door unlocked), so routes through them open up again.
+     * Ones it can't see stay remembered.
      */
-    private void RecheckNearbyBarricades()
+    private void RecheckNearbyBlocked()
     {
         if (knownBlocked.Count == 0) return;
 
         knownBlocked.RemoveWhere(node =>
             node == null ||
-            (!node.IsBarricadeIntact &&
+            (!StillInTheWay(node) &&
              Vector3.Distance(node.Position, transform.position) <= barricadeRecheckDistance));
+    }
+
+    // True while a remembered node still blocks the way: a door still locked or a barricade still intact.
+    private static bool StillInTheWay(WaypointNode node)
+    {
+        if (node.Type == WaypointType.Door) return node.Door != null && node.Door.IsLocked;
+        return node.IsBarricadeIntact;
     }
 
     // Opens the door and waits doorOpenWait seconds, also when it is already opening, so it has finished swinging.
@@ -1042,16 +1055,18 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * A doorway is blocked while its door is locked. A barricade is blocked only once this Thief has found it
-     * intact; until then it plans as if the way is open.
+     * A doorway or barricade is blocked only once this Thief has found it in the way (the door locked, the barricade
+     * intact); until then it plans as if the way is open. Nothing about doors or barricades is known in advance.
      */
     private bool IsBlocked(WaypointNode node)
     {
         switch (node.Type)
         {
-            case WaypointType.Door: return node.Door != null && node.Door.IsLocked;
-            case WaypointType.Barricade: return knownBlocked.Contains(node);
-            default: return false;
+            case WaypointType.Door:
+            case WaypointType.Barricade:
+                return knownBlocked.Contains(node);
+            default:
+                return false;
         }
     }
 
