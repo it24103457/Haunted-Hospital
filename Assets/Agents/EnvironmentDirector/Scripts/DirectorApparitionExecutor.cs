@@ -135,10 +135,10 @@ namespace HauntedHospital.EnvironmentAI
             else ApplyBrightness(Mathf.SmoothStep(0, 1, (elapsed - recoveryAt) / FadeIn));
             if (!revealed && elapsed >= RevealAt)
             {
-                // Recheck the camera after darkening, before revealing the figure.
-                float distance = Vector3.Distance(sample.PlayerPosition, action.anchor.Position);
-                if (!eligibility.IsVisible(action.anchor) || distance < action.definition.MinimumPlayerDistance || distance > action.definition.MaximumPlayerDistance)
-                { Finish(DirectorEventOutcome.Cancelled); return; }
+                // Recheck actual room membership and unobstructed 360-degree sight after darkening.
+                string placementRejection = eligibility.ApparitionPlacementRejection(action.definition, action.anchor);
+                if (placementRejection != null)
+                { Finish(DirectorEventOutcome.Cancelled); status = placementRejection; return; }
                 startedAt = Time.time - RevealAt;
                 elapsed = RevealAt;
                 appearance.SetActive(true);

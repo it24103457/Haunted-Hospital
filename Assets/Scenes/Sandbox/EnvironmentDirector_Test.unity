@@ -675,6 +675,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 11097222}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &11363001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 11363002}
+  - component: {fileID: 11363003}
+  m_Layer: 0
+  m_Name: EA_waste_disposal_apparition_pulse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &11363002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 11363001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 11.8, y: 0.025000095, z: 2.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &11363003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 11363001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: waste_disposal_apparition_pulse
+  targetType: 4
+  room: {fileID: 1124585457}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 2
+  directorLights:
+  - {fileID: 1693506660}
 --- !u!1 &12719918
 GameObject:
   m_ObjectHideFlags: 0
@@ -949,6 +1002,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &15510351
 PrefabInstance:
@@ -2030,6 +2084,59 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &36746335
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 36746336}
+  - component: {fileID: 36746337}
+  m_Layer: 0
+  m_Name: EA_operating_approach_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &36746336
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 36746335}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.85, y: 0.025000095, z: 25.650002}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &36746337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 36746335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: operating_approach_apparition_normal
+  targetType: 4
+  room: {fileID: 1857197101}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1403462789}
 --- !u!1 &37543942
 GameObject:
   m_ObjectHideFlags: 0
@@ -2319,9 +2426,63 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 84879575}
   - {fileID: 1260096188}
+--- !u!1 &44024701
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 44024702}
+  - component: {fileID: 44024703}
+  m_Layer: 0
+  m_Name: EA_north_lobby_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &44024702
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44024701}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.35, y: 0.025000095, z: 36.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &44024703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44024701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: north_lobby_apparition_normal
+  targetType: 4
+  room: {fileID: 145835175}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1838239639}
 --- !u!1 &44413723
 GameObject:
   m_ObjectHideFlags: 0
@@ -2462,6 +2623,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &48076408
 GameObject:
@@ -2603,6 +2765,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 29622906}
   - {fileID: 554645597}
@@ -3786,6 +3949,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1699059652}
 --- !u!1001 &71955093
@@ -3931,6 +4095,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &81329824
 GameObject:
@@ -5020,6 +5185,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &104957330
 GameObject:
@@ -5161,6 +5327,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 377231243}
   - {fileID: 1592292900}
@@ -6360,6 +6527,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1957090935}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &139860982
 PrefabInstance:
@@ -7130,6 +7298,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &147857187
 GameObject:
@@ -7181,6 +7350,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1315972563}
   - {fileID: 1319309922}
@@ -8622,6 +8792,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &175130095
 GameObject:
@@ -8912,6 +9083,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1276718912}
 --- !u!1 &181680964
@@ -9417,6 +9589,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 654988483}
 --- !u!1 &190952566
@@ -9559,6 +9732,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1866158560}
   - {fileID: 939290327}
@@ -10262,6 +10436,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 750753006}
 --- !u!1 &210079177
@@ -10529,6 +10704,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &216200312
 PrefabInstance:
@@ -11152,6 +11328,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 416550947}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &234103330
 PrefabInstance:
@@ -12195,6 +12372,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &261897090
 GameObject:
@@ -12650,6 +12828,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1512771602}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &267947071
 GameObject:
@@ -13659,6 +13838,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &304815884
 GameObject:
@@ -14168,6 +14348,60 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 312755374}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &319461035
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 319461036}
+  - component: {fileID: 319461037}
+  m_Layer: 0
+  m_Name: EA_anaesthesia_prep_apparition_pulse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &319461036
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 319461035}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -15.95, y: 0.025000006, z: 20.05}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &319461037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 319461035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: anaesthesia_prep_apparition_pulse
+  targetType: 4
+  room: {fileID: 1227322753}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 2
+  directorLights:
+  - {fileID: 1834814393}
+  - {fileID: 464109103}
 --- !u!1 &320530652
 GameObject:
   m_ObjectHideFlags: 0
@@ -14398,6 +14632,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 879722375}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &324871993
 GameObject:
@@ -14684,6 +14919,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &330995119
 GameObject:
@@ -14768,6 +15004,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 84879575}
   - {fileID: 1260096188}
@@ -16611,6 +16848,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1392109763}
 --- !u!1 &365798692
@@ -17087,6 +17325,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 355123662}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &381196761
 GameObject:
@@ -17482,6 +17721,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8050581736151047590, guid: 9632f233bf881e24a88d144b312a91f7, type: 3}
   m_PrefabInstance: {fileID: 385984202}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &387546552
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 387546553}
+  - component: {fileID: 387546554}
+  m_Layer: 0
+  m_Name: EA_main_corridor_middle_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &387546553
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387546552}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.9, y: 0.025000095, z: 22.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &387546554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387546552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: main_corridor_middle_apparition_normal
+  targetType: 4
+  room: {fileID: 885413307}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 887537800}
 --- !u!1 &387688739
 GameObject:
   m_ObjectHideFlags: 0
@@ -17532,6 +17824,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &388058598
 GameObject:
@@ -17801,6 +18094,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &395407896
 GameObject:
@@ -18789,6 +19083,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 29622906}
   - {fileID: 554645597}
@@ -19106,6 +19401,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &424819814
 PrefabInstance:
@@ -19219,6 +19515,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &425194545
 GameObject:
@@ -19525,6 +19822,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &434016810
 GameObject:
@@ -19901,6 +20199,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 2085821030}
 --- !u!1 &443387354
@@ -20688,6 +20987,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &460395855
 GameObject:
@@ -20739,6 +21039,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &464109100
 GameObject:
@@ -22173,6 +22474,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6136930526123612181, guid: a98df2a3047f1094889cc6151acdca35, type: 3}
   m_PrefabInstance: {fileID: 477937043}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &480681204
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 480681205}
+  - component: {fileID: 480681206}
+  m_Layer: 0
+  m_Name: EA_main_corridor_north_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &480681205
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480681204}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.6, y: 0.025000095, z: 34.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &480681206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480681204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: main_corridor_north_apparition_normal
+  targetType: 4
+  room: {fileID: 218154561}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1062386564}
 --- !u!1 &483154726
 GameObject:
   m_ObjectHideFlags: 0
@@ -22350,6 +22704,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &484989369 stripped
 GameObject:
@@ -22428,6 +22783,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 425194548}
   - {fileID: 2026912482}
@@ -22481,6 +22837,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &488617035
 GameObject:
@@ -22709,6 +23066,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1300599803}
 --- !u!1 &497065330
@@ -23319,6 +23677,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &517348524
 GameObject:
@@ -23638,6 +23997,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1082967310}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &526132025
 PrefabInstance:
@@ -24377,6 +24737,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 2136356720}
 --- !u!1 &540639270
@@ -24815,6 +25176,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &557184870
 GameObject:
@@ -25207,6 +25569,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &564622959
 GameObject:
@@ -28577,6 +28940,60 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &626977180
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 626977181}
+  - component: {fileID: 626977182}
+  m_Layer: 0
+  m_Name: EA_anaesthesia_prep_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &626977181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 626977180}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -10.1, y: 0.025000095, z: 20.15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &626977182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 626977180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: anaesthesia_prep_apparition_normal
+  targetType: 4
+  room: {fileID: 1227322753}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1834814393}
+  - {fileID: 464109103}
 --- !u!1001 &628109500
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28772,6 +29189,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5993290854874065217, guid: 376b4f1c00f7e454396e432d8624d308, type: 3}
   m_PrefabInstance: {fileID: 629835773}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &632206031
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 632206032}
+  - component: {fileID: 632206033}
+  m_Layer: 0
+  m_Name: EA_nurse_office_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &632206032
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632206031}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.95, y: 0.025000095, z: 10.3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &632206033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632206031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: nurse_office_apparition_normal
+  targetType: 4
+  room: {fileID: 1110236460}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1316223631}
 --- !u!1 &633177828
 GameObject:
   m_ObjectHideFlags: 0
@@ -30090,6 +30560,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &666297226
 PrefabInstance:
@@ -30742,6 +31213,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1487151311}
   - {fileID: 1627182909}
@@ -31183,6 +31655,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 723206219}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &692879380
 GameObject:
@@ -31540,6 +32013,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &709569814
 GameObject:
@@ -31591,6 +32065,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 808085285}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &711735215
 PrefabInstance:
@@ -31654,6 +32129,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6417730544537378635, guid: deb526d217dd2c94490c18cd84dba132, type: 3}
   m_PrefabInstance: {fileID: 711735215}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &712421094
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 712421095}
+  - component: {fileID: 712421096}
+  m_Layer: 0
+  m_Name: EA_wc_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &712421095
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 712421094}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.85, y: 0.025000006, z: 40.4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &712421096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 712421094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: wc_apparition_normal
+  targetType: 4
+  room: {fileID: 1294401108}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1392109763}
 --- !u!1 &714855722
 GameObject:
   m_ObjectHideFlags: 0
@@ -31928,6 +32456,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1300599803}
 --- !u!1 &719324706
@@ -32194,6 +32723,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 719820647}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &721360774
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 721360775}
+  - component: {fileID: 721360776}
+  m_Layer: 0
+  m_Name: EA_pre_op_apparition_pulse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &721360775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721360774}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.049999, y: 0.025000095, z: 22.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &721360776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721360774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: pre_op_apparition_pulse
+  targetType: 4
+  room: {fileID: 1289096525}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 2
+  directorLights:
+  - {fileID: 1276718912}
 --- !u!1 &721426567
 GameObject:
   m_ObjectHideFlags: 0
@@ -35606,6 +36188,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 425194548}
   - {fileID: 2026912482}
@@ -35771,6 +36354,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 2136356720}
 --- !u!1 &788937883
@@ -36320,6 +36904,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1160376533}
   - {fileID: 1614482293}
@@ -36682,6 +37267,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &819687881
 PrefabInstance:
@@ -39226,6 +39812,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2145857645493947849, guid: c330a36d00d75be43a5e12a6e85f0f45, type: 3}
   m_PrefabInstance: {fileID: 879722374}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &880396888
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 880396889}
+  - component: {fileID: 880396890}
+  m_Layer: 0
+  m_Name: EA_pre_op_approach_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &880396889
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880396888}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6.9, y: 0.025000095, z: 17.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880396890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880396888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: pre_op_approach_apparition_normal
+  targetType: 4
+  room: {fileID: 1197519329}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 529664022}
 --- !u!1 &885413306
 GameObject:
   m_ObjectHideFlags: 0
@@ -39597,6 +40236,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1834814393}
   - {fileID: 464109103}
@@ -41772,6 +42412,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 887537800}
 --- !u!1 &947439075
@@ -41976,6 +42617,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &952400111
 GameObject:
@@ -43255,6 +43897,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8220767262371725302, guid: 15193da7d76b8dc4aac54e06db8f74b9, type: 3}
   m_PrefabInstance: {fileID: 979169847}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &981101422
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 981101423}
+  - component: {fileID: 981101424}
+  m_Layer: 0
+  m_Name: EA_washroom_alcove_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &981101423
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981101422}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.6, y: 0.025000095, z: 23.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &981101424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981101422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: washroom_alcove_apparition_normal
+  targetType: 4
+  room: {fileID: 2126585240}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 750753006}
 --- !u!1 &983626716
 GameObject:
   m_ObjectHideFlags: 0
@@ -43519,6 +44214,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3478625281169607022, guid: e046123ddc628f546b49664360cc5431, type: 3}
   m_PrefabInstance: {fileID: 985496347}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &985686607
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 985686608}
+  - component: {fileID: 985686609}
+  m_Layer: 0
+  m_Name: EA_waste_disposal_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &985686608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985686607}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 11.65, y: 0.025000095, z: 3.15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &985686609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985686607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: waste_disposal_apparition_normal
+  targetType: 4
+  room: {fileID: 1124585457}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1693506660}
 --- !u!1 &987140251
 GameObject:
   m_ObjectHideFlags: 0
@@ -43681,6 +44429,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1415426984}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &989714371
 GameObject:
@@ -43916,6 +44665,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &992795034
 GameObject:
@@ -44073,6 +44823,31 @@ Transform:
   - {fileID: 1646434250}
   - {fileID: 1642209001}
   - {fileID: 1156896716}
+  - {fileID: 1443752643}
+  - {fileID: 1649854240}
+  - {fileID: 632206032}
+  - {fileID: 2009061530}
+  - {fileID: 2019133146}
+  - {fileID: 319461036}
+  - {fileID: 721360775}
+  - {fileID: 1592406116}
+  - {fileID: 11363002}
+  - {fileID: 1963559083}
+  - {fileID: 985686608}
+  - {fileID: 626977181}
+  - {fileID: 1504075263}
+  - {fileID: 1588824124}
+  - {fileID: 712421095}
+  - {fileID: 44024702}
+  - {fileID: 36746336}
+  - {fileID: 2019662338}
+  - {fileID: 480681205}
+  - {fileID: 1978579005}
+  - {fileID: 880396889}
+  - {fileID: 1750175320}
+  - {fileID: 981101423}
+  - {fileID: 1644460634}
+  - {fileID: 387546553}
   m_Father: {fileID: 593751867}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &995950706
@@ -44316,6 +45091,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1062386564}
 --- !u!1 &1003570160
@@ -44401,6 +45177,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1010981688
 GameObject:
@@ -45955,6 +46732,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1052716695
 GameObject:
@@ -46387,6 +47165,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1065568445
 GameObject:
@@ -46550,6 +47329,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1073862525
 GameObject:
@@ -47165,6 +47945,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1081264349
 GameObject:
@@ -48438,6 +49219,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1111601417
 GameObject:
@@ -51510,6 +52292,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1838239639}
 --- !u!1001 &1180254761
@@ -51736,6 +52519,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1188104999
 GameObject:
@@ -51877,6 +52661,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 193473202}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &1189243668
 PrefabInstance:
@@ -52164,6 +52949,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 409810017}
 --- !u!1 &1193572141
@@ -53266,6 +54052,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1487151311}
   - {fileID: 1627182909}
@@ -53703,6 +54490,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1225341855
 GameObject:
@@ -54378,6 +55166,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1242151692
 GameObject:
@@ -54429,6 +55218,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1771770515}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1242293715
 GameObject:
@@ -54806,6 +55596,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1257727804
 GameObject:
@@ -55248,6 +56039,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1848618394}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1269598791
 GameObject:
@@ -59779,6 +60571,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1315972563}
   - {fileID: 1319309922}
@@ -60988,6 +61781,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1393102227
 GameObject:
@@ -61218,6 +62012,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1401155921 stripped
 GameObject:
@@ -62856,6 +63651,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1419779504
 GameObject:
@@ -63701,6 +64497,60 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1440749644}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1443752642
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1443752643}
+  - component: {fileID: 1443752644}
+  m_Layer: 0
+  m_Name: EA_post_op_recovery_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1443752643
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1443752642}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -12.45, y: 0.025000095, z: 1.3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1443752644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1443752642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: post_op_recovery_apparition_normal
+  targetType: 4
+  room: {fileID: 1102540329}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1866158560}
+  - {fileID: 939290327}
 --- !u!1 &1447935401
 GameObject:
   m_ObjectHideFlags: 0
@@ -65586,6 +66436,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 2024485016}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &1484485077
 PrefabInstance:
@@ -66031,6 +66882,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 529664022}
 --- !u!1 &1488030121
@@ -66563,6 +67415,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1766778979108604476, guid: 1b8eea9f52f38764098de37af72ae335, type: 3}
   m_PrefabInstance: {fileID: 1503350545}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1504075262
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1504075263}
+  - component: {fileID: 1504075264}
+  m_Layer: 0
+  m_Name: EA_staff_utility_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1504075263
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504075262}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.65, y: 0.025000006, z: 38.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1504075264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504075262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: staff_utility_apparition_normal
+  targetType: 4
+  room: {fileID: 1854681602}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 966080415}
 --- !u!1 &1504603954
 GameObject:
   m_ObjectHideFlags: 0
@@ -67772,6 +68677,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 377231243}
   - {fileID: 1592292900}
@@ -68787,6 +69693,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 401917829}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1557266715
 GameObject:
@@ -69854,6 +70761,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 2052641880}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1584743880
 GameObject:
@@ -70083,7 +70991,61 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
+--- !u!1 &1588824123
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1588824124}
+  - component: {fileID: 1588824125}
+  m_Layer: 0
+  m_Name: EA_right_landing_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1588824124
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1588824123}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.4, y: 0.025000095, z: 15.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1588824125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1588824123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: right_landing_apparition_normal
+  targetType: 4
+  room: {fileID: 1671437231}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 157297574}
 --- !u!1 &1592292897
 GameObject:
   m_ObjectHideFlags: 0
@@ -70211,6 +71173,60 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &1592406115
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1592406116}
+  - component: {fileID: 1592406117}
+  m_Layer: 0
+  m_Name: EA_sterile_core_apparition_pulse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1592406116
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592406115}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10.3, y: 0.025000095, z: 24.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1592406117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592406115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: sterile_core_apparition_pulse
+  targetType: 4
+  room: {fileID: 1605412046}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 2
+  directorLights:
+  - {fileID: 1160376533}
+  - {fileID: 1614482293}
 --- !u!1 &1594134045
 GameObject:
   m_ObjectHideFlags: 0
@@ -71168,6 +72184,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1316223631}
 --- !u!1 &1610679098
@@ -71337,6 +72354,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1693506660}
 --- !u!1 &1611974155
@@ -73138,6 +74156,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1403462789}
 --- !u!1 &1639641675
@@ -73434,6 +74453,60 @@ Transform:
   - {fileID: 434016811}
   m_Father: {fileID: 87463870}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1644460633
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1644460634}
+  - component: {fileID: 1644460635}
+  m_Layer: 0
+  m_Name: EA_sterile_core_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1644460634
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1644460633}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.65, y: 0.024999948, z: 30.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1644460635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1644460633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: sterile_core_apparition_normal
+  targetType: 4
+  room: {fileID: 1605412046}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1160376533}
+  - {fileID: 1614482293}
 --- !u!1 &1646434249
 GameObject:
   m_ObjectHideFlags: 0
@@ -73675,6 +74748,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1647813670}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1649854239
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1649854240}
+  - component: {fileID: 1649854241}
+  m_Layer: 0
+  m_Name: EA_recovery_room_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1649854240
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1649854239}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.55, y: 0.025000095, z: 0.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1649854241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1649854239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: recovery_room_apparition_normal
+  targetType: 4
+  room: {fileID: 965369145}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 2085821030}
 --- !u!1 &1650158439
 GameObject:
   m_ObjectHideFlags: 0
@@ -76973,6 +78099,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1718973694
 GameObject:
@@ -77605,6 +78732,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1723928338
 GameObject:
@@ -78840,6 +79968,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1749282153}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1750175319
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1750175320}
+  - component: {fileID: 1750175321}
+  m_Layer: 0
+  m_Name: EA_pre_op_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1750175320
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1750175319}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.15, y: 0.025000095, z: 23.15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1750175321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1750175319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: pre_op_apparition_normal
+  targetType: 4
+  room: {fileID: 1289096525}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1276718912}
 --- !u!1001 &1752063466
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -78983,6 +80164,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 428574948}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1761977734
 GameObject:
@@ -79146,6 +80328,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 2045285890}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &1765343877
 PrefabInstance:
@@ -79904,6 +81087,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1789742538
 GameObject:
@@ -80940,6 +82124,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 1939838825}
 --- !u!1 &1814932761
@@ -81256,6 +82441,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1825535553
 GameObject:
@@ -81653,6 +82839,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1834814390
 GameObject:
@@ -82462,6 +83649,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 157297574}
 --- !u!1 &1854415288
@@ -84295,6 +85483,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1893887263
 GameObject:
@@ -84548,6 +85737,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1895951149
 GameObject:
@@ -84838,6 +86028,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1898457033
 GameObject:
@@ -85509,6 +86700,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights:
   - {fileID: 966080415}
 --- !u!1001 &1911784029
@@ -85862,6 +87054,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &1923082117
 GameObject:
@@ -85913,6 +87106,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &1923281205
 PrefabInstance:
@@ -87048,6 +88242,59 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!1 &1963559082
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1963559083}
+  - component: {fileID: 1963559084}
+  m_Layer: 0
+  m_Name: EA_staff_utility_apparition_pulse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1963559083
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1963559082}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.55, y: 0.025000006, z: 39.05}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1963559084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1963559082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: staff_utility_apparition_pulse
+  targetType: 4
+  room: {fileID: 1854681602}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 2
+  directorLights:
+  - {fileID: 966080415}
 --- !u!1 &1963701969
 GameObject:
   m_ObjectHideFlags: 0
@@ -87728,6 +88975,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1975605327}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1978579004
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1978579005}
+  - component: {fileID: 1978579006}
+  m_Layer: 0
+  m_Name: EA_elevator_lobby_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1978579005
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1978579004}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8.65, y: 0.025000095, z: 7.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1978579006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1978579004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: elevator_lobby_apparition_normal
+  targetType: 4
+  room: {fileID: 672062938}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1939838825}
 --- !u!1 &1982063168
 GameObject:
   m_ObjectHideFlags: 0
@@ -87923,6 +89223,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &1991426772
 PrefabInstance:
@@ -88944,6 +90245,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2008967559}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2009061529
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2009061530}
+  - component: {fileID: 2009061531}
+  m_Layer: 0
+  m_Name: EA_staff_room_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2009061530
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2009061529}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10.3, y: 0.025000157, z: 7.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2009061531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2009061529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: staff_room_apparition_normal
+  targetType: 4
+  room: {fileID: 250052191}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 1699059652}
 --- !u!1001 &2010643068
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -89444,6 +90798,59 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4037593603129922827, guid: ab40bc4cd730e4f41ac20aafb91479de, type: 3}
   m_PrefabInstance: {fileID: 2015710005}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2019133145
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2019133146}
+  - component: {fileID: 2019133147}
+  m_Layer: 0
+  m_Name: EA_storage_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2019133146
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019133145}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 14.55, y: 0.025000006, z: 13.3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2019133147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019133145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: storage_apparition_normal
+  targetType: 4
+  room: {fileID: 1635547322}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 654988483}
 --- !u!1 &2019448182
 GameObject:
   m_ObjectHideFlags: 0
@@ -89556,6 +90963,59 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2019448182}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2019662337
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2019662338}
+  - component: {fileID: 2019662339}
+  m_Layer: 0
+  m_Name: EA_west_lower_hall_apparition_normal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2019662338
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019662337}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.6, y: 0.025000095, z: 7.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 995207998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2019662339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019662337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beed3c615c824dc4b97a034eb87c8ea7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventAnchor
+  anchorId: west_lower_hall_apparition_normal
+  targetType: 4
+  room: {fileID: 310463296}
+  availableForSelection: 1
+  sourceObject: {fileID: 0}
+  audioKind: 0
+  apparitionKind: 1
+  directorLights:
+  - {fileID: 409810017}
 --- !u!1 &2022527336
 GameObject:
   m_ObjectHideFlags: 0
@@ -90501,6 +91961,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 1669092452}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &2042301136
 GameObject:
@@ -91428,6 +92889,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &2060400603
 GameObject:
@@ -91479,6 +92941,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 2075950364}
   audioKind: 0
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &2060698085
 GameObject:
@@ -91530,6 +92993,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &2062639719
 GameObject:
@@ -92254,6 +93718,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1 &2085821027
 GameObject:
@@ -95547,6 +97012,7 @@ MonoBehaviour:
   availableForSelection: 1
   sourceObject: {fileID: 0}
   audioKind: 1
+  apparitionKind: 0
   directorLights: []
 --- !u!1001 &6683700762133892310
 PrefabInstance:

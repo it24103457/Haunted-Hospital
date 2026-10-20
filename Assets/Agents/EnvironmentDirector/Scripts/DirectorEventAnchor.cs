@@ -5,6 +5,7 @@ using UnityEngine;
 namespace HauntedHospital.EnvironmentAI
 {
     public enum DirectorAudioAnchorKind { Whisper = 0, Knock = 1 }
+    public enum DirectorApparitionAnchorKind { Both = 0, NormalOnly = 1, LightPulseOnly = 2 }
 
     [DisallowMultipleComponent]
     public sealed class DirectorEventAnchor : MonoBehaviour
@@ -17,6 +18,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private Transform sourceObject;
         [Tooltip("Used only by AudioAnchor targets. Keeps knocks at authored wall/doorway positions.")]
         [SerializeField] private DirectorAudioAnchorKind audioKind;
+        [SerializeField] private DirectorApparitionAnchorKind apparitionKind;
         [Tooltip("Explicit Director lights. Also used by the light-pulse apparition variant.")]
         [SerializeField] private Light[] directorLights = Array.Empty<Light>();
 
@@ -36,6 +38,14 @@ namespace HauntedHospital.EnvironmentAI
         public bool SupportsEvent(DirectorEventDefinition definition)
         {
             if (definition == null || definition.RequiredTarget != targetType) return false;
+            if (targetType == DirectorTargetType.ApparitionAnchor)
+            {
+                if (definition.EventType == DirectorEventType.DistantApparition)
+                    return apparitionKind != DirectorApparitionAnchorKind.LightPulseOnly;
+                if (definition.EventType == DirectorEventType.LightPulseApparition)
+                    return apparitionKind != DirectorApparitionAnchorKind.NormalOnly && directorLights != null && directorLights.Length > 0;
+                return false;
+            }
             if (targetType == DirectorTargetType.AudioAnchor)
                 return audioKind == DirectorAudioAnchorKind.Whisper
                     ? definition.EventType == DirectorEventType.Whisper

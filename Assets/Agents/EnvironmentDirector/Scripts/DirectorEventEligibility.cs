@@ -119,7 +119,35 @@ namespace HauntedHospital.EnvironmentAI
             if (definition.BlockDuringImmediateDanger && state.HunterDanger != DirectorSignalState.Inactive)
                 return "Hunter danger active or unavailable";
             if (state.RecentGunfire != DirectorSignalState.Inactive) return "Gunfire recovery active or unavailable";
-            if (definition.RequiresVisibility && !IsVisible(anchor)) return "Target not visible or player camera unavailable";
+            if (anchor.TargetType == DirectorTargetType.ApparitionAnchor)
+            {
+                string rejection = ApparitionPlacementRejection(definition, anchor);
+                if (rejection != null) return rejection;
+            }
+            else if (definition.RequiresVisibility && !IsVisible(anchor)) return "Target not visible or player camera unavailable";
+            return null;
+        }
+
+        // Used before selection and immediately before reveal; facing direction is irrelevant.
+        public string ApparitionPlacementRejection(DirectorEventDefinition definition, DirectorEventAnchor anchor)
+        {
+            if (definition == null || anchor == null || roomTracker == null || roomTracker.Player == null ||
+                playerCamera == null || !playerCamera.isActiveAndEnabled ||
+                !playerCamera.transform.IsChildOf(roomTracker.Player)) return "Apparition camera or player unavailable";
+            if (anchor.Room == null || anchor.Room != roomTracker.CurrentRoom ||
+                !anchor.Room.Contains(roomTracker.Player.position)) return "Player must be inside the apparition's room";
+            float distance = Vector3.Distance(roomTracker.Player.position, anchor.Position);
+            if (distance < definition.MinimumPlayerDistance || distance > definition.MaximumPlayerDistance)
+                return "Outside apparition distance range";
+            Vector3 target = anchor.Position + Vector3.up * apparitionEyeHeight;
+            Vector3 delta = target - playerCamera.transform.position;
+            // All solid layers block the view, including doors and furniture. Ignore the player and triggers.
+            foreach (var hit in Physics.RaycastAll(playerCamera.transform.position, delta.normalized,
+                delta.magnitude, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.transform.IsChildOf(roomTracker.Player)) continue;
+                if (hit.distance < delta.magnitude - .03f) return "Apparition line of sight blocked by " + hit.transform.name;
+            }
             return null;
         }
 
