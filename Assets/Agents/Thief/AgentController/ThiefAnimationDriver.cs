@@ -25,7 +25,7 @@ public class ThiefAnimationDriver : MonoBehaviour
     [SerializeField] private float runAuthoredSpeed = 6.43f;
 
     [Tooltip("Seconds the Grab clip must stay visible; Stealing ends in one frame, so the crossfade to Locomotion is delayed this long.")]
-    [SerializeField] private float minGrabSeconds = 0.8f;
+    [SerializeField] private float minGrabSeconds = 0.85f;
 
     private const float Fade = 0.2f;
     private static readonly int SpeedParam = Animator.StringToHash("Speed");
@@ -71,13 +71,16 @@ public class ThiefAnimationDriver : MonoBehaviour
         float speed = agent.velocity.magnitude;
         animator.SetFloat(SpeedParam, speed);
 
-        // Only activate upper-body carry pose while actively traveling to stash with the item.
-        // During WaitAtDoor, Stealing, Delivering, Dead etc., this drops to false so action clips play clean.
-        bool isCarryingToStash = thief.IsCarrying && thief.State == ThiefState.GoToStash;
+        float held = Time.time - grabTime;
+        bool isPlayingGrab = held < minGrabSeconds;
+
+        // Only activate upper-body carry pose while actively traveling to stash with the item and after grab finishes.
+        // During WaitAtDoor, Stealing, Delivering, Dead or Grab playback, this drops to false so action clips play clean.
+        bool isCarryingToStash = thief.IsCarrying && thief.State == ThiefState.GoToStash && !isPlayingGrab;
         animator.SetBool(IsCarryingParam, isCarryingToStash);
 
-        // Stride scaling only while actually moving, or the one-shots would crawl at near-zero speed.
-        bool locomoting = thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash;
+        // Stride scaling only while actually moving and not playing grab, or the one-shots would crawl at near-zero speed.
+        bool locomoting = (thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash) && !isPlayingGrab;
         animator.speed = locomoting && runAuthoredSpeed > 0f ? speed / runAuthoredSpeed : 1f;
     }
 

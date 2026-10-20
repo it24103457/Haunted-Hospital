@@ -15,7 +15,15 @@ public class ThiefCarryVisual : MonoBehaviour
     [Tooltip("Seconds of the small scale bounce played on a dropped item.")]
     [SerializeField] private float dropPunchSeconds = 0.2f;
 
+    [Header("Pickup Timing")]
+    [Tooltip("Delay in seconds before the item attaches to the hand, matching the reach-down moment of the grab animation.")]
+    [SerializeField] private float grabPickupDelay = 0.38f;
+
+    [Tooltip("Seconds to smoothly interpolate the item from the ground into the hand socket.")]
+    [SerializeField] private float pickupInterpolateSeconds = 0.12f;
+
     private ThiefAgent thief;
+    private Coroutine pickupRoutine;
 
     private void Awake()
     {
@@ -39,19 +47,57 @@ public class ThiefCarryVisual : MonoBehaviour
     {
         thief.OnItemStolen -= HandleStolen;
         thief.OnItemDropped -= HandleDropped;
+        if (pickupRoutine != null) { StopCoroutine(pickupRoutine); pickupRoutine = null; }
     }
 
     private void HandleStolen(PickupInteractable item)
     {
         if (carrySocket == null || item == null) return;
-        item.transform.SetParent(carrySocket, false);
-        item.transform.localPosition = Vector3.zero;
-        item.transform.localRotation = Quaternion.identity;
+        if (pickupRoutine != null) StopCoroutine(pickupRoutine);
+        pickupRoutine = StartCoroutine(SmoothPickupItem(item));
     }
 
     private void HandleDropped(PickupInteractable item)
     {
+        if (pickupRoutine != null) { StopCoroutine(pickupRoutine); pickupRoutine = null; }
         if (item != null) StartCoroutine(PunchScale(item.transform));
+    }
+
+    private IEnumerator SmoothPickupItem(PickupInteractable item)
+    {
+        Transform itemTransform = item.transform;
+
+        // Leave item in place on the floor while the Thief bends down and reaches
+        if (grabPickupDelay > 0f)
+            yield return new WaitForSeconds(grabPickupDelay);
+
+        if (item == null || itemTransform == null || carrySocket == null) yield break;
+
+        Vector3 startWorldPos = itemTransform.position;
+        Quaternion startWorldRot = itemTransform.rotation;
+
+        // Parent to socket preserving world position during the blend
+        itemTransform.SetParent(carrySocket, true);
+
+        float elapsed = 0f;
+        while (elapsed < pickupInterpolateSeconds)
+        {
+            if (item == null || itemTransform == null || carrySocket == null) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / pickupInterpolateSeconds);
+            itemTransform.position = Vector3.Lerp(startWorldPos, carrySocket.position, t);
+            itemTransform.rotation = Quaternion.Slerp(startWorldRot, carrySocket.rotation, t);
+            yield return null;
+        }
+
+        if (itemTransform != null)
+        {
+            itemTransform.localPosition = Vector3.zero;
+            itemTransform.localRotation = Quaternion.identity;
+            StartCoroutine(PunchScale(itemTransform));
+        }
+
+        pickupRoutine = null;
     }
 
     private IEnumerator PunchScale(Transform item)
