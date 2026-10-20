@@ -26,11 +26,13 @@ public class ThiefTestPathView : MonoBehaviour
     private GUIStyle style;
     private readonly List<Vector3> points = new List<Vector3>();
 
-    // Builds the unlit path line once, so drawing it each frame only updates its points.
+    // Finds the CarrySocket and builds the unlit path line once, so drawing it each frame only updates its points.
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
-        carrySocket = transform.Find("CarrySocket");
+        // Searched under the whole Thief, because the socket can sit under a bone of the rigged model.
+        foreach (Transform t in GetComponentsInChildren<Transform>(true))
+            if (t.name == "CarrySocket") { carrySocket = t; break; }
 
         // The line lives on its own child so it never interferes with the Thief's colliders or model.
         GameObject lineObject = new GameObject("PathLine");
