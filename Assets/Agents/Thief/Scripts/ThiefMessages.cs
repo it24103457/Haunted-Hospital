@@ -123,12 +123,16 @@ public class ThiefMessages : MonoBehaviour
     /*
      * Keeps the text where the settings put it when they are changed in the Inspector. The change happens
      * just after validation, since Unity doesn't allow layout changes during OnValidate itself.
+     * While entering Play mode it waits for Start, which applies the layout itself, because the text isn't
+     * fully set up before then and styling it early throws an error.
      */
     private void OnValidate()
     {
         UnityEditor.EditorApplication.delayCall += () =>
         {
-            if (this != null) ApplyLayout();
+            if (this == null) return;
+            if (Application.isPlaying && !didStart) return;
+            ApplyLayout();
         };
     }
 #endif
