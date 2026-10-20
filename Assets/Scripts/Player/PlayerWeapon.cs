@@ -34,6 +34,26 @@ public class PlayerWeapon : MonoBehaviour
     public int MagazineSize => magazineSize;
     public bool IsReloading { get; private set; }
 
+    /// <summary>
+    /// True when the first thing hit by the same centre-camera ray used for shooting
+    /// implements IDamageable and is within this weapon's range and hit mask.
+    /// This describes the aimed-at target; it does not depend on ammo or reload state.
+    /// </summary>
+    public bool IsAimingAtDamageable
+    {
+        get
+        {
+            if (playerCamera == null) return false;
+
+            Transform cam = playerCamera.transform;
+            if (!Physics.Raycast(cam.position, cam.forward, out RaycastHit hit, range,
+                                 hitMask, QueryTriggerInteraction.Ignore))
+                return false;
+
+            return hit.collider.GetComponentInParent<IDamageable>() != null;
+        }
+    }
+
     // (current magazine, magazine size)
     public event Action<int, int> MagazineChanged;
 
