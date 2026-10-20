@@ -21,7 +21,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5a6e3958898ba5c468e8b8ef69b109b1, type: 2}
   - {fileID: 11400000, guid: c7979e0c863f071409c432e644fbd4c0, type: 2}
   - {fileID: 11400000, guid: ec442086d4cf0c94cb689b4d519ebe2f, type: 2}
-  minimumTimeBetweenEvents: 12
+  minimumTimeBetweenEvents: 24
   damageRecoverySeconds: 10
   gunfireRecoverySeconds: 6
   restDuration: 5

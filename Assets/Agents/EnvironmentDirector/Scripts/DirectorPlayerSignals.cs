@@ -39,7 +39,7 @@ namespace HauntedHospital.EnvironmentAI
                 objectives.gameObject.scene == gameObject.scene)
             {
                 keypad = objectives.IsKeypadOpen ? DirectorSignalState.Active : DirectorSignalState.Inactive;
-                ending = objectives.HasWon || objectives.IsEscapeInProgress || objectives.IsPaused
+                ending = objectives.HasWon || objectives.IsEscapeInProgress
                     ? DirectorSignalState.Active : DirectorSignalState.Inactive;
             }
         }

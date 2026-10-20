@@ -22,6 +22,8 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorEventIntensity intensity;
         [SerializeField, Range(0f, 1f)]
         private float predictedTensionIncrease = 0.1f;
+        [Tooltip("Applied once when delivered. Apparitions apply this only on the first visible sighting.")]
+        [SerializeField, Min(0f)] private float sanityCost;
 
         [Header("Target")]
         [SerializeField] private DirectorTargetType requiredTarget;
@@ -43,13 +45,18 @@ namespace HauntedHospital.EnvironmentAI
 
         public DirectorEventIntensity Intensity => intensity;
         public float PredictedTensionIncrease => predictedTensionIncrease;
+        public float SanityCost => sanityCost;
+        public bool IsApparition => eventType == DirectorEventType.DistantApparition ||
+            eventType == DirectorEventType.LightPulseApparition;
+        public bool CanStartDuringCombat => eventType == DirectorEventType.LightFlicker ||
+            eventType == DirectorEventType.LocalBlackout;
 
         public DirectorTargetType RequiredTarget => requiredTarget;
         public float MinimumPlayerDistance => minimumPlayerDistance;
         public float MaximumPlayerDistance => maximumPlayerDistance;
         public bool RequiresVisibility => requiresVisibility;
 
-        public bool BlockDuringImmediateDanger => blockDuringImmediateDanger;
+        public bool BlockDuringImmediateDanger => !CanStartDuringCombat && blockDuringImmediateDanger;
         public bool BlockDuringKeypadEntry => blockDuringKeypadEntry;
 
         public void CollectValidationErrors(List<string> errors)
@@ -80,6 +87,8 @@ namespace HauntedHospital.EnvironmentAI
 
             if (!IsFinite(cooldown) || cooldown < 0f)
                 errors.Add($"{prefix}: Cooldown cannot be negative.");
+            if (!IsFinite(sanityCost) || sanityCost < 0f)
+                errors.Add($"{prefix}: Sanity cost must be finite and non-negative.");
 
             if (!IsFinite(predictedTensionIncrease) ||
                 predictedTensionIncrease < 0f ||
@@ -110,7 +119,7 @@ namespace HauntedHospital.EnvironmentAI
             // DirectorEventEligibility, independent of camera-facing visibility.
             // Do not reject their catalogue entries when requiresVisibility is false.
 
-            if (intensity == DirectorEventIntensity.Strong &&
+            if (intensity == DirectorEventIntensity.Strong && !CanStartDuringCombat &&
                 !blockDuringImmediateDanger)
             {
                 errors.Add(
