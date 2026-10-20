@@ -26022,7 +26022,7 @@ MonoBehaviour:
     prefab: {fileID: 5716761999382721728, guid: ab40bc4cd730e4f41ac20aafb91479de, type: 3}
     rotation: {x: 0, y: 0, z: 0}
   - name: Hunter
-    prefab: {fileID: 7951111364613086873, guid: 3c7a91e5d24b48f6a0e15c8b7d2f4601, type: 3}
+    prefab: {fileID: 3479564926184807690, guid: 6b4cb9bc12a17eb4199241ce27477f0c, type: 3}
     rotation: {x: 0, y: 180, z: 0}
   titleText: {fileID: 424129217}
   bodyText: {fileID: 1430952866}
