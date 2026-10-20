@@ -26,6 +26,7 @@ public class ThiefTestPathView : MonoBehaviour
     private GUIStyle style;
     private readonly List<Vector3> points = new List<Vector3>();
 
+    // Builds the unlit path line once, so drawing it each frame only updates its points.
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
@@ -50,6 +51,7 @@ public class ThiefTestPathView : MonoBehaviour
             if (view == null || c.depth > view.depth) view = c;
     }
 
+    // Redraws the line after the Thief has moved this frame, from the Thief through the path points still ahead.
     private void LateUpdate()
     {
         IReadOnlyList<Vector3> path = thief.CurrentPath;
@@ -65,6 +67,7 @@ public class ThiefTestPathView : MonoBehaviour
         line.SetPositions(points.ToArray());
     }
 
+    // Raises a point to the line height, so the line stays visible above furniture from the top-down camera.
     private Vector3 Lift(Vector3 p) => new Vector3(p.x, lineHeight, p.z);
 
     /*
@@ -103,6 +106,7 @@ public class ThiefTestPathView : MonoBehaviour
         return item != null ? ThiefTestWorldLabels.ItemName(item.Type) : "item";
     }
 
+    // Draws the state label above the Thief, with a dark shadow so it stays readable on any floor.
     private void OnGUI()
     {
         if (view == null) return;

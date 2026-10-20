@@ -237,6 +237,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     private bool IsTravelling =>
         State == ThiefState.GoToItem || State == ThiefState.GoToStash || State == ThiefState.WaitAtDoor;
 
+    // Collects its own components and finds the waypoint graph, the player and the player's camera in the scene.
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -391,6 +392,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         OnVanished?.Invoke();
     }
 
+    // Collects every scene object whose name starts with the Thief spawn prefix; one is picked at random on each appearance.
     private void FindThiefSpawns()
     {
         thiefSpawns.Clear();
@@ -447,6 +449,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         item.transform.position += Vector3.up * (floorY - bottom);
     }
 
+    // Shows or hides the Thief's model and turns its hitbox on or off with it, so a hidden Thief can't be shot or seen.
     private void SetVisible(bool visible)
     {
         if (model != null) model.gameObject.SetActive(visible);
@@ -706,6 +709,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         return corners;
     }
 
+    // Total walking length of a NavMesh path, summed corner to corner, so a spot behind a wall shows up as a long detour.
     private static float PathLength(NavMeshPath path)
     {
         float length = 0f;
@@ -850,6 +854,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         return sample;
     }
 
+    // How much the player lacks a stat, from 0 (full) to 1 (empty), so stats with different maximums compare on one scale.
     private static float Need(float current, float max)
     {
         if (max <= 0f) return 0f;
@@ -937,6 +942,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         return best;
     }
 
+    // Distance between two points ignoring height, so an item on a shelf or table isn't counted as further away than it is.
     private static float FlatDistance(Vector3 a, Vector3 b)
     {
         a.y = 0f;
@@ -1082,6 +1088,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         return ThiefPathfinder.FindPath(from, to, EdgeCost, MinCostPerMetre);
     }
 
+    // Collects the graph node nearest to each Hunter spawn point, whose edges get the Hunter spawn discount.
     private void FindHunterSpawnNodes()
     {
         hunterSpawnNodes.Clear();

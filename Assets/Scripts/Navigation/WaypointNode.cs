@@ -45,6 +45,7 @@ public class WaypointNode : MonoBehaviour
         Barricade != null && Barricade.activeInHierarchy &&
         barricadeObstacle != null && barricadeObstacle.enabled;
 
+    // Door and barricade nodes find the door or barricade they stand in; normal nodes need nothing linked.
     private void Awake()
     {
         if (type == WaypointType.Normal) return;
@@ -90,6 +91,7 @@ public class WaypointNode : MonoBehaviour
     // Edge editing used by WaypointGraph's Rebuild Edges.
     public void EditorClearNeighbours() => neighbours.Clear();
 
+    // Adds a neighbour once, skipping itself and duplicates, so a rebuilt edge list stays clean.
     public void EditorAddNeighbour(WaypointNode node)
     {
         if (node != null && node != this && !neighbours.Contains(node))
