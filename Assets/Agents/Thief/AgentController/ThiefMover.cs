@@ -48,6 +48,8 @@ public class ThiefMover : MonoBehaviour
         for (int i = 0; i < points.Count; i++) path.Add(points[i]);
         index = 0;
 
+        if (!agent.isOnNavMesh) return;
+
         if (path.Count == 0)
         {
             agent.ResetPath();
@@ -60,14 +62,21 @@ public class ThiefMover : MonoBehaviour
     {
         agent.speed = baseSpeed * thief.SpeedMultiplier;
 
-        if (path.Count == 0 || index >= path.Count - 1) return;
+        if (path.Count == 0 || !agent.isOnNavMesh) return;
 
-        Vector3 target = path[index];
-        Vector3 flat = transform.position - target;
-        flat.y = 0f;
-        if (flat.magnitude > passDistance) return;
+        Vector3 toTarget = path[index] - transform.position;
+        toTarget.y = 0f;
 
-        index++;
-        agent.SetDestination(path[index]);
+        if (toTarget.magnitude <= passDistance && index < path.Count - 1)
+        {
+            index++;
+            agent.SetDestination(path[index]);
+            return;
+        }
+
+        // A publish can be dropped when the agent is off the mesh for a moment (spawn race), and the
+        // agent can lose its path mid-trip: re-issue the current point so the Thief never strands
+        // with a stored path and no destination.
+        if (!agent.hasPath) agent.SetDestination(path[index]);
     }
 }

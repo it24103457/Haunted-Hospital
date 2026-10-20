@@ -6,7 +6,8 @@ using UnityEngine.AI;
 /*
  * Maps ThiefAgent's published state onto the humanoid Animator on the model under Model. Locomotion blends
  * Idle and Run by the NavMeshAgent's speed, scaled while moving so the Run clip's strides match the agent's
- * actual speed; every other state plays its one-shot clip and returns to Locomotion on exit time. On death
+ * actual speed; every other state plays its one-shot clip and returns to Locomotion on exit time (the Grab
+ * clip holds for a minimum display time because Stealing itself lasts one frame). On death
  * ThiefAgent hides Model the same frame, so the driver shows it again, plays the Death clip and hides it
  * once the clip has finished; a respawn resets everything to Locomotion. The Animator never gets root
  * motion: the NavMeshAgent moves the Thief.
@@ -23,6 +24,9 @@ public class ThiefAnimationDriver : MonoBehaviour
     [Tooltip("Forward metres per second of the authored Run clip; strides are scaled by agent speed over this.")]
     [SerializeField] private float runAuthoredSpeed = 6.43f;
 
+    [Tooltip("Seconds the Grab clip must stay visible; Stealing ends in one frame, so the crossfade to Locomotion is delayed this long.")]
+    [SerializeField] private float minGrabSeconds = 0.8f;
+
     private const float Fade = 0.2f;
     private static readonly int SpeedParam = Animator.StringToHash("Speed");
 
@@ -37,6 +41,8 @@ public class ThiefAnimationDriver : MonoBehaviour
     private ThiefAgent thief;
     private NavMeshAgent agent;
     private Coroutine hideRoutine;
+    private Coroutine grabHold;
+    private float grabTime = float.NegativeInfinity;
 
     private void Awake()
     {
@@ -72,6 +78,7 @@ public class ThiefAnimationDriver : MonoBehaviour
     private void HandleStateChanged(ThiefState state)
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
+        if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
 
         if (state == ThiefState.Dead)
         {
@@ -88,7 +95,17 @@ public class ThiefAnimationDriver : MonoBehaviour
         if (state == ThiefState.Inactive || state == ThiefState.Vanished || animator == null) return;
 
         if (StateClips.TryGetValue(state, out string clip))
+        {
+            if (state == ThiefState.Stealing) grabTime = Time.time;
             animator.CrossFadeInFixedTime(clip, Fade);
+            return;
+        }
+
+        // Stealing ends in a single frame, so the blend back to Locomotion waits out the Grab hold
+        // instead of firing one frame after the Grab crossfade started; any newer state stops it above.
+        float held = Time.time - grabTime;
+        if (held < minGrabSeconds)
+            grabHold = StartCoroutine(ResumeLocomotionAfterGrab(minGrabSeconds - held));
         else
             animator.CrossFadeInFixedTime("Locomotion", Fade);
     }
@@ -96,9 +113,20 @@ public class ThiefAnimationDriver : MonoBehaviour
     private void HandleSpawned()
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
+        if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
+        grabTime = float.NegativeInfinity;
         if (animator == null) return;
         animator.speed = 1f;
         animator.CrossFadeInFixedTime("Locomotion", Fade);
+    }
+
+    private IEnumerator ResumeLocomotionAfterGrab(float wait)
+    {
+        yield return new WaitForSeconds(wait);
+        grabHold = null;
+        // Only blend back if nothing newer took over the Animator while waiting.
+        if (animator != null && (thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash))
+            animator.CrossFadeInFixedTime("Locomotion", Fade);
     }
 
     private IEnumerator HideAfterClip()
