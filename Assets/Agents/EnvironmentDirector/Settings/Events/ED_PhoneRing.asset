@@ -15,10 +15,10 @@ MonoBehaviour:
   eventId: phone_ring
   eventType: 3
   availableForSelection: 1
-  duration: 4
+  duration: 31.462654
   cooldown: 60
   intensity: 0
-  predictedTensionIncrease: 0.1
+  predictedTensionIncrease: 0.18
   requiredTarget: 1
   minimumPlayerDistance: 2
   maximumPlayerDistance: 12

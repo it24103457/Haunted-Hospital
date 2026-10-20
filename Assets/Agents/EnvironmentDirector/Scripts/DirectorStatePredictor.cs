@@ -39,7 +39,7 @@ namespace HauntedHospital.EnvironmentAI
 
         public static bool TryPredictEvent(DirectorPlanningState source, DirectorEventDefinition definition,
             DirectorSettings director, DirectorTensionSettings tension,
-            out DirectorPlanningState next, out string reason)
+            out DirectorPlanningState next, out string reason, float durationOverride = 0f)
         {
             next = null;
             if (!ValidSettings(director, tension, out reason)) return false;
@@ -54,7 +54,9 @@ namespace HauntedHospital.EnvironmentAI
             if (source.GlobalCooldownRemaining > 0f || source.CooldownRemaining(definition.EventId) > 0f ||
                 source.DamageRecoveryRemaining > 0f)
             { reason = "Predicted cooldown or damage recovery blocks event; predict Rest first"; return false; }
-            return Transition(source, definition, definition.Duration, director, tension, out next, out reason);
+            if (!NonNegative(durationOverride)) { reason = "Invalid duration override"; return false; }
+            return Transition(source, definition, durationOverride > 0f ? durationOverride : definition.Duration,
+                director, tension, out next, out reason);
         }
 
         private static bool Transition(DirectorPlanningState source, DirectorEventDefinition definition,
@@ -64,13 +66,13 @@ namespace HauntedHospital.EnvironmentAI
             next = null;
             if (source == null) { reason = "Missing source state"; return false; }
             float elapsed = source.ElapsedSeconds + duration;
-            float quiet = definition == null ? source.QuietSeconds + duration : duration;
+            float quiet = definition == null ? source.QuietSeconds + duration : 0f;
             if (!NonNegative(elapsed) || !NonNegative(quiet))
             { reason = "Prediction time overflow"; return false; }
-            // Assume delivery at the start, then decay over the event's duration.
+            // Delivered effects sustain pressure while active, matching live memory. Rest decays it.
             float pressure = Mathf.Clamp(source.EventPressure +
                 (definition == null ? 0f : definition.PredictedTensionIncrease), 0f, tension.MaximumEventPressure);
-            pressure = Mathf.Max(0f, pressure - tension.EventPressureDecayPerSecond * duration);
+            if (definition == null) pressure = Mathf.Max(0f, pressure - tension.EventPressureDecayPerSecond * duration);
             var cooldowns = new List<DirectorPlanningCooldown>(source.CopyCooldowns());
             for (int i = 0; i < cooldowns.Count; i++)
                 cooldowns[i] = new DirectorPlanningCooldown { eventId = cooldowns[i].eventId,

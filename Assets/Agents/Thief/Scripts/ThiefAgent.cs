@@ -334,15 +334,15 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * Killed: drops any carried item on the floor where the Thief fell (collectable again through Release),
-     * forgets everything it learned (barricade memory), stops, disappears (model hidden, hitbox off) and comes
+     * Killed: drops any carried item on the floor where the Thief fell, resting on the floor (collectable again through
+     * Release), forgets everything it learned (barricade memory), stops, disappears (model hidden, hitbox off) and comes
      * back after a random time between deathRespawnDelayMin and deathRespawnDelayMax. Raises OnDied.
      */
     private void Die()
     {
         if (carriedItem != null)
         {
-            carriedItem.Release(FloorBelow(transform.position));
+            DropOnFloor(carriedItem);
             OnItemDropped?.Invoke(carriedItem);
         }
         carriedItem = null;
@@ -416,6 +416,35 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     private Vector3 FloorBelow(Vector3 position)
     {
         return NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, navFilter) ? hit.position : position;
+    }
+
+    /*
+     * Releases a carried item where the Thief fell so it rests on the floor rather than sinking into it.
+     * Release places the item's pivot, which sits in the middle of the item, so the item is then lifted until the bottom of
+     * its model touches the floor. The floor's height comes from a ray straight down that skips the Thief and the item
+     * themselves; without a hit, the NavMesh height is used.
+     */
+    private void DropOnFloor(PickupInteractable item)
+    {
+        // The highest surface within a quarter metre of the NavMesh height is the floor (the hits come back in no order).
+        Vector3 spot = FloorBelow(transform.position);
+        float floorY = spot.y;
+        bool found = false;
+        foreach (RaycastHit hit in Physics.RaycastAll(spot + Vector3.up * 0.5f, Vector3.down, 1.5f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.transform.IsChildOf(transform) || hit.transform.IsChildOf(item.transform)) continue;
+            if (Mathf.Abs(hit.point.y - spot.y) > 0.25f) continue;
+            if (!found || hit.point.y > floorY) floorY = hit.point.y;
+            found = true;
+        }
+
+        item.Release(new Vector3(spot.x, floorY, spot.z));
+
+        Renderer[] renderers = item.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return;
+        float bottom = renderers[0].bounds.min.y;
+        foreach (Renderer r in renderers) bottom = Mathf.Min(bottom, r.bounds.min.y);
+        item.transform.position += Vector3.up * (floorY - bottom);
     }
 
     private void SetVisible(bool visible)

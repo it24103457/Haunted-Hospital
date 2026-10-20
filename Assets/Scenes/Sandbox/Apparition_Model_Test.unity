@@ -26397,6 +26397,8 @@ MonoBehaviour:
   playerTransform: {fileID: 936268515}
   roomTracker: {fileID: 593751869}
   settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
+  hunterSource: {fileID: 0}
+  maximumHunterSignalAge: 0.5
   observationInterval: 0.1
   referencesValid: 0
   validationMessage: Waiting for Play mode
@@ -60154,7 +60156,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1177059711948322676, guid: 742e37250fc42954ca11099e7638e3f9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1177059711948322676, guid: 742e37250fc42954ca11099e7638e3f9, type: 3}
       propertyPath: m_LocalRotation.w

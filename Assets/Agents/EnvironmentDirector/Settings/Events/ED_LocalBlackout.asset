@@ -15,7 +15,7 @@ MonoBehaviour:
   eventId: local_blackout
   eventType: 2
   availableForSelection: 1
-  duration: 4
+  duration: 30
   cooldown: 100
   intensity: 2
   predictedTensionIncrease: 0.22

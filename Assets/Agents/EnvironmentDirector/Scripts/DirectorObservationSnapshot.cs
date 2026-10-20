@@ -47,6 +47,14 @@ namespace HauntedHospital.EnvironmentAI
         public DirectorSignalState KeypadInteraction => keypadInteraction;
         public DirectorSignalState Victory => victory;
 
+        internal DirectorObservationSnapshot WithPlayerSignals(DirectorSignalState gunfire,
+            DirectorSignalState keypad, DirectorSignalState ending)
+        {
+            var copy = this;
+            copy.recentGunfire = gunfire; copy.keypadInteraction = keypad; copy.victory = ending;
+            return copy;
+        }
+
         internal DirectorObservationSnapshot WithHunterDanger(DirectorSignalState state)
         {
             var copy = this;
