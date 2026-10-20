@@ -19,3 +19,6 @@ MonoBehaviour:
   anchorRepetitionWeight: 0.1
   repetitionWindowSeconds: 180
   liveChoiceTolerance: 0.16
+  apparitionPreferenceStartsAfter: 60
+  apparitionPreferenceRampSeconds: 180
+  maximumApparitionPreference: 0.35

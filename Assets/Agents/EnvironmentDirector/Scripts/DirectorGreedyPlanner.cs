@@ -19,13 +19,15 @@ namespace HauntedHospital.EnvironmentAI
             public DirectorPlanningState state;
             public List<DirectorEventRecord> history;
             public float eventPenalty, anchorPenalty, priority, trackingScore;
+            public float sightingBonus;
+            public bool predictsSighting;
         }
 
         public static DirectorSearchPlan Search(DirectorPlanningState source,
             IReadOnlyList<DirectorPlanningAction> suppliedActions, IReadOnlyList<DirectorEventRecord> history,
             float desiredTension, float sampledAt, bool manualOnly, DirectorSettings director,
             DirectorTensionSettings tension, DirectorScoringSettings scoring, bool scoreWholeTrajectory = false,
-            bool varyLiveChoice = false)
+            bool varyLiveChoice = false, float secondsSinceApparitionSeen = 0f)
         {
             var result = new DirectorSearchPlan { manualOnly = manualOnly, sampledAt = sampledAt,
                 desiredTension = desiredTension, stopReason = "Invalid search inputs" };
@@ -85,19 +87,25 @@ namespace HauntedHospital.EnvironmentAI
                     var repetition = action.IsRest ? default : DirectorHeuristic.GetRepetition(current.history,
                         action.definition.EventType, action.anchorId, start, scoring.RepetitionWindowSeconds);
                     var score = DirectorHeuristic.Score(next.EstimatedPressure, desiredTension,
-                        next.Vulnerability, action.IsRest, repetition, scoring);
+                        next.Vulnerability, action.IsRest, repetition, scoring,
+                        !action.IsRest && action.definition.IsApparition && !current.predictsSighting
+                            ? DirectorHeuristic.ApparitionPreference(secondsSinceApparitionSeen, scoring) : 0f);
                     if (!score.valid) continue;
                     var child = new Node { id = result.generatedNodes++, depth = current.depth + 1,
                         parent = current, state = next, history = new List<DirectorEventRecord>(current.history),
                         eventPenalty = current.eventPenalty + score.eventRepetitionPenalty,
-                        anchorPenalty = current.anchorPenalty + score.anchorRepetitionPenalty };
+                        anchorPenalty = current.anchorPenalty + score.anchorRepetitionPenalty,
+                        sightingBonus = current.sightingBonus + score.apparitionSightingBonus,
+                        predictsSighting = current.predictsSighting || (!action.IsRest && action.definition.IsApparition) };
                     // Retain repetition penalties across Rest: waiting must not erase the
                     // earlier cost of selecting a repetitive scare in this branch.
                     child.trackingScore = (scoreWholeTrajectory ? current.trackingScore : 0f) +
                         score.targetDifference + score.overshootPenalty;
                     // Live replanning scores intermediate states too, preventing a useful
                     // scare being pushed to the last step on every one-second replan.
-                    child.priority = child.trackingScore + child.eventPenalty + child.anchorPenalty;
+                    // Credit one predicted sighting per branch; Rest cannot erase it or farm extra credit.
+                    // Use current absence, not future waiting, so postponement earns no extra bonus.
+                    child.priority = child.trackingScore + child.eventPenalty + child.anchorPenalty - child.sightingBonus;
                     if (!Finite(child.priority)) continue;
                     child.step = new DirectorPlanStep { action = action, predictedState = next,
                         localScore = score, branchScore = child.priority };

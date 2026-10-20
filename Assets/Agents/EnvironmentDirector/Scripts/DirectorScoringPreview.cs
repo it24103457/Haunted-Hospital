@@ -89,7 +89,9 @@ namespace HauntedHospital.EnvironmentAI
                         row.repetition = option.IsRest ? default : DirectorHeuristic.GetRepetition(history,
                             option.definition.EventType, option.anchor.AnchorId, now, scoringSettings.RepetitionWindowSeconds);
                         row.score = DirectorHeuristic.Score(next.EstimatedPressure, targetUsed,
-                            next.Vulnerability, option.IsRest, row.repetition, scoringSettings);
+                            next.Vulnerability, option.IsRest, row.repetition, scoringSettings,
+                            !option.IsRest && option.definition.IsApparition
+                                ? DirectorHeuristic.ApparitionPreference(eventMemory.SecondsSinceApparitionSeen, scoringSettings) : 0f);
                         row.reason = row.score.reason;
                     }
                     else row.reason = reason;
