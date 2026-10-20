@@ -29,6 +29,7 @@ public class ThiefAnimationDriver : MonoBehaviour
 
     private const float Fade = 0.2f;
     private static readonly int SpeedParam = Animator.StringToHash("Speed");
+    private static readonly int IsCarryingParam = Animator.StringToHash("IsCarrying");
 
     private static readonly Dictionary<ThiefState, string> StateClips = new Dictionary<ThiefState, string>
     {
@@ -69,6 +70,11 @@ public class ThiefAnimationDriver : MonoBehaviour
 
         float speed = agent.velocity.magnitude;
         animator.SetFloat(SpeedParam, speed);
+
+        // Only activate upper-body carry pose while actively traveling to stash with the item.
+        // During WaitAtDoor, Stealing, Delivering, Dead etc., this drops to false so action clips play clean.
+        bool isCarryingToStash = thief.IsCarrying && thief.State == ThiefState.GoToStash;
+        animator.SetBool(IsCarryingParam, isCarryingToStash);
 
         // Stride scaling only while actually moving, or the one-shots would crawl at near-zero speed.
         bool locomoting = thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash;
