@@ -47,6 +47,10 @@ public class ThiefAnimationDriver : MonoBehaviour
     [Tooltip("Duration of the smooth sink/fade out before vanishing.")]
     [SerializeField] private float vanishFadeDuration = 0.8f;
 
+    [Header("Door Facing")]
+    [Tooltip("Seconds over which the Thief smoothly rotates to face the doorway upon arriving at a closed door.")]
+    [SerializeField] private float doorTurnDuration = 0.15f;
+
     [Header("Flinch / Death Facing")]
     [Tooltip("Seconds over which the Thief snaps to face the damage source on hit.")]
     [SerializeField] private float flinchTurnDuration = 0.15f;
@@ -60,6 +64,7 @@ public class ThiefAnimationDriver : MonoBehaviour
     private Coroutine grabHold;
     private Coroutine vanishRoutine;
     private Coroutine flinchRoutine;
+    private Coroutine doorTurnRoutine;
     private float grabTime = float.NegativeInfinity;
     private float lastKnownHealth;
     private float lastFlinchTime = float.NegativeInfinity;
@@ -91,6 +96,7 @@ public class ThiefAnimationDriver : MonoBehaviour
         thief.OnSpawned -= HandleSpawned;
         if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
         if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
         ResetModelTransform();
     }
 
@@ -127,6 +133,7 @@ public class ThiefAnimationDriver : MonoBehaviour
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
         if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
         if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
 
         if (state == ThiefState.Dead)
         {
@@ -148,6 +155,11 @@ public class ThiefAnimationDriver : MonoBehaviour
         {
             ResetModelTransform();
             vanishRoutine = StartCoroutine(SmoothVanishAfterDelivery());
+        }
+
+        if (state == ThiefState.WaitAtDoor)
+        {
+            doorTurnRoutine = StartCoroutine(FaceDoor());
         }
 
         if (StateClips.TryGetValue(state, out string clip))
@@ -172,6 +184,7 @@ public class ThiefAnimationDriver : MonoBehaviour
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
         if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
         if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
         ResetModelTransform();
         grabTime = float.NegativeInfinity;
         lastKnownHealth = thief.Health;
@@ -229,6 +242,44 @@ public class ThiefAnimationDriver : MonoBehaviour
         hideRoutine = null;
     }
 
+    // ── Door facing ──────────────────────────────────────────────────
+
+    private IEnumerator FaceDoor()
+    {
+        IReadOnlyList<Vector3> path = thief != null ? thief.CurrentPath : null;
+        if (path == null || path.Count < 2)
+        {
+            doorTurnRoutine = null;
+            yield break;
+        }
+
+        Vector3 dir = path[path.Count - 1] - path[path.Count - 2];
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.001f)
+        {
+            doorTurnRoutine = null;
+            yield break;
+        }
+
+        Quaternion startRot = transform.rotation;
+        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+        float elapsed = 0f;
+
+        while (elapsed < doorTurnDuration)
+        {
+            if (thief.State != ThiefState.WaitAtDoor) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / doorTurnDuration);
+            transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
+            yield return null;
+        }
+
+        if (thief.State == ThiefState.WaitAtDoor)
+            transform.rotation = targetRot;
+
+        doorTurnRoutine = null;
+    }
+
     // ── Flinch / Death facing ────────────────────────────────────────
 
     private void OnDamageDetected()
@@ -243,6 +294,7 @@ public class ThiefAnimationDriver : MonoBehaviour
         animator.SetTrigger(FlinchTrigger);
 
         // Snap-rotate to face the player (damage source)
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
         if (flinchRoutine != null) StopCoroutine(flinchRoutine);
         flinchRoutine = StartCoroutine(FacePlayerOnHit());
     }
