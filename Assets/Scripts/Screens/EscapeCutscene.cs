@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
@@ -244,6 +245,8 @@ public class EscapeCutscene : MonoBehaviour
 
     private IEnumerator Run()
     {
+        yield return PrewarmRoof();
+
         // Fade in facing the key switch, just after the key was turned.
         yield return FadeTo(fade, 0f, 0.8f);
         yield return Wait(0.6f);
@@ -408,6 +411,44 @@ public class EscapeCutscene : MonoBehaviour
         yield return MoonShot();
         cam.fieldOfView = fovBefore;
         yield return ShowEnd(0f, 2.5f);
+    }
+
+    /*
+     * While the screen is still black at the start, switches the roof lights on and points the camera at the part-two views
+     * (inside the roof lift, the helicopter seat, the lift-off shots) for a couple of frames each, then puts everything back.
+     * In the Editor, a material lit in a way it hasn't been drawn before shows flat cyan for a moment while its shader is
+     * prepared; this gets that done out of sight, long before the roof doors open. A built game prepares shaders in advance anyway.
+     */
+    private IEnumerator PrewarmRoof()
+    {
+        if (!HasRoof) yield break;
+
+        if (roofLights != null) roofLights.SetActive(true);
+        Vector3 roofOffset = roofDoorLeft.parent.position - doorLeft.parent.position;
+        var views = new List<(Vector3 pos, Quaternion rot)>
+        {
+            (camLookBack.position + roofOffset, camLookBack.rotation),
+            (camLookBack.position + roofOffset, Quaternion.LookRotation(HeliCentre() - (camLookBack.position + roofOffset)))
+        };
+        foreach (Transform marker in new[] { heliSeat, shotLiftOff, shotClimb })
+            if (marker != null) views.Add((marker.position, Quaternion.LookRotation(HeliCentre() - marker.position)));
+        if (heliSeat != null) views.Add((heliSeat.position, heliSeat.rotation));
+
+        // The camera is placed from camBasePos/camBaseRot every frame, so the views go through those and are put back after.
+        Vector3 startPos = camBasePos;
+        Quaternion startRot = camBaseRot;
+        foreach (var view in views)
+        {
+            camBasePos = view.pos;
+            camBaseRot = view.rot;
+            yield return null;
+            yield return null;
+        }
+
+        if (roofLights != null) roofLights.SetActive(false);
+        camBasePos = startPos;
+        camBaseRot = startRot;
+        yield return null;
     }
 
     // The middle of the helicopter's body, which the shots keep in frame.
