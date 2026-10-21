@@ -9,7 +9,7 @@ using UnityEngine;
  */
 public static class HunterPathfinder
 {
-    /// <summary>The cheapest route from start to goal (both included), or an empty list when there is none.</summary>
+    // The cheapest route from start to goal (both included), or an empty list when there is none.
     public static List<WaypointNode> FindPath(WaypointNode start, WaypointNode goal, HunterSettings settings, Func<Door, bool> isBanned)
     {
         var route = new List<WaypointNode>();
@@ -50,10 +50,10 @@ public static class HunterPathfinder
         return route;
     }
 
-    /// <summary>
-    /// For an unreachable goal: the route to the reachable node that is closest (in a straight line) to the target.
-    /// The result is just the start node when nothing nearer can be reached.
-    /// </summary>
+
+    // For an unreachable goal: the route to the reachable node that is closest (in a straight line) to the target.
+    // The result is just the start node when nothing nearer can be reached.
+
     public static List<WaypointNode> FindPathToNearest(WaypointNode start, Vector3 target, HunterSettings settings, Func<Door, bool> isBanned)
     {
         if (start == null) return new List<WaypointNode>();
@@ -87,10 +87,9 @@ public static class HunterPathfinder
         return FindPath(start, best, settings, isBanned);
     }
 
-    /// <summary>
-    /// Every node the Hunter can reach from start without the total cost passing maxCost (start itself is not included).
-    /// Uses the same blocking and cost rules as FindPath, so a sealed room gives only the nodes inside it.
-    /// </summary>
+
+    // Every node the Hunter can reach from start without the total cost passing maxCost (start itself is not included).
+    // Uses the same blocking and cost rules as FindPath, so a sealed room gives only the nodes inside it.
     public static List<WaypointNode> FindReachableWithin(WaypointNode start, float maxCost, HunterSettings settings, Func<Door, bool> isBanned)
     {
         var result = new List<WaypointNode>();
@@ -128,7 +127,7 @@ public static class HunterPathfinder
         return result;
     }
 
-    /// <summary>The price of one step onto a neighbouring node. Infinity means blocked.</summary>
+    // The price of one step onto a neighbouring node. Infinity means blocked.
     public static float StepCost(WaypointNode from, WaypointNode to, HunterSettings settings, Func<Door, bool> isBanned)
     {
         if (IsBlocked(to, isBanned)) return float.PositiveInfinity;
@@ -141,15 +140,25 @@ public static class HunterPathfinder
         return cost;
     }
 
-    /// <summary>True for a locked door, a door the Hunter is avoiding for now, or an intact barricade.</summary>
+    // True for a locked door, a door the Hunter is avoiding for now, or an intact barricade.
     public static bool IsBlocked(WaypointNode node, Func<Door, bool> isBanned)
     {
         switch (node.Type)
         {
             case WaypointType.Door:
-                return node.Door != null && (node.Door.IsLocked || (isBanned != null && isBanned(node.Door)));
+                if (node.Door == null) return false;
+
+                // A locked door blocks the Hunter only while it is closed.
+                if (node.Door.IsLocked && !node.Door.IsOpen) return true;
+
+                // Avoid doors the Hunter recently failed to open.
+                if (!node.Door.IsOpen && isBanned != null && isBanned(node.Door)) return true;
+
+                return false;
+
             case WaypointType.Barricade:
                 return node.IsBarricadeIntact;
+
             default:
                 return false;
         }

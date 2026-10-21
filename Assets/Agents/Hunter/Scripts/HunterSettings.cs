@@ -100,6 +100,12 @@ public sealed class HunterSettings : ScriptableObject
 
     [SerializeField, Min(0.1f)] private float attackCooldownSeconds = 1.2f;
 
+    [Tooltip("Pause between the Hunter reaching the player and its first hit, so the player gets a moment to react.")]
+    [SerializeField, Min(0f)] private float attackWindupSeconds = 0.4f;
+
+    [Tooltip("How often the Hunter checks on the player: how close they are by path, and whether they are within reach.")]
+    [SerializeField, Min(0.05f)] private float senseIntervalSeconds = 0.2f;
+
     [Tooltip("The player's position counts as a valid target only if it was confirmed within this many seconds. Stops attacks through walls or into vents.")]
     [SerializeField, Min(0.05f)] private float freshReachSeconds = 0.5f;
 
@@ -196,6 +202,8 @@ public sealed class HunterSettings : ScriptableObject
     public float AttackExitRange => attackRange + attackExitMargin;
     public float AttackDamage => attackDamage;
     public float AttackCooldownSeconds => attackCooldownSeconds;
+    public float AttackWindupSeconds => attackWindupSeconds;
+    public float SenseIntervalSeconds => senseIntervalSeconds;
     public float FreshReachSeconds => freshReachSeconds;
 
     public float MaxHealth => maxHealth;

@@ -105,6 +105,26 @@ public sealed class HunterNavigator
         return HunterPathfinder.FindReachableWithin(graph.GetNearestNode(from), maxCost, settings, isBanned);
     }
 
+    /// <summary>
+    /// How far a position is by path from the Hunter (metres; closed doors cost extra). False when there is no route.
+    /// A position on the far side of a wall or a locked door is far or unreachable, however close it is in a straight line.
+    /// </summary>
+    public bool TryGetPathCost(Vector3 position, out float cost)
+    {
+        cost = 0f;
+
+        WaypointNode start = graph.GetNearestNode(body.position);
+        WaypointNode goal = graph.GetNearestNode(position);
+        if (start == null || goal == null) return false;
+
+        List<WaypointNode> found = HunterPathfinder.FindPath(start, goal, settings, isBanned);
+        if (found.Count == 0) return false;
+
+        cost = Flat(body.position, start.Position) + Flat(goal.Position, position);
+        for (int i = 1; i < found.Count; i++) cost += HunterPathfinder.StepCost(found[i - 1], found[i], settings, isBanned);
+        return true;
+    }
+
     /// <summary>Every node the Hunter can walk to from a position, however far (see NodesWithin).</summary>
     public List<WaypointNode> NodesReachable(Vector3 from)
     {
