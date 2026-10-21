@@ -61,8 +61,8 @@ MonoBehaviour:
   doorOpenTimeoutSeconds: 3
   doorBanSeconds: 6
   doorRetryLimit: 3
-  patrolSpeed: 0.7
-  investigateSpeed: 1
-  searchSpeed: 0.8
-  chaseSpeed: 1.4
+  patrolSpeed: 0.82
+  investigateSpeed: 1.14
+  searchSpeed: 0.93
+  chaseSpeed: 1.5
   enableDebugLogging: 0
