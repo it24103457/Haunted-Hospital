@@ -1085,7 +1085,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScreenNavigation
   mainMenuScene: {fileID: 102900000, guid: 10afa0908827c8544a13bf16fb4037ef, type: 3}
-  mainMenuScenePath: Assets/Scenes/Sandbox/MainMenu.unity
+  mainMenuScenePath: Assets/Scenes/Main/MainMenu.unity
 --- !u!114 &5522866345371348136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1168,7 +1168,7 @@ MonoBehaviour:
   sound: {fileID: 8300000, guid: 78fd52ca99938164d861f2051c6a6bac, type: 3}
   soundVolume: 0.9
   cutsceneScene: {fileID: 102900000, guid: 7b9f030e03449b34fb02c9a54ae17fc2, type: 3}
-  cutsceneScenePath: Assets/Scenes/Sandbox/EscapeCutscene.unity
+  cutsceneScenePath: Assets/Scenes/Main/EscapeCutscene.unity
   loadingText: {fileID: 3702230851736477581}
   loadingDotInterval: 0.4
   minimumLoadingTime: 1

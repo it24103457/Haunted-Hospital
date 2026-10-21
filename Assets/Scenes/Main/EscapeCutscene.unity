@@ -10472,7 +10472,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 1
   m_VoxelSize: 0.05
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 69aad2967202f6148b3d3291b8b39344, type: 2}
+  m_NavMeshData: {fileID: 0}
   m_BuildHeightMesh: 0
 --- !u!1 &733785727
 GameObject:
@@ -12895,7 +12895,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScreenNavigation
   mainMenuScene: {fileID: 102900000, guid: 10afa0908827c8544a13bf16fb4037ef, type: 3}
-  mainMenuScenePath: Assets/Scenes/Sandbox/MainMenu.unity
+  mainMenuScenePath: Assets/Scenes/Main/MainMenu.unity
 --- !u!114 &892624816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24564,6 +24564,7 @@ MonoBehaviour:
   rideTime: 7
   rideLight: 0.45
   playerWalkSpeed: 1.5
+  spinUpTime: 4
   shotFov: 50
   moonShotFov: 30
   moonShotTime: 7
