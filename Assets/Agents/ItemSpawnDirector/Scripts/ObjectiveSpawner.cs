@@ -76,13 +76,36 @@ public class ObjectiveSpawner : MonoBehaviour
     public bool IsKeySpawned => keySpawned;
     public IReadOnlyCollection<string> UsedPaperMarkers => usedPaperMarkers;
 
+#if UNITY_EDITOR
+    private void Reset()
+    {
+        AutoAssignPrefabs();
+    }
+#endif
+
     private void Awake()
     {
+        AutoAssignPrefabs();
+
         if (objectives == null) objectives = FindAnyObjectByType<ObjectiveState>();
         if (player == null) player = FindAnyObjectByType<PlayerStats>();
 
         FindMarkers();
         BindBarricades();
+    }
+
+    private void AutoAssignPrefabs()
+    {
+#if UNITY_EDITOR
+        if (paperPrefab == null)
+        {
+            paperPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Hospital/Props/PF_DigitPaper.prefab");
+        }
+        if (keyPrefab == null)
+        {
+            keyPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Hospital/Props/PF_ExitKey.prefab");
+        }
+#endif
     }
 
     private void OnEnable()
@@ -286,6 +309,8 @@ public class ObjectiveSpawner : MonoBehaviour
 
     private bool SpawnPaper(int stage)
     {
+        if (paperPrefab == null) AutoAssignPrefabs();
+
         if (paperPrefab == null)
         {
             Debug.LogError("[ObjectiveSpawner] Paper prefab is not assigned! Assign Assets/Prefabs/Hospital/Props/PF_DigitPaper.prefab.", this);
@@ -332,6 +357,8 @@ public class ObjectiveSpawner : MonoBehaviour
     private bool SpawnExitKey()
     {
         if (keySpawned) return true;
+
+        if (keyPrefab == null) AutoAssignPrefabs();
 
         if (keyPrefab == null)
         {

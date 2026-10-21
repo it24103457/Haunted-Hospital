@@ -65432,6 +65432,9 @@ GameObject:
   - component: {fileID: 1646723099}
   - component: {fileID: 1646723098}
   - component: {fileID: 1646723097}
+  - component: {fileID: 1646723102}
+  - component: {fileID: 1646723101}
+  - component: {fileID: 1646723100}
   m_Layer: 0
   m_Name: ItemSpawnDirector
   m_TagString: Untagged
@@ -65455,6 +65458,7 @@ MonoBehaviour:
   expectedPlayerDelay: 10
   expectedStolenDelay: 20
   expectedMinDistance: 8
+  expectedSpreadDistance: 5
   expectedInitialTotal: 9
 --- !u!114 &1646723098
 MonoBehaviour:
@@ -65479,7 +65483,9 @@ MonoBehaviour:
   - SP_S09
   - SP_S10
   - SP_S12
+  barricadeSearchRadius: 5
   useHardSplit: 1
+  spawnOnAllMarkers: 0
   targetCount: 9
   barricadedCounts:
     health: 1
@@ -65490,18 +65496,22 @@ MonoBehaviour:
     ammo: 2
     sanity: 2
   minSpawnDistance: 8
+  spreadTopCount: 3
   respawnDelay: 10
   stolenRespawnDelay: 20
   useDynamicCaps: 1
   healthCap:
-    min: 1
-    max: 3
+    veryLowCount: 1
+    normalCount: 2
+    veryLowThreshold: 0.3
   ammoCap:
-    min: 1
-    max: 3
+    veryLowCount: 1
+    normalCount: 2
+    veryLowThreshold: 0.3
   sanityCap:
-    min: 1
-    max: 3
+    veryLowCount: 1
+    normalCount: 2
+    veryLowThreshold: 0.3
   player: {fileID: 0}
   logDetails: 1
 --- !u!4 &1646723099
@@ -65519,6 +65529,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1646723100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646723096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec4d5b4907bf420d9ae4ab4b1a9acefb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectiveSpawner
+  objectives: {fileID: 1646723102}
+  player: {fileID: 0}
+  paperPrefab: {fileID: 1146901176307982891, guid: e8f878b8d62919c479a7c60b49ebd22f, type: 3}
+  keyPrefab: {fileID: 2646021429721027363, guid: f813f5ae99636c944973eb78746794e9, type: 3}
+  paperMarkerPrefix: SP_C
+  keyMarkerPrefix: SP_K
+  barricadeMarkerNames: []
+  barricadeSearchRadius: 5
+  minSpawnDistance: 8
+  spreadTopCount: 3
+  logDetails: 1
+--- !u!114 &1646723101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646723096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9678aa1e6520b264eb3e665d70ff70ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectiveHud
+--- !u!114 &1646723102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646723096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd3c580845ea6d648bd33971b0367ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectiveState
+  totalClues: 4
+  logChanges: 0
 --- !u!1 &1647402751
 GameObject:
   m_ObjectHideFlags: 0
