@@ -52,6 +52,9 @@ public class PlayerController : MonoBehaviour
     private float verticalVelocity;
     private bool isCrouching;
 
+    // True while the player is crouching (read by Door to make a quiet close).
+    public bool IsCrouching => isCrouching;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
