@@ -46,6 +46,7 @@ GameObject:
   - component: {fileID: 6665716702562475112}
   - component: {fileID: 1971315693549221161}
   - component: {fileID: 8364301554020682613}
+  - component: {fileID: 5470303165331039183}
   m_Layer: 0
   m_Name: PF_Thief
   m_TagString: Untagged
@@ -79,7 +80,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -1372625422
   m_Radius: 0.3
-  m_Speed: 6
+  m_Speed: 1.6
   m_Acceleration: 12
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -188,7 +189,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ThiefAnimationDriver
   model: {fileID: 1684260540850879749}
   animator: {fileID: 2923432571471880243}
-  runAuthoredSpeed: 6.43
+  runAuthoredSpeed: 1.6
   minGrabSeconds: 0.8
   vanishFadeDelay: 2.2
   vanishFadeDuration: 0.8
@@ -213,6 +214,27 @@ MonoBehaviour:
   pickupInterpolateSeconds: 0.12
   depositDelay: 0.85
   depositDropSeconds: 0.2
+--- !u!114 &5470303165331039183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7676168184634716972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17b7461ecbd539f4fae8fa0582e3d189, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThiefAudioDriver
+  runClip: {fileID: 8300000, guid: 44daf627b94305043a43e1cbc3d2158c, type: 3}
+  runSource: {fileID: 0}
+  runVolume: 0.85
+  fadeSpeed: 5
+  scalePitchWithSpeed: 1
+  baseRunSpeed: 1.6
+  spatialBlend: 0.45
+  minDistance: 2
+  maxDistance: 22
 --- !u!1 &7972034447856784362
 GameObject:
   m_ObjectHideFlags: 0
