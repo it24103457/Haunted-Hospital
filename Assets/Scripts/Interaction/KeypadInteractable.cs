@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -7,8 +6,10 @@ using UnityEngine.InputSystem;
 /// The elevator keypad. Press E to open an on-screen number pad, type four digits (keyboard or mouse),
 /// Enter to submit, Esc to cancel. A correct code tells ObjectiveState and opens the elevator doors.
 ///
-/// The correct code is the digits of the four clue papers in the scene, in the order of their
-/// "Position In Code". Type a code into 'Code Override' to use a fixed code for testing instead.
+/// The correct code is ObjectiveState.Code, which the objective spawner generates for each run.
+/// In a test scene with no spawner (so no generated code), it is the four digits the player has read from papers.
+/// The player must have read all four papers before any code is accepted, so guessing cannot skip them.
+/// 'Code Override' is for testing only and must stay empty in the real game.
 /// While the pad is open the player's movement, interaction and weapon are switched off.
 /// </summary>
 public class KeypadInteractable : MonoBehaviour, IInteractable
@@ -27,7 +28,8 @@ public class KeypadInteractable : MonoBehaviour, IInteractable
         Key.Numpad5, Key.Numpad6, Key.Numpad7, Key.Numpad8, Key.Numpad9
     };
 
-    [Tooltip("Leave empty to use the digits written on the clue papers. Fill in four digits to force a code (testing).")]
+    [Tooltip("TEST ONLY. Leave empty in the real game. Four digits here replace the generated code and skip the " +
+             "'find all four papers' check, so the keypad can be tried without the papers.")]
     [SerializeField] private string codeOverride = "";
 
     [Tooltip("The elevator's Animator controller name. The animator with this controller gets Open set to true.")]
@@ -122,6 +124,16 @@ public class KeypadInteractable : MonoBehaviour, IInteractable
             return;
         }
 
+        bool testOverride = !string.IsNullOrEmpty(codeOverride);
+
+        // Nobody gets through by guessing: every paper must have been read first.
+        if (!testOverride && objectives != null && !AllDigitsFound())
+        {
+            feedback = "Find all four code papers first.";
+            entered = "";
+            return;
+        }
+
         string expected = ExpectedCode();
         if (expected.Length != CodeLength)
         {
@@ -149,8 +161,7 @@ public class KeypadInteractable : MonoBehaviour, IInteractable
         OpenElevator();
         onCodeAccepted.Invoke();
 
-        ObjectiveHud hud = ObjectiveHud.Instance;
-        if (hud != null) hud.ShowMessage("The elevator doors open.");
+        // No message here: the objective spawner announces that the elevator is unlocked.
     }
 
     private void OpenElevator()
@@ -171,17 +182,35 @@ public class KeypadInteractable : MonoBehaviour, IInteractable
         }
     }
 
-    // The code override if there is one, otherwise the clue digits in code order.
+    // True when the player has discovered all four code positions.
+    private bool AllDigitsFound()
+    {
+        if (objectives == null) return false;
+
+        for (int position = 1; position <= CodeLength; position++)
+        {
+            if (!objectives.TryGetDigit(position, out _)) return false;
+        }
+
+        return true;
+    }
+
+    // The test override if there is one, otherwise the generated code, otherwise (a test scene with no spawner)
+    // the four digits the player has discovered. Never read from paper text.
     private string ExpectedCode()
     {
         if (!string.IsNullOrEmpty(codeOverride)) return codeOverride;
+        if (objectives == null) return "";
 
-        ClueInteractable[] clues = FindObjectsByType<ClueInteractable>(FindObjectsSortMode.None);
-        List<ClueInteractable> ordered = new List<ClueInteractable>(clues);
-        ordered.Sort((a, b) => a.PositionInCode.CompareTo(b.PositionInCode));
+        if (!string.IsNullOrEmpty(objectives.Code)) return objectives.Code;
 
         string code = "";
-        foreach (ClueInteractable clue in ordered) code += clue.Digit.ToString();
+        for (int position = 1; position <= CodeLength; position++)
+        {
+            if (!objectives.TryGetDigit(position, out int digit)) return "";
+            code += digit.ToString();
+        }
+
         return code;
     }
 

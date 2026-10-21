@@ -18,7 +18,7 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Weapon")]
     [SerializeField, Min(1)] private int magazineSize = 6;
     [SerializeField, Min(0)] private int startingMagazine = 6;
-    [SerializeField, Min(0f)] private float damage = 50f;
+    [SerializeField, Min(0f)] private float damage = 25f;
     [SerializeField, Min(1f)] private float range = 40f;
     [Tooltip("Minimum seconds between shots.")]
     [SerializeField, Min(0f)] private float fireInterval = 0.5f;
@@ -33,6 +33,26 @@ public class PlayerWeapon : MonoBehaviour
     public int Magazine { get; private set; }
     public int MagazineSize => magazineSize;
     public bool IsReloading { get; private set; }
+
+    /// <summary>
+    /// True when the first thing hit by the same centre-camera ray used for shooting
+    /// implements IDamageable and is within this weapon's range and hit mask.
+    /// This describes the aimed-at target; it does not depend on ammo or reload state.
+    /// </summary>
+    public bool IsAimingAtDamageable
+    {
+        get
+        {
+            if (playerCamera == null) return false;
+
+            Transform cam = playerCamera.transform;
+            if (!Physics.Raycast(cam.position, cam.forward, out RaycastHit hit, range,
+                                 hitMask, QueryTriggerInteraction.Ignore))
+                return false;
+
+            return hit.collider.GetComponentInParent<IDamageable>() != null;
+        }
+    }
 
     // (current magazine, magazine size)
     public event Action<int, int> MagazineChanged;
