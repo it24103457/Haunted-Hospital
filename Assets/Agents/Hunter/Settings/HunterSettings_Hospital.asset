@@ -36,6 +36,7 @@ MonoBehaviour:
   patrolLegTimeoutSeconds: 45
   searchSeconds: 10
   searchRadius: 8
+  searchPauseSeconds: 1.5
   chaseLoudness: 12
   chaseProximity: 8
   chaseLoseSeconds: 6
@@ -43,6 +44,8 @@ MonoBehaviour:
   attackExitMargin: 0.5
   attackDamage: 20
   attackCooldownSeconds: 1.2
+  attackWindupSeconds: 0.4
+  senseIntervalSeconds: 0.2
   freshReachSeconds: 0.5
   maxHealth: 100
   shotAlertSeconds: 4
@@ -53,6 +56,7 @@ MonoBehaviour:
   respawnRetrySeconds: 3
   closedDoorExtraCost: 3
   replanIntervalSeconds: 0.5
+  stuckSeconds: 6
   doorApproachDistance: 1.2
   doorOpenTimeoutSeconds: 3
   doorBanSeconds: 6
