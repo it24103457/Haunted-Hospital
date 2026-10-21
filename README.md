@@ -36,17 +36,7 @@ A first-person survival horror game set in an abandoned hospital. You wake up tr
 
 ### Contents
 
-[The game](#the-game)<br>
-[How to play](#how-to-play)<br>
-[Getting started](#getting-started)<br>
-[Team and roles](#team-and-roles)<br>
-[Agents](#agents)<br>
-[Shared systems](#shared-systems)<br>
-[Graphics](#graphics)<br>
-[Screens and UI](#screens-and-ui)<br>
-[Project structure and test scenes](#project-structure-and-test-scenes)<br>
-[Workflow](#workflow)<br>
-[Credits](#credits)
+[The game](#the-game)<br>[How to play](#how-to-play)<br>[Getting started](#getting-started)<br>[Team and roles](#team-and-roles)<br>[Agents](#agents)<br>[Shared systems](#shared-systems)<br>[Graphics](#graphics)<br>[Screens and UI](#screens-and-ui)<br>[Project structure and test scenes](#project-structure-and-test-scenes)<br>[Workflow](#workflow)<br>[Credits](#credits)
 
 </div>
 
@@ -61,9 +51,9 @@ The only way out is the elevator. Its four-digit code is written one digit at a 
 While you search, keep your health, ammo and sanity up. The Hunter follows every noise you make, the Thief takes the supplies you were counting on, and the Environment Director wears down your sanity with things that should not be happening.
 
 ```mermaid
-flowchart LR
+flowchart TB
     A([Wake up]) --> B[Find the 4 code notes]
-    B --> C[Open the elevator<br>with the keypad]
+    B --> C[Open the elevator with the keypad]
     C --> D[Find the exit key]
     D --> E([Escape])
 
@@ -72,7 +62,7 @@ flowchart LR
     T[Resource Thief] -. steals the supplies<br>you need .-> B
     ED[Environment Director] -. scares that<br>drain sanity .-> B
 
-    B -. health or sanity<br>runs out .-> R([Start again])
+    B -- health or sanity runs out --> R([Start again])
     R --> A
 ```
 
