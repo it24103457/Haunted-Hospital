@@ -18,7 +18,7 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Weapon")]
     [SerializeField, Min(1)] private int magazineSize = 6;
     [SerializeField, Min(0)] private int startingMagazine = 6;
-    [SerializeField, Min(0f)] private float damage = 50f;
+    [SerializeField, Min(0f)] private float damage = 25f;
     [SerializeField, Min(1f)] private float range = 40f;
     [Tooltip("Minimum seconds between shots.")]
     [SerializeField, Min(0f)] private float fireInterval = 0.5f;
