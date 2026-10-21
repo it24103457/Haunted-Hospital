@@ -77,28 +77,44 @@ public class LowStatsEffects : MonoBehaviour
         if (material != null) CoreUtils.Destroy(material);
     }
 
-    // Starts or stops the low-health effect and heartbeat.
-    public void SetHealthLow(bool low)
+    /*
+     * Starts or stops the low-health effect. With withSound false (health at 0, as the death screen comes in) the picture
+     * effect stays on, so the screen never clears before the death screen covers it, but the heartbeat stops.
+     */
+    public void SetHealthLow(bool low, bool withSound = true)
     {
-        if (healthLow == low) return;
+        bool wasLow = healthLow;
         healthLow = low;
 
-        if (low)
+        if (!low || !withSound)
+        {
+            heartbeatSource.Stop();
+            return;
+        }
+
+        if (!wasLow)
         {
             healthLowSince = Time.unscaledTime;
             Play(heartbeatSource, 0f, heartbeatLoudVolume);
         }
-        else heartbeatSource.Stop();
     }
 
-    // Starts or stops the low-sanity effect and headache.
-    public void SetSanityLow(bool low)
+    /*
+     * Starts or stops the low-sanity effect. With withSound false (sanity at 0, as the sanity screen comes in) the picture
+     * effect stays on, so the screen never clears before the sanity screen covers it, but the headache stops.
+     */
+    public void SetSanityLow(bool low, bool withSound = true)
     {
-        if (sanityLow == low) return;
+        bool wasLow = sanityLow;
         sanityLow = low;
 
-        if (low) Play(headacheSource, 0f, headacheLoudVolume);
-        else headacheSource.Stop();
+        if (!low || !withSound)
+        {
+            headacheSource.Stop();
+            return;
+        }
+
+        if (!wasLow) Play(headacheSource, 0f, headacheLoudVolume);
     }
 
     private void Update()

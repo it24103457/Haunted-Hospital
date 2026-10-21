@@ -9,14 +9,14 @@ using UnityEngine;
  * Code digits come from ObjectiveState: each DigitFound puts the digit into its slot and draws another quarter of the key
  * outline. On start, and whenever the state changes (for example a reset of the run), the slots are brought back in line
  * with what TryGetDigit reports, so they only ever show digits the player has actually discovered, never the code itself.
- * Low health and low sanity (below lowThreshold, but not at 0, where the death or sanity screen takes over) switch the
- * matching LowStatsEffects on and off.
+ * Low health and low sanity (below lowThreshold) switch the matching LowStatsEffects on and off. At 0 the picture effect
+ * stays on underneath the death or sanity screen as it fades in, while the heartbeat or headache stops.
  * The HUD itself never looks at the game, so swapping where a value comes from only changes this script.
  */
 [RequireComponent(typeof(PlayerHud))]
 public class PlayerHudBinder : MonoBehaviour
 {
-    [Tooltip("Health or sanity below this (and above 0) shows the low health or low sanity effect.")]
+    [Tooltip("Health or sanity below this shows the low health or low sanity effect.")]
     [SerializeField, Min(0f)] private float lowThreshold = 15f;
 
     private PlayerHud hud;
@@ -88,13 +88,13 @@ public class PlayerHudBinder : MonoBehaviour
     private void OnHealthChanged(float current, float max)
     {
         hud.SetHealth(current, max);
-        if (lowStats != null) lowStats.SetHealthLow(current > 0f && current < lowThreshold);
+        if (lowStats != null) lowStats.SetHealthLow(current < lowThreshold, current > 0f);
     }
 
     private void OnSanityChanged(float current, float max)
     {
         hud.SetSanity(current, max);
-        if (lowStats != null) lowStats.SetSanityLow(current > 0f && current < lowThreshold);
+        if (lowStats != null) lowStats.SetSanityLow(current < lowThreshold, current > 0f);
     }
     private void OnAmmoChanged(int reserve) => hud.SetAmmo(reserve, player.MaxReserveAmmo);
     private void OnMagazineChanged(int loaded, int size) => hud.SetMagazine(loaded, size);
