@@ -19,7 +19,9 @@ The Director uses custom C# fuzzy inference, state prediction and informed searc
 | Apparition | Darkens the target room's Director lights, reveals the woman with her voice, plays UnsettlingIdle, BodyJolt and PulsePose, then removes her and restores the lights. | 3, only after an actual visible sighting |
 | Rest | Starts no effect and allows pressure and cooldowns to recover. | 0 |
 
-Phone, whisper and announcement durations follow the selected recordings so their voice lines can finish. The apparition duration accommodates both the full animation sequence and its voice. Its temporary reveal light makes the figure readable during the room's darkness.
+Phone, whisper and announcement durations follow the selected recordings so their voice lines can finish. The apparition plays its arrival stinger at reveal, followed by one complete Monster_03 performance after the arrival cue finishes. The monster clip never loops. A separate disappearance sound continues after the model is removed. The event duration accommodates the animation sequence and the delayed monster clip. Its temporary reveal light makes the figure readable during the room's darkness.
+
+The woman's animation clips move 13 upper-body bones through a clear pointing gesture, a pronounced backward spinal arch and sideways head tilts reaching approximately 48 degrees. Her pointing arm aims at the observed player position after animation sampling, with a short blend into and out of aiming. The hips, legs and root stay fixed. Pointing clips loop continuously, and the controller blends between poses. During a Director appearance, the executor controls the sequence so the standalone jolt transition cannot return her to idle prematurely. The current rig has no jaw bone or mouth blend shapes, so these clips do not animate the mouth.
 
 A separate `light_pulse_apparition` definition exists in the catalogue but is currently disabled and has no supported executor. The `PulsePose` animation within the active apparition is a pose in that event, rather than a second independently running event.
 
