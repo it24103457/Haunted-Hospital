@@ -25,9 +25,11 @@ public class ThiefTestSpawner : MonoBehaviour
     private readonly List<Transform> markers = new List<Transform>();
     private readonly Dictionary<PickupInteractable, Transform> occupied = new Dictionary<PickupInteractable, Transform>();
 
+    // Listens for collected items only while enabled, so replacements are scheduled only while the spawner runs.
     private void OnEnable() => PickupInteractable.AnyCollected += OnItemCollected;
     private void OnDisable() => PickupInteractable.AnyCollected -= OnItemCollected;
 
+    // Finds every spawn marker and fills the scene up to targetCount items.
     private void Start()
     {
         foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude))
@@ -74,6 +76,7 @@ public class ThiefTestSpawner : MonoBehaviour
         StartCoroutine(RespawnAfter(pickup.WasStolen ? stolenRespawnDelay : respawnDelay));
     }
 
+    // Waits the given time, then places one replacement item.
     private IEnumerator RespawnAfter(float delay)
     {
         yield return new WaitForSeconds(delay);

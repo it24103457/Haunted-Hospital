@@ -35,6 +35,7 @@ public class WaypointGraph : MonoBehaviour
 
     public IReadOnlyList<WaypointNode> Nodes => nodes;
 
+    // Collects the active child nodes once at start, so lookups never search the scene again.
     private void Awake()
     {
         GetComponentsInChildren(false, nodes);
@@ -150,6 +151,7 @@ public class WaypointGraph : MonoBehaviour
         return HasClearLine(a.Position, b.Position);
     }
 
+    // Shortest distance from a point to the line segment a-b, used to keep edges from cutting past doorway nodes.
     private static float DistanceToSegment(Vector3 p, Vector3 a, Vector3 b)
     {
         Vector3 ab = b - a;
