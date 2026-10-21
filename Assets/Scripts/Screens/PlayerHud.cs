@@ -27,9 +27,9 @@ public class PlayerHud : MonoBehaviour
 
     [Header("Look")]
     [SerializeField] private TMP_FontAsset font;
-    [SerializeField] private Color healthColor = new Color(0.85f, 0.1f, 0.08f);
-    [SerializeField] private Color ammoColor = new Color(1f, 0.9f, 0.2f);
-    [SerializeField] private Color sanityColor = new Color(0.34f, 0.74f, 0.91f);
+    [SerializeField] private Color healthColor = new Color(0.78f, 0.09f, 0.07f);
+    [SerializeField] private Color ammoColor = new Color(0.85f, 0.66f, 0.2f);
+    [SerializeField] private Color sanityColor = new Color(0.3f, 0.66f, 0.84f);
     [SerializeField] private Color borderColor = new Color(0.82f, 0.82f, 0.78f, 1f);
     [SerializeField] private Color slotFill = new Color(0f, 0f, 0f, 0.45f);
     [SerializeField] private Color barBackground = new Color(0f, 0f, 0f, 0.5f);
@@ -66,7 +66,7 @@ public class PlayerHud : MonoBehaviour
     [SerializeField] private float iconSize = 30f;
     [SerializeField] private float barWidth = 320f;
     [SerializeField] private float barHeight = 22f;
-    [SerializeField] private float border = 3f;
+    [SerializeField] private float border = 2f;
     [SerializeField] private float rowGap = 14f;
     [SerializeField] private float slotGap = 8f;
     [SerializeField] private float slotsToBarsGap = 24f;
@@ -80,8 +80,8 @@ public class PlayerHud : MonoBehaviour
     [SerializeField] private Color flashFill = new Color(0.82f, 0.82f, 0.78f, 0.55f);
     [SerializeField, Min(0.01f)] private float flashSeconds = 1.5f;
 
-    private RectTransform healthFill;
-    private RectTransform ammoFill;
+    private Image healthFill;
+    private Image ammoFill;
     private TextMeshProUGUI magazineLoaded;
     private TextMeshProUGUI magazineSize;
     private Image keyOutline;
@@ -92,7 +92,7 @@ public class PlayerHud : MonoBehaviour
     private bool keyHeld;
     private float keyProgress;
     private float keyAcquiredAt = float.NegativeInfinity;
-    private RectTransform sanityFill;
+    private Image sanityFill;
     private readonly Image[] slotFills = new Image[SlotCount];
     private readonly TextMeshProUGUI[] slotDigits = new TextMeshProUGUI[SlotCount];
     private readonly float[] flashStarted = new float[SlotCount];
@@ -219,13 +219,12 @@ public class PlayerHud : MonoBehaviour
         }
     }
 
-    // Sizes a bar's fill to the share of current over max, from the left.
-    private static void SetBar(RectTransform fill, float current, float max)
+    // Reveals a bar's textured fill from the left by the share of current over max, so the texture never stretches.
+    private static void SetBar(Image fill, float current, float max)
     {
         if (fill == null) return;
 
-        float share = max > 0f ? Mathf.Clamp01(current / max) : 0f;
-        fill.anchorMax = new Vector2(share, 1f);
+        fill.fillAmount = max > 0f ? Mathf.Clamp01(current / max) : 0f;
     }
 
     /*
@@ -286,24 +285,38 @@ public class PlayerHud : MonoBehaviour
     }
 
     // One bar row at the given height: the icon on the left, then a bordered bar. Returns the bar's fill.
-    private RectTransform BarRow(RectTransform root, string name, Sprite icon, Color color, float y)
+    private Image BarRow(RectTransform root, string name, Sprite icon, Color color, float y)
     {
         float rowHeight = Mathf.Max(iconSize, barHeight);
 
         Image iconImage = NewImage(name + "Icon", root, color);
         iconImage.sprite = icon;
         iconImage.preserveAspect = true;
+        AddDropShadow(iconImage);
         Place(iconImage.rectTransform, new Vector2(0f, y + (rowHeight - iconSize) * 0.5f), new Vector2(iconSize, iconSize));
 
         Vector2 barPos = new Vector2(iconSize + 14f, y + (rowHeight - barHeight) * 0.5f);
         Image background = Framed(name + "Bar", root, barPos, new Vector2(barWidth, barHeight), barBackground);
 
+        // The fill covers the whole bar and is revealed from the left, showing the shaded, grainy bar texture in its colour.
         Image fill = NewImage("Level", background.transform, color);
+        fill.sprite = HudIcons.BarFill;
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        fill.fillOrigin = (int)Image.OriginHorizontal.Left;
         RectTransform fillRect = fill.rectTransform;
         fillRect.anchorMin = Vector2.zero;
         fillRect.anchorMax = Vector2.one;
         fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
-        return fillRect;
+        return fill;
+    }
+
+    // A soft dark copy just below and to the right of an icon, so it sits on the screen instead of looking pasted on.
+    private static void AddDropShadow(Graphic graphic)
+    {
+        var shadow = graphic.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.6f);
+        shadow.effectDistance = new Vector2(2f, -2f);
     }
 
     /*
@@ -354,6 +367,8 @@ public class PlayerHud : MonoBehaviour
 
         keyOutline = KeyLayer(root, "KeyOutline", HudIcons.KeyOutline, keyColor, position, size);
         keyFill = KeyLayer(root, "KeyFill", HudIcons.Key, keyColor, position, size);
+        AddDropShadow(keyOutline);
+        AddDropShadow(keyFill);
         keyGoldOutline = KeyLayer(root, "KeyGoldOutline", HudIcons.KeyOutline, keyGoldColor, position, size);
     }
 

@@ -1203,9 +1203,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHud
   font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  healthColor: {r: 0.85, g: 0.1, b: 0.08, a: 1}
-  ammoColor: {r: 1, g: 0.9, b: 0.2, a: 1}
-  sanityColor: {r: 0.34, g: 0.74, b: 0.91, a: 1}
+  healthColor: {r: 0.78, g: 0.09, b: 0.07, a: 1}
+  ammoColor: {r: 0.85, g: 0.66, b: 0.2, a: 1}
+  sanityColor: {r: 0.3, g: 0.66, b: 0.84, a: 1}
   borderColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
   slotFill: {r: 0, g: 0, b: 0, a: 0.45}
   barBackground: {r: 0, g: 0, b: 0, a: 0.5}
@@ -1229,7 +1229,7 @@ MonoBehaviour:
   iconSize: 30
   barWidth: 320
   barHeight: 22
-  border: 3
+  border: 2
   rowGap: 14
   slotGap: 8
   slotsToBarsGap: 24
