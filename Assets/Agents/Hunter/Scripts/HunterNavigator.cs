@@ -76,12 +76,23 @@ public sealed class HunterNavigator
     /// </summary>
     public bool GoTo(Vector3 destination, bool allowPartialRoute)
     {
+        Vector3 previousTarget = target;
+        bool previousAllowPartial = allowPartial;
+
         target = destination;
         allowPartial = allowPartialRoute;
-        failures.Clear();
-        stuckReplans = 0;
 
-        return Plan();
+        if (Plan())
+        {
+            failures.Clear();
+            stuckReplans = 0;
+            return true;
+        }
+
+        // No route: leave whatever the Hunter was doing exactly as it was.
+        target = previousTarget;
+        allowPartial = previousAllowPartial;
+        return false;
     }
 
     /// <summary>Stops walking and clears the path.</summary>
@@ -107,14 +118,12 @@ public sealed class HunterNavigator
 
     private bool Plan()
     {
-        route.Clear();
-
         WaypointNode start = graph.GetNearestNode(body.position);
         WaypointNode goal = graph.GetNearestNode(target);
         if (start == null || goal == null) return false;
 
         List<WaypointNode> found = HunterPathfinder.FindPath(start, goal, settings, isBanned);
-        IsPartialRoute = false;
+        bool partial = false;
 
         if (found.Count == 0)
         {
@@ -122,11 +131,13 @@ public sealed class HunterNavigator
 
             // Unreachable: go as near as the building allows.
             found = HunterPathfinder.FindPathToNearest(start, target, settings, isBanned);
-            IsPartialRoute = true;
+            partial = true;
             if (found.Count == 0) return false;
         }
 
+        route.Clear();
         route.AddRange(found);
+        IsPartialRoute = partial;
         worldSignature = ComputeWorldSignature();
         nextWorldCheck = Time.time + settings.ReplanIntervalSeconds;
         pendingDoor = null;

@@ -87,6 +87,47 @@ public static class HunterPathfinder
         return FindPath(start, best, settings, isBanned);
     }
 
+    /// <summary>
+    /// Every node the Hunter can reach from start without the total cost passing maxCost (start itself is not included).
+    /// Uses the same blocking and cost rules as FindPath, so a sealed room gives only the nodes inside it.
+    /// </summary>
+    public static List<WaypointNode> FindReachableWithin(WaypointNode start, float maxCost, HunterSettings settings, Func<Door, bool> isBanned)
+    {
+        var result = new List<WaypointNode>();
+        if (start == null) return result;
+
+        var best = new Dictionary<WaypointNode, float> { [start] = 0f };
+        var queue = new Queue<WaypointNode>();
+        queue.Enqueue(start);
+
+        while (queue.Count > 0)
+        {
+            WaypointNode current = queue.Dequeue();
+
+            foreach (WaypointNode next in current.Neighbours)
+            {
+                if (next == null) continue;
+
+                float step = StepCost(current, next, settings, isBanned);
+                if (float.IsPositiveInfinity(step)) continue;
+
+                float cost = best[current] + step;
+                if (cost > maxCost) continue;
+                if (best.TryGetValue(next, out float known) && known <= cost) continue;
+
+                best[next] = cost;
+                queue.Enqueue(next);
+            }
+        }
+
+        foreach (WaypointNode node in best.Keys)
+        {
+            if (node != start) result.Add(node);
+        }
+
+        return result;
+    }
+
     /// <summary>The price of one step onto a neighbouring node. Infinity means blocked.</summary>
     public static float StepCost(WaypointNode from, WaypointNode to, HunterSettings settings, Func<Door, bool> isBanned)
     {
