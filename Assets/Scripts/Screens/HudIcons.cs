@@ -213,6 +213,7 @@ public static class HudIcons
                !InKey(x + w, y + w) || !InKey(x - w, y - w) || !InKey(x + w, y - w) || !InKey(x - w, y + w);
     }
 
+    // Inside a circle centred at (cx, cy) with radius r.
     private static bool InCircle(float x, float y, float cx, float cy, float r)
     {
         return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r;

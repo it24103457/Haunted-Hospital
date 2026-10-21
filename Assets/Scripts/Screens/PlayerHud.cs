@@ -99,11 +99,13 @@ public class PlayerHud : MonoBehaviour
     private float slotSize;
     private bool built;
 
+    // Builds the HUD as soon as it exists, so the binder can fill it in on its first frame.
     private void Awake()
     {
         Build();
     }
 
+    // Fades each flashing code slot back to normal and, while the key is held, runs its pickup animation.
     private void Update()
     {
         if (!built) return;
@@ -144,6 +146,7 @@ public class PlayerHud : MonoBehaviour
 
     // Bars: current against its maximum; values outside 0 to max are clamped.
 
+    // Bars: current against its maximum; values outside 0 to max are clamped.
     public void SetHealth(float current, float max) => SetBar(healthFill, current, max);
     public void SetAmmo(float current, float max) => SetBar(ammoFill, current, max);
     public void SetSanity(float current, float max) => SetBar(sanityFill, current, max);
@@ -433,6 +436,7 @@ public class PlayerHud : MonoBehaviour
         return fill;
     }
 
+    // One border strip of a framed box, stretched along one side between the given anchors and offsets.
     private void Edge(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin,
                       Vector2 offsetMax, Color color)
     {
@@ -460,6 +464,7 @@ public class PlayerHud : MonoBehaviour
         r.offsetMax = new Vector2(-inset, -inset);
     }
 
+    // A plain image in the given colour under the parent, that never catches clicks.
     private static Image NewImage(string name, Transform parent, Color color)
     {
         Image image = NewRect(name, parent).gameObject.AddComponent<Image>();
@@ -468,6 +473,7 @@ public class PlayerHud : MonoBehaviour
         return image;
     }
 
+    // An empty UI object under the parent, on the parent's layer.
     private static RectTransform NewRect(string name, Transform parent)
     {
         var go = new GameObject(name, typeof(RectTransform));

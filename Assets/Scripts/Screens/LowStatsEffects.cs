@@ -60,6 +60,7 @@ public class LowStatsEffects : MonoBehaviour
     private float sanityAmount;
     private float healthLowSince;
 
+    // Makes the effect material from the shader, the render pass that uses it and one audio source per sound.
     private void Awake()
     {
         if (screenShader != null) material = CoreUtils.CreateEngineMaterial(screenShader);
@@ -69,9 +70,11 @@ public class LowStatsEffects : MonoBehaviour
         headacheSource = NewSource(headache);
     }
 
+    // Adds the screen effect to each game camera only while this component is on.
     private void OnEnable() => RenderPipelineManager.beginCameraRendering += AddPassToCamera;
     private void OnDisable() => RenderPipelineManager.beginCameraRendering -= AddPassToCamera;
 
+    // Frees the effect material.
     private void OnDestroy()
     {
         if (material != null) CoreUtils.Destroy(material);
@@ -117,6 +120,10 @@ public class LowStatsEffects : MonoBehaviour
         if (!wasLow) Play(headacheSource, 0f, headacheLoudVolume);
     }
 
+    /*
+     * Fades each effect towards on or off, passes the amounts and colours to the shader, eases the heartbeat from loud to
+     * soft, turns the headache down after its loud opening, and keeps both sounds looping over their chosen stretch.
+     */
     private void Update()
     {
         float step = Time.unscaledDeltaTime / fadeSeconds;
@@ -187,6 +194,7 @@ public class LowStatsEffects : MonoBehaviour
         source.timeSamples = Mathf.Clamp((int)(from * source.clip.frequency), 0, source.clip.samples - 1);
     }
 
+    // A flat (non-3D) audio source for one of the sounds, with the clip loaded ahead so it plays without delay.
     private AudioSource NewSource(AudioClip clip)
     {
         var source = gameObject.AddComponent<AudioSource>();
@@ -206,6 +214,7 @@ public class LowStatsEffects : MonoBehaviour
     {
         private readonly Material material;
 
+        // Runs after the game's own post-processing and asks for a picture it can read from.
         public LowStatsPass(Material material)
         {
             this.material = material;
@@ -213,6 +222,7 @@ public class LowStatsEffects : MonoBehaviour
             requiresIntermediateTexture = true;
         }
 
+        // Copies the camera picture through the effect into a new texture, which then becomes the camera picture.
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
             var resources = frameData.Get<UniversalResourceData>();

@@ -63,6 +63,7 @@ public class HowToPlayMenu : MonoBehaviour
     private int index;
     private AudioSource audioSource;
 
+    // Reads the pages from the text file and makes the page-turn sound's source, which plays even while the game is paused.
     private void Awake()
     {
         Parse();
@@ -72,12 +73,14 @@ public class HowToPlayMenu : MonoBehaviour
         audioSource.spatialBlend = 0f;
     }
 
+    // Opens on the first page every time.
     private void OnEnable()
     {
         index = 0;
         ShowPage();
     }
 
+    // Right arrow or D turns forward, left arrow or A back, and Esc closes the screen.
     private void Update()
     {
         Keyboard keyboard = Keyboard.current;
@@ -88,6 +91,7 @@ public class HowToPlayMenu : MonoBehaviour
         if (keyboard.escapeKey.wasPressedThisFrame) Back();
     }
 
+    // Turns to the next page, if there is one.
     public void Next()
     {
         if (index >= pages.Count - 1) return;
@@ -95,6 +99,7 @@ public class HowToPlayMenu : MonoBehaviour
         TurnPage();
     }
 
+    // Turns to the previous page, if there is one.
     public void Previous()
     {
         if (index <= 0) return;
@@ -102,18 +107,21 @@ public class HowToPlayMenu : MonoBehaviour
         TurnPage();
     }
 
+    // Closes the screen and raises onBack, so the main menu shows its buttons again.
     public void Back()
     {
         gameObject.SetActive(false);
         onBack?.Invoke();
     }
 
+    // Plays the page-turn sound and shows the new page.
     private void TurnPage()
     {
         if (pageTurn != null) audioSource.PlayOneShot(pageTurn, pageTurnVolume);
         ShowPage();
     }
 
+    // Fills in the current page's title, text, page counter, model and arrow buttons; with no pages it shows the coming-soon text.
     private void ShowPage()
     {
         if (pages.Count == 0)
@@ -136,6 +144,7 @@ public class HowToPlayMenu : MonoBehaviour
         if (nextButton != null) nextButton.interactable = index < pages.Count - 1;
     }
 
+    // Shows the page's model in the preview, or hides the frame and gives the text the full width when there is none.
     private void SetModel(ModelEntry entry)
     {
         bool hasModel = entry != null && entry.prefab != null;
@@ -144,6 +153,7 @@ public class HowToPlayMenu : MonoBehaviour
         if (textArea != null) textArea.offsetMin = new Vector2(hasModel ? textLeftWithModel : textLeftWithoutModel, textArea.offsetMin.y);
     }
 
+    // The Models list entry with the given name (ignoring case), or nothing, with a warning, when no entry matches.
     private ModelEntry FindModel(string name)
     {
         if (string.IsNullOrEmpty(name) || models == null) return null;
@@ -191,6 +201,7 @@ public class HowToPlayMenu : MonoBehaviour
         Finish(page, body);
     }
 
+    // Stores a page once all its text lines have been read.
     private void Finish(Page page, StringBuilder body)
     {
         if (page == null) return;

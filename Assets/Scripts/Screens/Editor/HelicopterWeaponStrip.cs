@@ -23,6 +23,7 @@ public class HelicopterWeaponStrip : AssetPostprocessor
     // Raised whenever what this removes changes, so Unity re-imports the model.
     public override uint GetVersion() => 2;
 
+    // When the helicopter model imports, removes the triangles of its weapon parts so only the ambulance body remains.
     private void OnPostprocessModel(GameObject root)
     {
         if (assetPath != ModelPath) return;

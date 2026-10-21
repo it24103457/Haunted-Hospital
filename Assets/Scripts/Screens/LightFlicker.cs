@@ -41,6 +41,7 @@ public class LightFlicker : MonoBehaviour
     private MaterialPropertyBlock block;
     private float baseVolume;
 
+    // Remembers each light's brightness and each glow panel's colour, so every flicker is relative to how the lamp normally looks.
     private void Awake()
     {
         baseIntensities = new float[lights.Length];
@@ -57,6 +58,7 @@ public class LightFlicker : MonoBehaviour
         if (hum != null) baseVolume = hum.volume;
     }
 
+    // Starts the flicker pattern whenever the lamp is switched on.
     private void OnEnable()
     {
         StartCoroutine(Run());
@@ -69,6 +71,10 @@ public class LightFlicker : MonoBehaviour
         Apply(1f);
     }
 
+    /*
+     * The flicker pattern, repeated forever: a steady spell with a faint shimmer, then a burst of quick stutters, and now and
+     * then a short blackout.
+     */
     private IEnumerator Run()
     {
         while (true)

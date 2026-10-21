@@ -16,6 +16,7 @@ public class UIButtonSounds : MonoBehaviour
     [Tooltip("Buttons that play their own sound when clicked (e.g. page turns), so they only get the hover sound.")]
     [SerializeField] private Button[] noClickSound;
 
+    // Gives every button under this object its click sound (unless listed as silent) and, if set, its hover sound.
     private void Awake()
     {
         foreach (Button button in GetComponentsInChildren<Button>(true))
@@ -25,6 +26,7 @@ public class UIButtonSounds : MonoBehaviour
         }
     }
 
+    // Plays one of the button sounds at this component's volume.
     private void Play(AudioClip clip)
     {
         PlayClip(clip, volume);
@@ -58,6 +60,7 @@ public class UIButtonSounds : MonoBehaviour
         public float seconds;
         private float elapsed;
 
+        // Removes the sound's object once its time is up, counted on real time so it also works while the game is paused.
         private void Update()
         {
             elapsed += Time.unscaledDeltaTime;
@@ -71,12 +74,14 @@ public class UIButtonSounds : MonoBehaviour
         private UIButtonSounds owner;
         private Button button;
 
+        // Links the relay to the sound owner and the button it watches.
         public void Init(UIButtonSounds soundOwner, Button target)
         {
             owner = soundOwner;
             button = target;
         }
 
+        // Plays the hover sound when the pointer moves onto a clickable button.
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (button.interactable) owner.Play(owner.hover);

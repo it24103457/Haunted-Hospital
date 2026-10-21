@@ -27,6 +27,7 @@ public class MainMenu : MonoBehaviour
     [Tooltip("Optional wake-up intro played before the game scene loads. Leave empty to load the game straight away.")]
     [SerializeField] private WakeUpIntro intro;
 
+    // Frees the mouse and restores normal time and audio, then shows the main buttons with both sub-screens closed.
     private void Start()
     {
         Cursor.lockState = CursorLockMode.None;
@@ -39,6 +40,7 @@ public class MainMenu : MonoBehaviour
         CloseControls();
     }
 
+    // Starts the wake-up intro, which loads the game when it ends, or loads the game straight away with no intro.
     public void Play()
     {
 #if UNITY_EDITOR
@@ -49,6 +51,7 @@ public class MainMenu : MonoBehaviour
         else SceneLoader.Load(gameScenePath);
     }
 
+    // Swaps the main buttons for the How to Play screen.
     public void OpenHowToPlay()
     {
         if (howToPlayPanel == null) return;
@@ -57,12 +60,14 @@ public class MainMenu : MonoBehaviour
         howToPlayPanel.SetActive(true);
     }
 
+    // Closes the How to Play screen and shows the main buttons again.
     public void CloseHowToPlay()
     {
         if (howToPlayPanel != null) howToPlayPanel.SetActive(false);
         if (mainPanel != null) mainPanel.SetActive(true);
     }
 
+    // Swaps the main buttons for the Controls screen.
     public void OpenControls()
     {
         if (controlsPanel == null) return;
@@ -71,6 +76,7 @@ public class MainMenu : MonoBehaviour
         controlsPanel.SetActive(true);
     }
 
+    // Closes the Controls screen and shows the main buttons again.
     public void CloseControls()
     {
         if (controlsPanel != null) controlsPanel.SetActive(false);

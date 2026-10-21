@@ -134,6 +134,7 @@ public class WakeUpIntro : MonoBehaviour
 
     public bool IsRunning => started;
 
+    // Starts with the fade, eyelids, skip hint and loading text hidden, so the menu looks normal until Play is pressed.
     private void Awake()
     {
         fade.gameObject.SetActive(false);
@@ -157,6 +158,7 @@ public class WakeUpIntro : MonoBehaviour
         StartCoroutine(Run());
     }
 
+    // While the intro runs, Space skips straight to loading the game.
     private void Update()
     {
         if (!started || skipping) return;
@@ -170,6 +172,7 @@ public class WakeUpIntro : MonoBehaviour
         }
     }
 
+    // The whole intro: fade from the menu, wake up, look around, run to the locked door and rattle it, find the gun, then load the game.
     private IEnumerator Run()
     {
         Cursor.visible = false;
@@ -265,6 +268,7 @@ public class WakeUpIntro : MonoBehaviour
     private float sceneTime;
     private float sceneLength = 1f;
 
+    // Holds the current view for the duration, with the breathing continuing.
     private IEnumerator Hold(float duration)
     {
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
@@ -504,6 +508,7 @@ public class WakeUpIntro : MonoBehaviour
         eyelidBottom.sizeDelta = new Vector2(eyelidBottom.sizeDelta.x, h);
     }
 
+    // Fades an overlay from one opacity to another over the duration.
     private static IEnumerator FadeGroup(CanvasGroup group, float from, float to, float duration)
     {
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)

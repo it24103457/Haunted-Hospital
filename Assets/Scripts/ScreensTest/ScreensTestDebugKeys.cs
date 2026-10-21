@@ -28,12 +28,14 @@ public class ScreensTestDebugKeys : MonoBehaviour
     private PauseMenu pauseMenu;
     private GUIStyle hintStyle;
 
+    // Finds the player and the objectives the keys act on.
     private void Start()
     {
         player = FindAnyObjectByType<PlayerStats>();
         objectives = FindAnyObjectByType<ObjectiveState>();
     }
 
+    // Handles the test keys: the F keys for screens and objectives, the numpad for the player's stats.
     private void Update()
     {
         Keyboard keyboard = Keyboard.current;
@@ -74,6 +76,7 @@ public class ScreensTestDebugKeys : MonoBehaviour
         return position;
     }
 
+    // Draws the key hint in the top-left corner, hidden while a pause, death, sanity or win screen is showing.
     private void OnGUI()
     {
         if (pauseMenu == null) pauseMenu = FindAnyObjectByType<PauseMenu>();

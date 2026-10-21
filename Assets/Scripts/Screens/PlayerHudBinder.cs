@@ -25,6 +25,7 @@ public class PlayerHudBinder : MonoBehaviour
     private PlayerWeapon weapon;
     private ObjectiveState objectives;
 
+    // The HUD and the low-stat effects on the same object, which this script feeds.
     private void Awake()
     {
         hud = GetComponent<PlayerHud>();
@@ -85,17 +86,21 @@ public class PlayerHudBinder : MonoBehaviour
         }
     }
 
+    // Updates the health bar and switches the low-health effect: on below the threshold, silent at 0.
     private void OnHealthChanged(float current, float max)
     {
         hud.SetHealth(current, max);
         if (lowStats != null) lowStats.SetHealthLow(current < lowThreshold, current > 0f);
     }
 
+    // Updates the sanity bar and switches the low-sanity effect: on below the threshold, silent at 0.
     private void OnSanityChanged(float current, float max)
     {
         hud.SetSanity(current, max);
         if (lowStats != null) lowStats.SetSanityLow(current < lowThreshold, current > 0f);
     }
+
+    // Reserve ammo, magazine and key: passed straight on to the HUD.
     private void OnAmmoChanged(int reserve) => hud.SetAmmo(reserve, player.MaxReserveAmmo);
     private void OnMagazineChanged(int loaded, int size) => hud.SetMagazine(loaded, size);
     private void OnExitKeyChanged(bool held) => hud.SetKey(held);
