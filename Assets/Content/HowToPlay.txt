@@ -83,6 +83,12 @@ Once it is chasing you it moves faster, and a few hits will kill you. Go quiet a
 
 Shoot it down and it comes back a while later, somewhere out of sight. Being near it may wear on your sanity, and cleared barricades open new routes for it.
 
+=== Hiding
+image: Vent
+Some walls have low vent openings into small service spaces. Crouch (C) to crawl through. Nothing that hunts you can follow you in.
+
+Get to the back and stay quiet. Right next to the opening you can still be reached, and any noise you make will still be heard.
+
 === The Hospital Itself
 image: DarkHall
 The building is against you too.

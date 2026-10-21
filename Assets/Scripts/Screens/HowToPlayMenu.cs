@@ -453,7 +453,23 @@ public class HowToPlayMenu : MonoBehaviour
     private static void Finish(Section section, Page page, StringBuilder body)
     {
         if (section == null || page == null) return;
-        page.Body = body.ToString().Trim();
+        page.Body = KeepLastWordsTogether(body.ToString().Trim());
         section.Pages.Add(page);
+    }
+
+    /*
+     * Joins the last two words of every paragraph with a non-breaking space, so a paragraph never ends on a line holding a
+     * single word. Paragraphs of two words or fewer are left as they are.
+     */
+    private static string KeepLastWordsTogether(string text)
+    {
+        string[] paragraphs = text.Split('\n');
+        for (int i = 0; i < paragraphs.Length; i++)
+        {
+            string p = paragraphs[i].TrimEnd();
+            int last = p.LastIndexOf(' ');
+            if (last > 0 && p.IndexOf(' ') != last) paragraphs[i] = p.Substring(0, last) + ' ' + p.Substring(last + 1);
+        }
+        return string.Join("\n", paragraphs);
     }
 }
