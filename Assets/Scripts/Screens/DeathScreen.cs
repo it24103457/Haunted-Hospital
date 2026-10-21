@@ -7,7 +7,7 @@ using UnityEngine;
  * then after a short pause the screen fades in and its sound plays. Once it is fully shown, game time and game audio stop,
  * so nothing keeps moving or making noise behind it. Button sounds still play, since they ignore the audio pause.
  * The fade runs on real time, so it is not affected by the game clock.
- * The objectives HUD (notes line and messages) is drawn with OnGUI, which always appears on top of any Canvas,
+ * The objective messages are drawn with OnGUI, which always appears on top of any Canvas,
  * so it is switched off as the screen appears. It comes back on its own when the level is restarted.
  */
 public class DeathScreen : MonoBehaviour
@@ -24,11 +24,13 @@ public class DeathScreen : MonoBehaviour
 
     public bool IsShowing { get; private set; }
 
+    // Starts hidden and see-through, so nothing shows until the player dies.
     private void Awake()
     {
         SetVisible(false, 0f);
     }
 
+    // Listens for the player dying; if the player is already dead (a very early death), shows the screen at once.
     private void Start()
     {
         player = FindAnyObjectByType<PlayerStats>();
@@ -38,11 +40,13 @@ public class DeathScreen : MonoBehaviour
         if (player.IsDead) OnDied();
     }
 
+    // Stops listening, so a destroyed screen is never called by the player.
     private void OnDestroy()
     {
         if (player != null) player.Died -= OnDied;
     }
 
+    // Starts showing the screen once, however many times the death is reported.
     private void OnDied()
     {
         if (IsShowing) return;
@@ -50,6 +54,10 @@ public class DeathScreen : MonoBehaviour
         StartCoroutine(Show());
     }
 
+    /*
+     * Freezes the controls, waits the short delay, hides the objective messages, plays the sound and fades the screen in.
+     * Once fully shown the buttons work, and game time and game audio stop.
+     */
     private IEnumerator Show()
     {
         PlayerControlLock.Set(true);

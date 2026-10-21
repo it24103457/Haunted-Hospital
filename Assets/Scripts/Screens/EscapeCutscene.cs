@@ -162,6 +162,7 @@ public class EscapeCutscene : MonoBehaviour
 
     private bool HasRoof => roofDoorLeft != null && roofDoorRight != null && heli != null;
 
+    // Takes the doors off their Animator and remembers each light's normal brightness, so the sequence can drive them directly.
     private void Awake()
     {
         if (doorAnimator != null) doorAnimator.enabled = false;
@@ -204,12 +205,14 @@ public class EscapeCutscene : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
     }
 
+    // Starts the sequence and the skip hint together.
     private void Start()
     {
         StartCoroutine(Run());
         StartCoroutine(ShowSkipHint());
     }
 
+    // Runs the light flicker and keeps the Hunter looking at the camera while asked to; Space skips to the end.
     private void Update()
     {
         if (flickering) Flicker();
@@ -234,6 +237,7 @@ public class EscapeCutscene : MonoBehaviour
             float k = (shakeUntil - Time.unscaledTime) * shakeStrength;
             offset = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f) * k * 0.04f;
         }
+
         // A steady low rumble while the lift is moving.
         if (rumble > 0f)
         {
@@ -243,6 +247,7 @@ public class EscapeCutscene : MonoBehaviour
         cam.transform.SetPositionAndRotation(camBasePos + camBaseRot * offset, camBaseRot);
     }
 
+    // The whole escape, start to finish: the lift ride and the Hunter's attack, then the roof and the helicopter, ending on the win screen.
     private IEnumerator Run()
     {
         yield return PrewarmRoof();
@@ -557,6 +562,7 @@ public class EscapeCutscene : MonoBehaviour
         fade.alpha = 1f;
     }
 
+    // Slides the roof doors smoothly to the given closed amount (0 open, 1 shut) over the duration.
     private IEnumerator MoveRoofDoors(float closed, float duration)
     {
         float from = roofDoorsClosed;
@@ -588,6 +594,7 @@ public class EscapeCutscene : MonoBehaviour
         for (int i = 0; i < roofLiftLights.Length; i++) roofLiftLights[i].intensity = roofLightBase[i] * level;
     }
 
+    // Eases the lift's camera rumble to the given strength over the duration.
     private IEnumerator BlendRumble(float to, float duration)
     {
         float from = rumble;
@@ -599,6 +606,7 @@ public class EscapeCutscene : MonoBehaviour
         rumble = to;
     }
 
+    // Plays a clip once on the given source from a point part-way in, replacing whatever it was playing.
     private static void PlayFrom(AudioSource source, AudioClip clip, float startFrom, float volume)
     {
         if (clip == null) return;
@@ -610,6 +618,7 @@ public class EscapeCutscene : MonoBehaviour
         source.Play();
     }
 
+    // Stops the source after the given time, unless it has moved on to another clip by then.
     private static IEnumerator StopSourceAfter(AudioSource source, float seconds)
     {
         AudioClip clip = source.clip;
@@ -617,6 +626,7 @@ public class EscapeCutscene : MonoBehaviour
         if (source.clip == clip) source.Stop();
     }
 
+    // Eases the source's volume to the given level over the duration.
     private static IEnumerator FadeVolume(AudioSource source, float to, float duration)
     {
         float from = source.volume;
@@ -628,6 +638,7 @@ public class EscapeCutscene : MonoBehaviour
         source.volume = to;
     }
 
+    // Fades the source to silence and stops it, unless it has moved on to another clip by then.
     private static IEnumerator FadeOut(AudioSource source, float duration)
     {
         AudioClip clip = source.clip;
@@ -646,6 +657,7 @@ public class EscapeCutscene : MonoBehaviour
     private bool hitLanded;
     private bool hunterInView;
 
+    // Plays the doors slamming at the given moment, from where the Hunter stands.
     private IEnumerator PlayDoorsShutAt(float time)
     {
         yield return WaitUntilTime(time);
@@ -658,6 +670,7 @@ public class EscapeCutscene : MonoBehaviour
         return new Vector3(hunterStop.position.x, hunterStop.position.y, doorLeft.position.z - 0.8f);
     }
 
+    // At the given moment stops the lift sound and, unless the Hunter's hit already landed, jams the doors with a clunk and a shake.
     private IEnumerator StopLiftSoundAt(float time)
     {
         yield return WaitUntilTime(time);
@@ -667,6 +680,7 @@ public class EscapeCutscene : MonoBehaviour
         Shake(0.35f, 0.8f);
     }
 
+    // Skips the rest: silences everything, fades to black, and jumps to the final roof shot before fading back in.
     private IEnumerator SkipToEnd()
     {
         skipHint.gameObject.SetActive(false);
@@ -782,6 +796,7 @@ public class EscapeCutscene : MonoBehaviour
         }
     }
 
+    // Eases how strongly the Hunter turns its head towards the camera.
     private IEnumerator BlendLook(float to, float duration)
     {
         float from = hunterHold.lookWeight;
@@ -793,12 +808,14 @@ public class EscapeCutscene : MonoBehaviour
         hunterHold.lookWeight = to;
     }
 
+    // The Hunter's head position, or a point at head height above it when the model has no head bone.
     private Vector3 HunterHead()
     {
         Transform head = hunter.GetBoneTransform(HumanBodyBones.Head);
         return head != null ? head.position : hunter.transform.position + Vector3.up * 1.7f;
     }
 
+    // Throws the held gun at the Hunter's head in a spinning arc, then lets it drop to the floor.
     private IEnumerator ThrowGun(float duration)
     {
         heldGun.SetParent(null, true);
@@ -832,6 +849,7 @@ public class EscapeCutscene : MonoBehaviour
         heldGun.SetPositionAndRotation(to, rotTo);
     }
 
+    // Moves the lift doors to the given closed amount over the duration.
     private IEnumerator CloseDoors(float target, float duration)
     {
         float from = doorsClosed;
@@ -854,6 +872,7 @@ public class EscapeCutscene : MonoBehaviour
         doorRight.localPosition = r;
     }
 
+    // Sets each flickering light for this frame: mostly near full, sometimes dropping almost to dark.
     private void Flicker()
     {
         for (int i = 0; i < flickerLights.Length; i++)
@@ -868,12 +887,14 @@ public class EscapeCutscene : MonoBehaviour
         }
     }
 
+    // Starts a camera shake that fades out over the duration; LateUpdate applies it.
     private void Shake(float duration, float strength)
     {
         shakeUntil = Time.unscaledTime + duration;
         shakeStrength = strength / duration;
     }
 
+    // Moves and turns the camera smoothly to the given pose over the duration.
     private IEnumerator MoveCamera(Vector3 pos, Quaternion rot, float duration)
     {
         Vector3 p0 = camBasePos;
@@ -889,11 +910,13 @@ public class EscapeCutscene : MonoBehaviour
         camBaseRot = rot;
     }
 
+    // Turns the camera, without moving it, to look at the given point over the duration.
     private IEnumerator LookAt(Vector3 point, float duration)
     {
         yield return MoveCamera(camBasePos, Quaternion.LookRotation(point - camBasePos), duration);
     }
 
+    // Moves the held gun smoothly between two poses in the camera's hands over the duration.
     private IEnumerator MoveGun(Vector3 fromPos, Quaternion fromRot, Vector3 toPos, Quaternion toRot, float duration)
     {
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
@@ -907,6 +930,7 @@ public class EscapeCutscene : MonoBehaviour
         heldGun.localRotation = toRot;
     }
 
+    // Fades a screen overlay to the given opacity over the duration.
     private static IEnumerator FadeTo(CanvasGroup group, float to, float duration)
     {
         float from = group.alpha;
@@ -918,11 +942,13 @@ public class EscapeCutscene : MonoBehaviour
         group.alpha = to;
     }
 
+    // Waits the given time on real time, so it is unaffected by the game clock.
     private static IEnumerator Wait(float seconds)
     {
         yield return new WaitForSecondsRealtime(seconds);
     }
 
+    // Waits until the given moment on the real-time clock.
     private static IEnumerator WaitUntilTime(float time)
     {
         while (Time.unscaledTime < time) yield return null;
@@ -942,6 +968,7 @@ public class EscapeCutscene : MonoBehaviour
         Destroy(go, clip.length - s.time + 0.1f);
     }
 
+    // Adds an audio source to the given object: flat (0) or placed in the scene (1), with a short audible range.
     private static AudioSource NewSource(GameObject host, float spatial)
     {
         var s = host.AddComponent<AudioSource>();

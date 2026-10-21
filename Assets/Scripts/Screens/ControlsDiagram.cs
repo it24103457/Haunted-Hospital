@@ -113,6 +113,7 @@ public static class ControlsDiagram
         Box(face, "Scroll Wheel", new Vector2(0f, top - buttonHeight * 0.5f), new Vector2(14f, 40f), KeyBorder);
     }
 
+    // An oval in the given colour: a box using the shared oval sprite, used for the mouse.
     private static RectTransform Oval(RectTransform stage, string name, Vector2 centre, Vector2 size, Color color)
     {
         var rt = Box(stage, name, centre, size, color);
@@ -169,6 +170,7 @@ public static class ControlsDiagram
         Line(stage, lineStart, pointAt, lineColor);
     }
 
+    // A thin straight line between two points, used for the callouts: a box stretched to the distance and turned to the angle.
     private static void Line(RectTransform stage, Vector2 from, Vector2 to, Color color)
     {
         Vector2 d = to - from;
@@ -176,6 +178,7 @@ public static class ControlsDiagram
         line.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
     }
 
+    // A plain coloured rectangle centred on a point of the stage, that never catches clicks.
     private static RectTransform Box(RectTransform stage, string name, Vector2 centre, Vector2 size, Color color)
     {
         var rt = NewRect(name, stage);
@@ -188,6 +191,7 @@ public static class ControlsDiagram
         return rt;
     }
 
+    // A text label centred on a point of the stage, in the given font, size, colour and alignment.
     private static TextMeshProUGUI Text(RectTransform stage, TMP_FontAsset font, string text, Vector2 centre, Vector2 size,
                                         float fontSize, Color color, TextAlignmentOptions align)
     {
@@ -206,6 +210,7 @@ public static class ControlsDiagram
         return label;
     }
 
+    // An empty UI object under the given parent, so every piece of the diagram starts from the same blank rectangle.
     private static RectTransform NewRect(string name, Transform parent)
     {
         var rt = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();

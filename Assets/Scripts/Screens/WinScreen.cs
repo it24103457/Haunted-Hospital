@@ -67,6 +67,7 @@ public class WinScreen : MonoBehaviour
         }
     }
 
+    // Starts with the panel, the cutscene video and the loading text hidden.
     private void Awake()
     {
         panel.gameObject.SetActive(false);
@@ -74,6 +75,7 @@ public class WinScreen : MonoBehaviour
         if (loadingText != null) loadingText.gameObject.SetActive(false);
     }
 
+    // Listens for the objectives changing, and checks once straight away in case the game is already won.
     private void Start()
     {
         objectives = FindAnyObjectByType<ObjectiveState>();
@@ -83,11 +85,13 @@ public class WinScreen : MonoBehaviour
         OnStateChanged();
     }
 
+    // Stops listening, so a destroyed screen is never called by the objectives.
     private void OnDestroy()
     {
         if (objectives != null) objectives.StateChanged -= OnStateChanged;
     }
 
+    // Starts showing the win once, when the objectives report the game won, and hides the old objective messages.
     private void OnStateChanged()
     {
         if (IsShowing || !objectives.HasWon) return;
@@ -97,6 +101,10 @@ public class WinScreen : MonoBehaviour
         StartCoroutine(Show());
     }
 
+    /*
+     * Freezes the controls and fades the game out; then either loads the escape cutscene scene, or plays the cutscene video
+     * if one is set, and finally fades in the win text and buttons and stops game time and audio.
+     */
     private IEnumerator Show()
     {
         PlayerControlLock.Set(true);
@@ -187,6 +195,7 @@ public class WinScreen : MonoBehaviour
         loadingText.text = "Loading" + new string('.', dots) + "<alpha=#00>" + new string('.', 3 - dots);
     }
 
+    // Plays the cutscene video from start to finish, waiting for it to load first, then hides it.
     private IEnumerator PlayCutscene()
     {
         cutscene.gameObject.SetActive(true);
@@ -200,6 +209,7 @@ public class WinScreen : MonoBehaviour
         cutscene.gameObject.SetActive(false);
     }
 
+    // Fades a group in from see-through to fully visible over the duration.
     private static IEnumerator Fade(CanvasGroup group, float duration)
     {
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
@@ -210,6 +220,7 @@ public class WinScreen : MonoBehaviour
         group.alpha = 1f;
     }
 
+    // Sets a group's opacity and whether its buttons can be clicked.
     private static void SetGroup(CanvasGroup group, float alpha, bool clickable)
     {
         group.alpha = alpha;
@@ -218,6 +229,7 @@ public class WinScreen : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // In the Editor, stores the chosen cutscene scene's path, since a scene asset can't be referenced in a build.
     private void OnValidate()
     {
         cutsceneScenePath = cutsceneScene != null ? AssetDatabase.GetAssetPath(cutsceneScene) : string.Empty;
