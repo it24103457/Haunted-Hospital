@@ -53,6 +53,9 @@ public class HunterEars : MonoBehaviour
     // Raised when the target appears, disappears or changes to a different noise.
     public event Action TargetChanged;
 
+    /// <summary>Raised for every noise the Hunter hears (Id is 0, because this is the sound itself, not a memory).</summary>
+    public event Action<HeardNoise> NoiseHeard;
+
     private readonly List<HeardNoise> memory = new List<HeardNoise>();
     private HunterBrain brain;
     private HunterSettings settings;
@@ -187,6 +190,9 @@ public class HunterEars : MonoBehaviour
                       $"{memory.Count} remembered, merge radius {settings.MemoryMergeRadius:0.#} m).", this);
 
         UpdateTarget(now);
+
+        // Last, because a listener may clear the memory (a chase starting does).
+        NoiseHeard?.Invoke(new HeardNoise(0, noise.Position, noise.Type, heard, importance, now, noise.Source));
     }
 
     private int IndexNear(Vector3 position, float radius)
