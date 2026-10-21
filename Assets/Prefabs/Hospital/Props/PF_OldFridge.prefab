@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2390615448799926574}
+  - component: {fileID: 7100000000000000001}
   m_Layer: 0
   m_Name: PF_OldFridge
   m_TagString: Untagged
@@ -116,8 +117,23 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.6726216, y: 1.7815394, z: 0.5748619}
-  m_Center: {x: -0.000013411045, y: 0.6947229, z: 0.04625213}
+  m_Size: {x: 0.6726216, y: 1.7815394, z: 0.242}
+  m_Center: {x: -0.000013411045, y: 0.6947229, z: -0.121}
+--- !u!114 &7100000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 648811340429764100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c014323a7ff64d3db12ce04dccc6d39d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 0}
+  openParameter: 
+  displayName: 
 --- !u!1001 &7870621655447562778
 PrefabInstance:
   m_ObjectHideFlags: 0
