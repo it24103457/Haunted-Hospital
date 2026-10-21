@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Unity-6000.6.2f1-7a1410?style=for-the-badge&logo=unity&logoColor=white" alt="Unity 6000.6.2f1">
-  <img src="https://img.shields.io/badge/URP-17.6-7a1410?style=for-the-badge&logo=unity&logoColor=white" alt="URP 17.6">
+  <img src="https://img.shields.io/badge/URP-17.6-0b0b0c?style=for-the-badge&logo=unity&logoColor=white" alt="URP 17.6">
   <img src="https://img.shields.io/badge/C%23-.NET-7a1410?style=for-the-badge&logo=csharp&logoColor=white" alt="C#">
 </p>
 
@@ -61,66 +61,19 @@ The only way out is the elevator. Its four-digit code is written one digit at a 
 While you search, keep your health, ammo and sanity up. The Hunter follows every noise you make, the Thief takes the supplies you were counting on, and the Environment Director wears down your sanity with things that should not be happening.
 
 ```mermaid
-flowchart TB
-    START([Wake up in the hospital]) --> EXPLORE[Explore the hospital]
+flowchart LR
+    A([Wake up]) --> B[Find the 4 code notes]
+    B --> C[Open the elevator<br>with the keypad]
+    C --> D[Find the exit key]
+    D --> E([Escape])
 
-    subgraph OBJ [Escape objective]
-        NOTE[Find a code note<br>in a fridge or on a desk] --> READ[Read it with E<br>digit fills its HUD slot]
-        READ --> ALL{All 4 digits?}
-        ALL -- no, next note appears elsewhere --> NOTE
-        ALL -- yes --> KEYPAD[Enter the code on the keypad<br>elevator doors open]
-        KEYPAD --> KEY[Exit key appears in a<br>first aid shelf or cooler box]
-        KEY --> TAKE[Take the exit key]
-        TAKE --> SWITCH[Turn the key in the<br>elevator key switch]
-    end
+    ISD[Item Spawn Director] -. places supplies,<br>notes and the key .-> B
+    H[Sound Hunter] -. hears your noise<br>and chases you .-> B
+    T[Resource Thief] -. steals the supplies<br>you need .-> B
+    ED[Environment Director] -. scares that<br>drain sanity .-> B
 
-    EXPLORE --> NOTE
-    SWITCH --> CUT([Escape cutscene]) --> WIN([Win screen])
-
-    subgraph SUP [Supplies]
-        FIND[Medkits, Ammo Boxes and<br>Sanity Bottles on furniture] --> PICK[Pick up with E]
-        PICK --> NEW[Another appears<br>elsewhere later]
-    end
-    EXPLORE --> FIND
-
-    subgraph BAR [Barricades]
-        BOARD[Boarded doorway] --> SHOOT[Shoot the planks off]
-        SHOOT --> OPEN[Doorway stays open<br>for you, the Thief and the Hunter]
-    end
-    EXPLORE --> BOARD
-
-    subgraph HUN [The Hunter]
-        NOISE[You make noise:<br>sprinting, doors, gunshots, barricades] --> HEARS[Hunter hears it<br>and investigates]
-        HEARS --> CHASE{Finds you?}
-        CHASE -- you go quiet --> LOST[It loses your trail<br>and searches]
-        CHASE -- you hide deep in a vent --> LOST
-        CHASE -- you shoot it down --> DOWN[It respawns later<br>out of sight]
-        CHASE -- it catches you --> HIT[You lose health]
-    end
-    SHOOT --> NOISE
-    EXPLORE --> NOISE
-
-    subgraph THI [The Thief]
-        STEAL[Thief goes for a supply<br>you are short of] --> CARRY[Carries it to a stash]
-        CARRY --> SHOT{You shoot it<br>in time?}
-        SHOT -- yes --> DROP[It drops the item<br>for you to pick up]
-        SHOT -- no --> GONE[Item is gone,<br>replaced more slowly]
-        SEEN[You see the Thief] --> SAN1[You lose sanity]
-    end
-    FIND -.-> STEAL
-
-    subgraph DIR [The hospital itself]
-        EVENT[Flicker, blackout, whisper,<br>phone, announcement, knock,<br>apparition] --> SAN2[You lose sanity]
-    end
-
-    HIT --> HP{Health at 0?}
-    SAN1 --> SP{Sanity at 0?}
-    SAN2 --> SP
-    HP -- yes --> DEAD([You die])
-    SP -- yes --> MAD([You lose your mind])
-    DEAD --> RESTART([Run restarts from the beginning])
-    MAD --> RESTART
-    RESTART --> START
+    B -. health or sanity<br>runs out .-> R([Start again])
+    R --> A
 ```
 
 <table>
@@ -515,4 +468,5 @@ For_README/                 images for this README
 | Hospital bed | CobleGames |
 | Hospital doors, windows and wooden planks | Hospital Stage 2 pack |
 | Thief and Hunter animations | [Mixamo](https://www.mixamo.com) |
+| Sounds | [Pixabay](https://pixabay.com) |
 | Font | Liberation Sans (SIL Open Font License) |
