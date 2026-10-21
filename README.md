@@ -15,7 +15,7 @@
   <a href="https://github.com/it24103457"><img src="https://img.shields.io/badge/it24103457-1e1e1f?style=flat-square&logo=github&logoColor=white" alt="it24103457"></a>
 </p>
 
-A first-person survival horror game set in an abandoned hospital. You wake up trapped inside, and you are not alone: something hunts by sound, something else steals your supplies, and the building itself works against you. Find the elevator code, find the exit key and get out.
+A first-person survival horror shooter set in an abandoned hospital. You wake up trapped inside, and you are not alone: something hunts by sound, something else steals your supplies, and the building itself works against you. Find the elevator code, find the exit key and get out.
 
 ## Features at a glance
 
