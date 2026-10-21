@@ -977,6 +977,7 @@ GameObject:
   - component: {fileID: 3954183002642399879}
   - component: {fileID: 2719725375370201027}
   - component: {fileID: 6650126312444528365}
+  - component: {fileID: 477419649603685455}
   m_Layer: 0
   m_Name: PF_GameUI
   m_TagString: Untagged
@@ -1252,6 +1253,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb361ec9668eee3438a6e6294c4dee97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHudBinder
+  lowThreshold: 15
+--- !u!114 &477419649603685455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1956618726812749134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca4b8f0cb6fe19045842b22211fdee33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LowStatsEffects
+  screenShader: {fileID: 4800000, guid: 6e134e06631713249bc8e15d518b87f3, type: 3}
+  healthTint: {r: 0.8, g: 0.42, b: 0.4, a: 0.35}
+  healthVignette: {r: 0.4, g: 0.02, b: 0.03, a: 0.85}
+  fadeSeconds: 0.6
+  heartbeat: {fileID: 8300000, guid: ac67440287e97c54ab543dd5503ecc23, type: 3}
+  heartbeatLoopEnd: 7.5
+  heartbeatLoudVolume: 0.9
+  heartbeatQuietVolume: 0.55
+  heartbeatSoftenSeconds: 4
+  headache: {fileID: 8300000, guid: e3cbb19f3ca226c49a9de35dc3dcfeb0, type: 3}
+  headacheLoopStart: 4
+  headacheLoopEnd: 29
+  headacheLoudVolume: 0.9
+  headacheLoopVolume: 0.6
 --- !u!1 &1993781757931554406
 GameObject:
   m_ObjectHideFlags: 0

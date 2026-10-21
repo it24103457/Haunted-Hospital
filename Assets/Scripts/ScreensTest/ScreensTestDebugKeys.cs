@@ -3,21 +3,23 @@ using UnityEngine.InputSystem;
 
 /*
  * Test-only keys for trying the game screens without playing through, for the screens test scene only.
- * F5 kills the player (death screen), F6 completes the escape (win screen), F7 deals 25 damage, F8 drains all sanity (sanity screen).
+ * F6 completes the escape (win screen), F7 takes all health (death screen), F8 drains all sanity (sanity screen).
  * Damage goes through PlayerStats' own TakeDamage, sanity through its DrainSanity and the win through ObjectiveState's own CompleteEscape,
  * so the screens react exactly as they would in a real game. Pause is already on Esc.
- * HUD keys: F4 gives or takes the exit key (the key icon's pickup animation, shimmer and label), F9 reads the next code digit
+ * Objective keys: F4 gives or takes the exit key (the key icon's pickup animation, shimmer and label), F9 reads the next code digit
  * through ObjectiveState.ReadClue, exactly as a clue paper does (the run's real digit if a code is set, otherwise a random
- * one), F10 resets the run's objectives (ObjectiveState.ResetRun), F11 takes 10 sanity and F12 uses 10 rounds of reserve
- * ammo. Everything goes through PlayerStats and ObjectiveState, so the HUD reacts exactly as in a real game.
- * A hint in the top-left corner lists the keys in two groups (screens, HUD), with the player's health, sanity, reserve ammo
+ * one) and F10 resets the run's objectives (ObjectiveState.ResetRun).
+ * Numpad keys change the player's stats by a step each (10 by default), in the same top-to-bottom order as the HUD's bars:
+ * 7 / 8 health down / up, 4 / 5 reserve ammo down / up, 1 / 2 sanity down / up; going below 15 shows the low health or
+ * low sanity effect. Everything goes through PlayerStats and ObjectiveState, so the HUD reacts exactly as in a real game.
+ * A hint in the top-left corner lists the keys in three groups (screens, objectives, numpad), with the player's health, sanity, reserve ammo
  * and whether the key is held on the last line, on a faint dark backdrop. Its size follows the screen height, so it reads
  * the same at any resolution or Game view scale.
  * It is hidden while a screen is open, since OnGUI draws over the screens.
  */
 public class ScreensTestDebugKeys : MonoBehaviour
 {
-    [SerializeField, Min(0f)] private float damageStep = 25f;
+    [SerializeField, Min(0f)] private float healthStep = 10f;
     [SerializeField, Min(0f)] private float sanityStep = 10f;
     [SerializeField, Min(0)] private int ammoStep = 10;
 
@@ -37,12 +39,15 @@ public class ScreensTestDebugKeys : MonoBehaviour
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null || player == null) return;
 
-        if (keyboard.f5Key.wasPressedThisFrame) player.TakeDamage(new DamageInfo(player.Health, gameObject));
-        if (keyboard.f7Key.wasPressedThisFrame) player.TakeDamage(new DamageInfo(damageStep, gameObject));
+        if (keyboard.f7Key.wasPressedThisFrame) player.TakeDamage(new DamageInfo(player.Health, gameObject));
         if (keyboard.f6Key.wasPressedThisFrame && objectives != null && !player.IsDead) objectives.CompleteEscape();
         if (keyboard.f8Key.wasPressedThisFrame) player.DrainSanity(player.Sanity);
-        if (keyboard.f11Key.wasPressedThisFrame) player.DrainSanity(sanityStep);
-        if (keyboard.f12Key.wasPressedThisFrame) player.TryUseAmmo(Mathf.Min(ammoStep, player.ReserveAmmo));
+        if (keyboard.numpad7Key.wasPressedThisFrame) player.TakeDamage(new DamageInfo(Mathf.Min(healthStep, player.Health), gameObject));
+        if (keyboard.numpad8Key.wasPressedThisFrame) player.Heal(healthStep);
+        if (keyboard.numpad4Key.wasPressedThisFrame) player.TryUseAmmo(Mathf.Min(ammoStep, player.ReserveAmmo));
+        if (keyboard.numpad5Key.wasPressedThisFrame) player.AddAmmo(ammoStep);
+        if (keyboard.numpad1Key.wasPressedThisFrame) player.DrainSanity(Mathf.Min(sanityStep, player.Sanity));
+        if (keyboard.numpad2Key.wasPressedThisFrame) player.AddSanity(sanityStep);
         if (keyboard.f4Key.wasPressedThisFrame) player.SetExitKey(!player.HasExitKey);
 
         if (objectives == null) return;
@@ -89,9 +94,9 @@ public class ScreensTestDebugKeys : MonoBehaviour
             ? $"\nHealth {player.Health:0}   Sanity {player.Sanity:0}   Ammo {player.ReserveAmmo}   Key {(player.HasExitKey ? "held" : "no")}"
             : string.Empty;
         var text = new GUIContent(
-            "Screens:  F5 die   F6 win   F7 -" + damageStep.ToString("0") + " health   F8 lose sanity   Esc pause" +
-            "\nHUD:  F4 give/take key   " + nextDigit + "   F10 reset objectives   F11 -" + sanityStep.ToString("0") +
-            " sanity   F12 -" + ammoStep + " ammo" + stats);
+            "Screens:  F6 win   F7 health to 0   F8 sanity to 0   Esc pause" +
+            "\nObjectives:  F4 give/take key   " + nextDigit + "   F10 reset objectives" +
+            "\nNumpad:  7/8 health -/+   4/5 ammo -/+   1/2 sanity -/+   (" + healthStep.ToString("0") + " each)" + stats);
         Vector2 size = hintStyle.CalcSize(text);
         float pad = 8f * scale;
         var box = new Rect(16f * scale, 16f * scale, size.x + pad * 2f, size.y + pad);
