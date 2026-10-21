@@ -15,9 +15,9 @@ using UnityEngine.AI;
  *   NavMeshAgent base speed = 1.4 m/s (set on PF_Hunter prefab).
  *   Walk authored speed     = 1.15 m/s (Zombie walking-2.fbx forward displacement).
  *   Run authored speed      = 4.25 m/s (Zombie Run.fbx forward displacement).
- *   HunterSettings multipliers: patrol=0.82->1.15 m/s, search=0.93->1.30 m/s,
- *                               investigate=1.14->1.60 m/s, chase=1.50->2.10 m/s.
- *   Chase ratio: 2.10/4.25 = 0.49x (clamped [0.45, 1.5]) -- moderate lurching run, zero foot sliding.
+ *   HunterSettings multipliers: patrol=0.70->0.98 m/s, search=0.80->1.12 m/s,
+ *                               investigate=1.00->1.40 m/s, chase=1.35->1.89 m/s.
+ *   Chase ratio: 1.89/4.25 = 0.44x (clamped [0.35, 1.5]) -- realistic menacing shambling run, zero foot sliding.
  */
 [RequireComponent(typeof(HunterBrain), typeof(NavMeshAgent))]
 public class HunterAnimationDriver : MonoBehaviour
@@ -34,10 +34,7 @@ public class HunterAnimationDriver : MonoBehaviour
     [SerializeField] private float walkAuthoredSpeed = 1.15f;
 
     [Tooltip("Authored forward speed (m/s) of the Hunter_Run clip (Zombie Run.fbx). Used for stride matching during Chase.")]
-    [SerializeField] private float runAuthoredSpeed = 4.25f;
-
-    [Tooltip("Speed multiplier for the Upper Body Chase layer clip to sync with 2 run strides per upper-body lurch.")]
-    [SerializeField] private float chaseUpperBodySpeedMultiplier = 3.25f;
+    [SerializeField] private float runAuthoredSpeed = 2.6f;
 
     [Header("Hit & Facing Tuning")]
     [Tooltip("Minimum seconds between successive flinch animations.")]
@@ -52,6 +49,16 @@ public class HunterAnimationDriver : MonoBehaviour
 
     [Tooltip("Speed to blend layer weights in and out (4.0 = ~0.25s).")]
     [SerializeField] private float layerBlendSpeed = 4f;
+
+    [Header("Visual Fidelity & Banking")]
+    [Tooltip("Maximum roll lean angle (degrees) during sharp turns.")]
+    [SerializeField, Range(0f, 10f)] private float maxBankAngle = 4.5f;
+
+    [Tooltip("Rate at which the model banks into turns.")]
+    [SerializeField] private float bankSpeed = 6f;
+
+    [Tooltip("Rate at which the model recovers from banking.")]
+    [SerializeField] private float bankRecoverSpeed = 8f;
 
     // Animator parameter hashes
     private static readonly int SpeedParam      = Animator.StringToHash("Speed");
@@ -74,6 +81,8 @@ public class HunterAnimationDriver : MonoBehaviour
 
     private float currentUpperBodyWeight;
     private float currentHeadLookWeight;
+    private float lastYRotation;
+    private float currentBankAngle;
 
     private void Awake()
     {
@@ -133,23 +142,55 @@ public class HunterAnimationDriver : MonoBehaviour
         bool isChasing    = state == HunterState.Chase;
         float speed       = agent.velocity.magnitude;
 
-        animator.SetFloat(SpeedParam, speed);
+        // Angular velocity calculation for banking and pivot footwork
+        float deltaAngle = Mathf.DeltaAngle(lastYRotation, transform.eulerAngles.y);
+        lastYRotation = transform.eulerAngles.y;
+        float angularVelocity = Time.deltaTime > 0.0001f ? (deltaAngle / Time.deltaTime) : 0f;
+
+        // Dynamic turn banking: smoothly roll torso into the turn
+        float targetBank = Mathf.Clamp(-angularVelocity * 0.035f, -maxBankAngle, maxBankAngle);
+        if (speed < 0.2f || isInactive || state == HunterState.Dead) targetBank = 0f;
+        currentBankAngle = Mathf.MoveTowards(
+            currentBankAngle,
+            targetBank,
+            Time.deltaTime * (Mathf.Abs(targetBank) > Mathf.Abs(currentBankAngle) ? bankSpeed : bankRecoverSpeed));
+
+        if (model != null)
+        {
+            model.localRotation = Quaternion.Euler(0f, 0f, currentBankAngle);
+        }
+
         animator.SetBool(IsInactiveParam, isInactive);
 
-        // Stride matching: scale playback speed so feet match ground movement.
-        // With NavMeshAgent base = 1.4 m/s and tuned HunterSettings multipliers,
-        // ratios are ~1.0x for patrol walk and chase run -- zero foot sliding.
+        // Stride matching & Pivot shuffling:
         if (isInactive || state == HunterState.Dead)
         {
+            animator.SetFloat(SpeedParam, 0f);
             animator.speed = 1f;
         }
         else if (speed > 0.05f)
         {
-            float authoredRef = isChasing ? runAuthoredSpeed : walkAuthoredSpeed;
-            animator.speed = Mathf.Clamp(speed / authoredRef, 0.45f, 1.5f);
+            animator.SetFloat(SpeedParam, speed);
+            if (isChasing)
+            {
+                // In Chase, sprint animation plays at a crisp, natural playback rate (never slow motion)
+                animator.speed = Mathf.Clamp(speed / runAuthoredSpeed, 0.85f, 1.25f);
+            }
+            else
+            {
+                animator.speed = Mathf.Clamp(speed / walkAuthoredSpeed, 0.50f, 1.5f);
+            }
+        }
+        else if (Mathf.Abs(angularVelocity) > 25f)
+        {
+            // Pivot in place: shuffle feet with the turn rate so the zombie never rotates like a frozen statue
+            float turnShuffle = Mathf.Clamp01(Mathf.Abs(angularVelocity) / 140f) * 0.35f;
+            animator.SetFloat(SpeedParam, turnShuffle);
+            animator.speed = Mathf.Clamp(turnShuffle / walkAuthoredSpeed, 0.45f, 1.0f);
         }
         else
         {
+            animator.SetFloat(SpeedParam, 0f);
             animator.speed = 1f;
         }
     }
@@ -183,11 +224,12 @@ public class HunterAnimationDriver : MonoBehaviour
 
     private void UpdateLayers()
     {
-        // Layer 1: Upper Body Chase blend
+        // Layer 1: Upper Body Layer is not used to override the sprint with a walk clip during Chase,
+        // allowing Zombie Run.fbx to play its full authentic sprint motion without distortion.
         bool isChasing = hunter.State == HunterState.Chase;
         animator.SetBool(IsChasingParam, isChasing);
 
-        float targetUpperWeight = isChasing ? 1f : 0f;
+        float targetUpperWeight = 0f;
         currentUpperBodyWeight = Mathf.MoveTowards(
             currentUpperBodyWeight, targetUpperWeight, Time.deltaTime * layerBlendSpeed);
 

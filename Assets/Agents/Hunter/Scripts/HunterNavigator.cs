@@ -188,13 +188,44 @@ public sealed class HunterNavigator
         if (!Plan()) Finish(HunterNavStatus.Failed);
     }
 
-    // Skips the first node when the Hunter is already past it, so it does not walk back to it.
+    // Returns the first route index whose node is still meaningfully ahead of the Hunter,
+    // skipping ALL nodes that have already been passed or are very close.
+    // This prevents PublishFrom from issuing a first waypoint that is behind the agent,
+    // which is the root cause of the backward teleport on every path replan.
     private int FirstIndex()
     {
-        if (route.Count < 2) return 0;
+        if (route.Count == 0) return 0;
+        if (route.Count == 1) return 0;
 
-        bool closerToSecond = Flat(body.position, route[1].Position) < Flat(route[0].Position, route[1].Position);
-        return closerToSecond ? 1 : 0;
+        // Walk the route; the first node that is in front of the agent (or at least not
+        // strictly behind it) and is further than ArrivalRadius away becomes the start.
+        for (int i = 0; i < route.Count - 1; i++)
+        {
+            Vector3 toNode = route[i].Position - body.position;
+            toNode.y = 0f;
+            float dist = toNode.magnitude;
+
+            // Already very close: skip this node and aim for the next
+            if (dist <= settings.ArrivalRadius) continue;
+
+            // Node is strictly behind us: skip it (dot < 0 means behind)
+            Vector3 toNext = route[i + 1].Position - body.position;
+            toNext.y = 0f;
+            // If next node is closer than this node AND agent is past the midpoint of the
+            // segment route[i]→route[i+1], skip to next node
+            float segLen = Flat(route[i].Position, route[i + 1].Position);
+            if (toNext.magnitude < dist && dist > segLen * 0.5f) continue;
+
+            // Also skip if the node is directly behind the agent's forward direction
+            // (use velocity direction if available; otherwise body.forward)
+            Vector3 agentFwd = body.forward;
+            if (Vector3.Dot(agentFwd, toNode.normalized) < -0.15f) continue;
+
+            return i;
+        }
+
+        // All nodes passed (or only one remains) — aim for the last
+        return route.Count - 1;
     }
 
     // Publishes the points from startIndex up to the node in front of the next closed door (or the end of the route).
@@ -211,6 +242,11 @@ public sealed class HunterNavigator
         }
 
         int last = holdIndex >= 0 ? holdIndex - 1 : route.Count - 1;
+
+        // Clamp startIndex to never exceed last: if FirstIndex() skipped past
+        // all publishable nodes, start from 'last' so we always head toward
+        // the current segment's end rather than dispatching a backward point.
+        if (startIndex > last) startIndex = Mathf.Max(last, 0);
 
         points.Clear();
         for (int i = startIndex; i <= last; i++) points.Add(route[i].Position);

@@ -14,8 +14,10 @@ public static class HunterSpeedFixPatcher
     [MenuItem("Haunted Hospital/Patch Hunter Speed Fix")]
     public static void Run()
     {
+        ReimportAnimations();
         PatchController();
         PatchPrefab();
+        PatchSettings();
         Debug.Log("[HunterSpeedFix] All patches applied successfully.");
     }
 
@@ -142,9 +144,36 @@ public static class HunterSpeedFixPatcher
             }
         }
 
+        // 5. Adjust action & layer speeds for realistic horror pacing and enable feet IK
+        if (idleState != null)     idleState.iKOnFeet     = true;
+        if (walkState != null)     walkState.iKOnFeet     = true;
+        if (runState != null)      runState.iKOnFeet      = true;
+        if (inactiveState != null) inactiveState.iKOnFeet = true;
+        if (attackState != null)   { attackState.speed = 0.80f;   attackState.iKOnFeet = true; }
+        if (flinchState != null)   { flinchState.speed = 0.85f;   flinchState.iKOnFeet = true; }
+        if (doorPushState != null) { doorPushState.speed = 0.75f; doorPushState.iKOnFeet = true; }
+        var deathState = FindState(sm, "Death");
+        if (deathState != null)    { deathState.speed = 0.80f;    deathState.iKOnFeet = true; }
+
+        // Layer 1: Upper Body Layer
+        if (ctrl.layers.Length > 1)
+        {
+            var upperSm = ctrl.layers[1].stateMachine;
+            var chaseUpper = FindState(upperSm, "Chase_UpperBody");
+            if (chaseUpper != null) chaseUpper.speed = 1.10f;
+        }
+
+        // Layer 2: Head Look Layer
+        if (ctrl.layers.Length > 2)
+        {
+            var headSm = ctrl.layers[2].stateMachine;
+            var headLook = FindState(headSm, "HeadLook");
+            if (headLook != null) headLook.speed = 0.75f;
+        }
+
         EditorUtility.SetDirty(ctrl);
         AssetDatabase.SaveAssets();
-        Debug.Log("[HunterSpeedFix] AC_Hunter.controller patched.");
+        Debug.Log("[HunterSpeedFix] AC_Hunter.controller patched with realistic action speeds.");
     }
 
     // 
@@ -161,8 +190,9 @@ public static class HunterSpeedFixPatcher
         {
             agent.speed        = 1.4f;
             agent.angularSpeed = 360f;
-            agent.acceleration = 16f;
-            Debug.Log($"[HunterSpeedFix] NavMeshAgent: speed={agent.speed} angularSpeed={agent.angularSpeed} acceleration={agent.acceleration}");
+            agent.acceleration = 8f;
+            agent.autoRepath   = false;
+            Debug.Log($"[HunterSpeedFix] NavMeshAgent: speed={agent.speed} angularSpeed={agent.angularSpeed} acceleration={agent.acceleration} autoRepath={agent.autoRepath}");
         }
 
         var col = go.GetComponent<CapsuleCollider>();
@@ -179,12 +209,18 @@ public static class HunterSpeedFixPatcher
             var walkProp = so.FindProperty("walkAuthoredSpeed");
             var runProp  = so.FindProperty("runAuthoredSpeed");
             if (walkProp != null) walkProp.floatValue = 1.15f;
-            if (runProp  != null) runProp.floatValue  = 4.25f;
+            if (runProp  != null) runProp.floatValue  = 2.60f;
             so.ApplyModifiedPropertiesWithoutUndo();
-            Debug.Log("[HunterSpeedFix] HunterAnimationDriver authored speeds updated to walk=1.15, run=4.25.");
+            Debug.Log("[HunterSpeedFix] HunterAnimationDriver authored speeds updated to walk=1.15, run=2.60.");
         }
 
         var audioDriver = go.GetComponent<HunterAudioDriver>();
+        if (audioDriver == null)
+        {
+            audioDriver = go.AddComponent<HunterAudioDriver>();
+            Debug.Log("[HunterSpeedFix] Added HunterAudioDriver to PF_Hunter.");
+        }
+
         if (audioDriver != null)
         {
             var so = new SerializedObject(audioDriver);
@@ -210,16 +246,80 @@ public static class HunterSpeedFixPatcher
                 walkClipsProp.GetArrayElementAtIndex(1).objectReferenceValue = walk2;
             }
 
+            var walkTrack = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Art/Models/Agents/Hunter/Audio/walk-1.mp3");
+
+            var walkClipProp = so.FindProperty("walkClip");
+            if (walkClipProp != null) walkClipProp.objectReferenceValue = walkTrack;
+
             var growlProp = so.FindProperty("growlClip");
             if (growlProp != null) growlProp.objectReferenceValue = growl;
 
             so.ApplyModifiedPropertiesWithoutUndo();
-            Debug.Log("[HunterSpeedFix] HunterAudioDriver footstep clips wired.");
+            Debug.Log("[HunterSpeedFix] HunterAudioDriver footstep clips and walk-1.mp3 wired.");
         }
 
         PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
         PrefabUtility.UnloadPrefabContents(go);
         Debug.Log("[HunterSpeedFix] PF_Hunter.prefab patched.");
+    }
+
+    // 
+    // Settings
+    // 
+    private static void PatchSettings()
+    {
+        const string settingsPath = "Assets/Agents/Hunter/Settings/HunterSettings_Hospital.asset";
+        var settings = AssetDatabase.LoadAssetAtPath<HunterSettings>(settingsPath);
+        if (settings == null) { Debug.LogWarning("[HunterSpeedFix] HunterSettings_Hospital not found."); return; }
+
+        var so = new SerializedObject(settings);
+        var patrolProp     = so.FindProperty("patrolSpeed");
+        var searchProp     = so.FindProperty("searchSpeed");
+        var investProp     = so.FindProperty("investigateSpeed");
+        var chaseProp      = so.FindProperty("chaseSpeed");
+        var exitMarginProp = so.FindProperty("attackExitMargin");
+        var cdProp         = so.FindProperty("attackCooldownSeconds");
+        var windProp       = so.FindProperty("attackWindupSeconds");
+        var waitProp       = so.FindProperty("patrolWaitSeconds");
+
+        if (patrolProp     != null) patrolProp.floatValue     = 0.70f;
+        if (searchProp     != null) searchProp.floatValue     = 0.80f;
+        if (investProp     != null) investProp.floatValue     = 1.00f;
+        if (chaseProp      != null) chaseProp.floatValue      = 1.29f; // 1.4 * 1.29 = 1.8 m/s actual chase speed
+        if (exitMarginProp != null) exitMarginProp.floatValue = 1.00f; // 1.0m exit margin to prevent Attack/Chase flutter
+        if (cdProp         != null) cdProp.floatValue         = 1.60f;
+        if (windProp       != null) windProp.floatValue       = 0.55f;
+        if (waitProp       != null) waitProp.floatValue       = 3.50f;
+
+        so.ApplyModifiedProperties();
+        EditorUtility.SetDirty(settings);
+        AssetDatabase.SaveAssets();
+        Debug.Log("[HunterSpeedFix] HunterSettings_Hospital updated with moderate chase speed and 1.0m attack exit margin.");
+    }
+
+    // 
+    // Animations Reimport (Feet Grounding)
+    // 
+    private static void ReimportAnimations()
+    {
+        string[] fbxFiles = new string[]
+        {
+            "Assets/Art/Models/Agents/Hunter/Animations/Look Around.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Push.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie Attack.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie Dying.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie Idle.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie Reaction Hit-2.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie Run.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie walking-1.fbx",
+            "Assets/Art/Models/Agents/Hunter/Animations/Zombie walking-2.fbx"
+        };
+
+        foreach (var path in fbxFiles)
+        {
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+        }
+        Debug.Log("[HunterSpeedFix] All 9 Hunter animation FBX files reimported with Feet grounding.");
     }
 
     // Helpers
