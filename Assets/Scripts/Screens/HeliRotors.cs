@@ -22,6 +22,7 @@ public class HeliRotors : MonoBehaviour
 
     public float speed = 1f;
 
+    // Turns the main rotor (with its hub) and the tail rotor around their own axes, on real time so it never stops.
     private void Update()
     {
         float dt = Time.unscaledDeltaTime * speed;

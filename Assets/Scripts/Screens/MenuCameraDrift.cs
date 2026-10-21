@@ -20,6 +20,7 @@ public class MenuCameraDrift : MonoBehaviour
     private Quaternion startRotation;
     private float time;
 
+    // Remembers where the camera starts, since the drift is always an offset from there.
     private void Awake()
     {
         startPosition = transform.position;
@@ -28,6 +29,7 @@ public class MenuCameraDrift : MonoBehaviour
         time = Random.Range(0f, 100f);
     }
 
+    // Sways the camera slightly around its start; stops for good once the wake-up intro takes the camera over.
     private void Update()
     {
         if (intro != null && intro.IsRunning)

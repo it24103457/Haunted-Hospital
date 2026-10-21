@@ -31,29 +31,34 @@ public class ModelPreview : MonoBehaviour
     private RenderTexture texture;
     private GameObject current;
 
+    // Builds the stage the first time the preview is used.
     private void Awake()
     {
         if (stage == null) BuildStage();
     }
 
+    // Shows the stage and starts switching its lights per camera while the preview is on screen.
     private void OnEnable()
     {
         RenderPipelineManager.beginCameraRendering += LightOnlyForStage;
         if (stage != null) stage.gameObject.SetActive(true);
     }
 
+    // Hides the stage and stops switching its lights while the preview is off screen.
     private void OnDisable()
     {
         RenderPipelineManager.beginCameraRendering -= LightOnlyForStage;
         if (stage != null) stage.gameObject.SetActive(false);
     }
 
+    // Removes the stage and frees its render texture.
     private void OnDestroy()
     {
         if (stage != null) Destroy(stage.gameObject);
         if (texture != null) texture.Release();
     }
 
+    // Turns the model slowly, on real time so it keeps turning while the game is paused.
     private void Update()
     {
         if (turntable != null) turntable.Rotate(0f, turnSpeed * Time.unscaledDeltaTime, 0f, Space.World);
@@ -96,6 +101,7 @@ public class ModelPreview : MonoBehaviour
             if (l != null) l.enabled = own;
     }
 
+    // Builds the stage far below the level: the turntable, a hidden holder for new copies, two lights and the camera with its render texture.
     private void BuildStage()
     {
         stage = new GameObject("ModelPreviewStage").transform;
@@ -161,12 +167,14 @@ public class ModelPreview : MonoBehaviour
         foreach (var p in copy.GetComponentsInChildren<ParticleSystem>(true)) p.gameObject.SetActive(false);
     }
 
+    // True for the parts of a copy that only matter in play (scripts, physics, navigation, animation, sound, lights).
     private static bool IsGameplayPart(Component c)
     {
         return c is MonoBehaviour || c is Collider || c is Rigidbody || c is Animator || c is AudioSource || c is Light
             || c is UnityEngine.AI.NavMeshAgent || c is UnityEngine.AI.NavMeshObstacle;
     }
 
+    // True while another component on the same object still requires this one, so it can't be removed yet.
     private static bool IsRequiredByAnother(Component target)
     {
         System.Type type = target.GetType();
@@ -181,6 +189,7 @@ public class ModelPreview : MonoBehaviour
         return false;
     }
 
+    // True when a required component type is the given type or a base of it.
     private static bool Needs(System.Type required, System.Type type)
     {
         return required != null && required.IsAssignableFrom(type);

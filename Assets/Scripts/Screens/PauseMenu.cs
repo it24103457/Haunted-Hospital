@@ -22,6 +22,7 @@ public class PauseMenu : MonoBehaviour
 
     public bool IsPaused { get; private set; }
 
+    // Starts unpaused and finds the objectives and the player, used to tell when pausing isn't allowed.
     private void Start()
     {
         panel.SetActive(false);
@@ -29,6 +30,7 @@ public class PauseMenu : MonoBehaviour
         player = FindAnyObjectByType<PlayerStats>();
     }
 
+    // Esc pauses or resumes, except while the keypad is open or in the frame it closes, since Esc closes the keypad too.
     private void Update()
     {
         bool keypadOpen = objectives != null && objectives.IsKeypadOpen;
@@ -43,6 +45,7 @@ public class PauseMenu : MonoBehaviour
         keypadWasOpen = keypadOpen;
     }
 
+    // Shows the pause screen, stops game time and audio, and frees the mouse.
     public void Pause()
     {
         if (IsPaused) return;
@@ -60,6 +63,7 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
+    // Hides the pause screen, restarts game time and audio, and hands the mouse back to the game.
     public void Resume()
     {
         if (!IsPaused) return;
@@ -73,6 +77,7 @@ public class PauseMenu : MonoBehaviour
         if (ObjectiveHud.Instance != null) ObjectiveHud.Instance.enabled = hudWasEnabled;
     }
 
+    // Pausing is only allowed in normal play: not once the player is dead, a death or sanity screen is showing, or the game is won.
     private bool CanPause()
     {
         if (player != null && player.IsDead) return false;

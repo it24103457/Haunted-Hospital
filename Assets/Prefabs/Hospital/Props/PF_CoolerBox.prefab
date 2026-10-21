@@ -62,6 +62,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5546198848153242583}
+  - component: {fileID: 8966013233449161449}
   m_Layer: 0
   m_Name: PF_CoolerBox
   m_TagString: Untagged
@@ -86,6 +87,23 @@ Transform:
   - {fileID: 9115630192539641554}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8966013233449161449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7550053421682320669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 132aaa0a2ea2437d9ae076c8a2409b45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoolerBoxInteractable
+  animator: {fileID: 0}
+  openParameter: 
+  displayName: 
+  bodyCollider: {fileID: 0}
+  openBodyHeight: 0.07
 --- !u!1 &8403982421583545080
 GameObject:
   m_ObjectHideFlags: 0

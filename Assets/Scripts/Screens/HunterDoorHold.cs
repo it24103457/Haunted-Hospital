@@ -17,11 +17,13 @@ public class HunterDoorHold : MonoBehaviour
 
     private Animator animator;
 
+    // The Animator on the same Hunter, whose hands and head this script places.
     private void Awake()
     {
         animator = GetComponent<Animator>();
     }
 
+    // Each animation frame: puts both hands on the door points and turns the head towards the look-at point, by their weights.
     private void OnAnimatorIK(int layerIndex)
     {
         animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, handWeight);

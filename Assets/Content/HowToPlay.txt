@@ -1,72 +1,172 @@
 # How to Play pages, read by the How to Play screen in the main menu.
 #
-# Each page starts with a line "=== Title". The pages appear in the order they are written here.
-# An optional "model: Name" line right under the title shows that model on the page. The name must match
-# one of the entries in the Models list on the HowToPlay object (in the MainMenu scene).
+# A line "[Name]" starts a section. Sections are listed as blocks down the left side of the screen, in the order they
+# are written here, and the screen opens on the first one.
+# Each page starts with a line "=== Title" and belongs to the section above it. Previous/Next turn the pages of a section
+# and carry on into the next or previous section at either end.
+# Right under the title, these optional lines set the page's picture:
+#   "model: Name" shows that model turning. "model: A, B, C" shows several, each taking a turn for a few seconds.
+#   "image: Name" shows a still image instead of a model.
+#   "icon: Health", "icon: Ammo" or "icon: Sanity" adds that HUD icon in the top-right corner of the picture.
+# Model and image names must match entries in the Models and Images lists on the HowToPlay object (in the MainMenu scene).
 # Everything after that is the page text. Blank lines become paragraph breaks.
 # A page with no text shows "More information coming soon."
 # Lines starting with # are notes like these and are never shown in the game.
 # The controls have their own screen and file: Controls.txt.
 
+[Intro]
+
+=== The Hospital
+image: Corridor
+You wake up trapped in an abandoned hospital, and you are not alone.
+
+The only way out is the elevator. Find the four digits of its code, open it, find the exit key and turn it in the elevator's key switch to escape.
+
+Keep your health and sanity up, keep your gun loaded, and keep away from what lives in these halls.
+
+[Supplies]
+
 === Health
 model: Medkit
-You lose health when something hurts you. If it runs out, you die.
+icon: Health
+Your health is the red bar on your HUD. You lose health when the Hunter catches you.
 
-Grab a Medkit to restore some of it. Walk up to one and press E to open it.
+Grab a Medkit to restore some of it. Walk up to one and press E to take it.
 
-Supplies are scarce. Grab them before something else does.
+When your health gets low, the edges of your screen turn red and you hear your heartbeat.
+
+If your health runs out, you die and the run starts over from the beginning.
 
 === Ammo
 model: AmmoBox
-Your gun reloads from the ammo you carry in reserve. Press R to reload once your magazine runs low.
+icon: Ammo
+Your ammo is the gold bar on your HUD: the rounds you carry in reserve. The MAG count beside it shows the rounds loaded in your gun.
 
-Grab an Ammo Box to refill your reserve.
+Grab an Ammo Box to add rounds to your reserve, then press R to reload from it.
+
+Running out of ammo does not end the run, but an empty gun cannot stop the Thief or the Hunter.
 
 === Sanity
 model: SanityBottle
-The hospital wears on your mind. Every time you catch sight of the Thief, your sanity slips. If it runs out, you lose your mind.
+icon: Sanity
+Your sanity is the blue bar on your HUD. The hospital itself wears on your mind, and the strange things that happen in it chip away at your sanity.
+
+Every time you catch sight of the Thief, your sanity slips further, and the Hunter may wear on it too.
 
 Grab a Sanity Bottle to steady it again. Its pills restore some of your sanity.
 
-=== Clue Notes
-model: CluePaper
-Notes with single digits are scattered around the hospital. Each one gives you one number of the keypad code.
+When your sanity gets low, darkness creeps in from the edges of your screen and your head starts to pound.
 
-Your notes so far are shown at the top of the screen.
+If your sanity runs out, you lose your mind and the run starts over from the beginning.
 
-=== Keypad
-model: Keypad
-Enter the four-digit code from the notes to open the elevator doors. Type the digits and press Enter, or click the keys.
-
-=== Exit Key
-model: ExitKey
-Hidden in one of the first aid shelves or cooler boxes around the hospital. You will need it for the elevator's key switch.
-
-=== First Aid Shelf
-model: KeyBox
-Glass-fronted first aid shelves on the walls. The exit key could be in one of them.
-
-=== Cooler Box
-model: CoolerBox
-Cooler boxes left around the hospital. The exit key could be in one of these too.
-
-=== Elevator Key Switch
-model: KeySwitch
-Your way out, inside the elevator. Once the doors are open and you have the exit key, turn the key to escape.
+[Enemies]
 
 === The Thief
 model: Thief
-Something else is in here, and it wants your supplies. It sneaks to medkits, ammo and pills, carries them off to its stash and vanishes, only to return later.
+Something else is in here, and it wants your supplies. It sneaks to medkits, ammo boxes and sanity bottles, carries them off to its stash and vanishes, only to return later.
 
-Just seeing it chips away at your sanity. Shoot it to make it drop what it is carrying. It goes for what you need most, so do not leave supplies lying around.
+It goes for what you need most, so do not leave supplies lying around. Just seeing it chips away at your sanity.
+
+Shoot it to make it drop what it is carrying. Doorways you clear of barricades open up new routes for it too.
 
 === Thief Stashes
-model: StashBag
+model: StashBag, StashBasket
 Bags and baskets where the Thief hides what it takes. Once an item reaches a stash, it is gone.
-
-=== Barricades
-model: Barricade
-Some doorways are boarded up. Shoot the planks off one at a time to get through.
 
 === The Hunter
 model: Hunter
+It cannot see you. It hears you.
+
+Footsteps, slamming doors, breaking barricades and gunshots all draw it in. Sprinting is loud and crouching is almost silent. Get too close, even quietly, and it will find you.
+
+Once it is chasing you it moves faster, and a few hits will kill you. Go quiet and it loses your trail.
+
+Shoot it down and it comes back a while later, somewhere out of sight. Being near it may wear on your sanity, and cleared barricades open new routes for it.
+
+=== Hiding
+image: Vent
+Some walls have low vent openings into small service spaces. Crouch (C) to crawl through. Nothing that hunts you can follow you in.
+
+Get to the back and stay quiet. Right next to the opening you can still be reached, and any noise you make will still be heard.
+
+=== The Hospital Itself
+image: DarkHall
+The building is against you too.
+
+Lights may flicker or die around you, and sounds come from places no one should be. A room you thought was empty might not stay that way.
+
+Each of these wears on your sanity. They tend to come when things are quiet, so a calm moment is not always a safe one.
+
+[Barricades]
+
+=== Barricades
+model: Barricade
+Some doorways are boarded up. Shoot the planks off one at a time with your gun to get through. Supplies are sometimes waiting on the other side.
+
+Breaking a barricade is loud, and the Hunter will come to find out what made the noise.
+
+Once a doorway is open it stays open, and the Thief and the Hunter can use it too.
+
+[Progression]
+
+=== Code Notes
+model: CluePaper
+The elevator is locked with a four-digit code, and its digits are written on notes around the hospital. Each note shows one digit and its place in the code.
+
+Only one note is out at a time. Read it with E and the next one appears somewhere else. Notes turn up inside fridges and on office desks.
+
+Each digit you find fills its slot at the bottom right of your HUD, and the key outline there draws in a little more.
+
+=== Keypad
+model: Keypad
+Once you have all four digits, enter the code on the keypad by the elevator to open its doors. Type the digits and press Enter, or click the keys.
+
+=== Exit Key
+model: ExitKey
+Once the code is accepted, the exit key appears somewhere in the hospital, inside a first aid shelf or a cooler box.
+
+Find it and press E to take it. The key icon on your HUD fills in once you have it.
+
+=== Elevator Key Switch
+model: KeySwitch
+Your way out, inside the elevator. With the doors open and the exit key in hand, turn the key to escape.
+
+[Weapon]
+
+=== The Gun
+model: Gun
+Your only weapon. Click the left mouse button to shoot.
+
+Each magazine holds 6 rounds, and the MAG count on your HUD shows how many are loaded.
+
+Press R to reload from your reserve ammo; firing with an empty magazine reloads too. Every reload uses up your reserve, so it can run out. Grab Ammo Boxes to top it up.
+
+=== What to Shoot
+model: Barricade, Thief, Hunter
+<b>Barricades</b>: shoot the planks off to open the doorway.
+
+<b>The Thief</b>: makes it drop what it is carrying.
+
+<b>The Hunter</b>: brings it down for a while.
+
+Every gunshot is loud, and the Hunter hears it.
+
+[Item Locations]
+
+=== First Aid Shelf
+model: KeyBox
+Glass-fronted first aid shelves on the walls. Once the code is accepted, the exit key can appear inside one of them.
+
+=== Cooler Box
+model: CoolerBox
+Cooler boxes left around the hospital. Once the code is accepted, the exit key can appear inside one of these too.
+
+=== Fridge
+model: Fridge
+Old fridges around the hospital. Code notes can appear inside them.
+
+=== Furniture
+model: Bed, Nightstand, Shelf, Trolley, Desk
+Medkits, ammo boxes and sanity bottles appear on hospital beds, bedside tables, metal shelves and trolleys. Code notes can also appear on office desks.
+
+When you take a supply, another one appears somewhere else a little later. Supplies the Thief steals are replaced too, but more slowly.

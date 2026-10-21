@@ -11,12 +11,14 @@ using UnityEngine.UI;
  */
 public class DeselectAfterClick : MonoBehaviour
 {
+    // Hooks every button under this object, so each click is followed by clearing the selection.
     private void Awake()
     {
         foreach (Button button in GetComponentsInChildren<Button>(true))
             button.onClick.AddListener(ClearSelection);
     }
 
+    // Clears the selected UI element, so a clicked button doesn't stay highlighted.
     private static void ClearSelection()
     {
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);

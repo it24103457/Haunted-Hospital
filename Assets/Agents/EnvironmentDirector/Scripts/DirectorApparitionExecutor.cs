@@ -25,13 +25,13 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private string currentAnimation;
         [SerializeField] private string targetRoom;
         [SerializeField] private int affectedLights;
-        private const float FadeOut = .25f, DarkBeat = .15f, FadeIn = .75f, Blend = .12f;
+        private const float FadeOut = .25f, DarkBeat = .15f, FadeIn = .75f, Blend = .28f;
         private const float RevealAt = FadeOut + DarkBeat;
         private readonly List<Light> lights = new List<Light>();
         private readonly List<float> intensities = new List<float>();
         private DirectorPlanningAction action;
         private string token;
-        private bool ownsMemory, revealed, removed;
+        private bool ownsMemory, revealed, removed, monsterPlayed;
         private float startedAt;
         private GameObject appearance;
         private Animator animator;
@@ -40,7 +40,9 @@ namespace HauntedHospital.EnvironmentAI
 
         private float AnimationDuration => idleClip.length + joltClip.length + poseClip.length + Blend * 2;
         private AudioClip VoiceClip => apparitionPrefab == null ? null : apparitionPrefab.GetComponentInChildren<DirectorApparitionVoice>(true)?.Clip;
-        public float NextDuration => AssetsReady() ? RevealAt + Mathf.Max(AnimationDuration, VoiceClip.length) + FadeIn : 0f;
+        private float ArrivalDuration => apparitionPrefab == null ? 0f : apparitionPrefab.GetComponentInChildren<DirectorApparitionVoice>(true).ArrivalDuration;
+        private float MonsterAt => Mathf.Max(idleClip.length, ArrivalDuration);
+        public float NextDuration => AssetsReady() ? RevealAt + Mathf.Max(AnimationDuration, MonsterAt + VoiceClip.length) + FadeIn : 0f;
 
         private bool AssetsReady() => apparitionPrefab != null && VoiceClip != null && VoiceClip.length > 0 &&
             idleClip != null && idleClip.length > 0 && joltClip != null && joltClip.length > 0 && poseClip != null && poseClip.length > 0;
@@ -77,7 +79,7 @@ namespace HauntedHospital.EnvironmentAI
                 if (!memory.BeginEvent(candidate.definition.EventId, candidate.definition.EventType, candidate.anchorId, candidate.roomId))
                 { Cleanup(); Release(); return false; }
                 ownsMemory = running = true;
-                revealed = removed = false; animationStage = -1; startedAt = Time.time;
+                revealed = removed = monsterPlayed = false; animationStage = -1; startedAt = Time.time;
                 targetRoom = candidate.roomId; affectedLights = lights.Count;
                 status = "Fading out " + targetRoom;
                 return true;
@@ -138,8 +140,10 @@ namespace HauntedHospital.EnvironmentAI
                 startedAt = Time.time - RevealAt;
                 elapsed = RevealAt;
                 appearance.SetActive(true);
+                // Prevent the standalone jolt-to-idle transition from interrupting this sequence.
+                animator.SetBool("DirectorSequence", true);
                 animator.SetBool("PulsePose", false); animator.ResetTrigger("Jolt");
-                voice.PlayVoice(false);
+                voice.PlayArrival();
                 revealed = true;
                 memory.MarkEffectDelivered(action.definition.PredictedTensionIncrease);
             }
@@ -151,7 +155,12 @@ namespace HauntedHospital.EnvironmentAI
                     memory.TryApplyActiveSanityLoss();
                 }
                 float age = elapsed - RevealAt;
+                if (!monsterPlayed && age >= MonsterAt)
+                { voice.PlayVoice(false); monsterPlayed = true; }
                 int stage = age < idleClip.length ? 0 : age < idleClip.length + Blend + joltClip.length ? 1 : 2;
+                float pointing = stage == 1 ? 0f : Mathf.SmoothStep(0f, 1f, age / .8f);
+                voice.PointAt(observation.Current.PlayerPosition + Vector3.up * 1.2f,
+                    observation.Current.IsValid ? pointing : 0f);
                 if (stage != animationStage)
                 {
                     animationStage = stage;
@@ -163,7 +172,8 @@ namespace HauntedHospital.EnvironmentAI
                 }
                 status = "Showing " + currentAnimation + " in " + targetRoom;
             }
-            if (!removed && elapsed >= recoveryAt) { Cleanup(); removed = true; status = "Restoring " + targetRoom; }
+            if (!removed && elapsed >= recoveryAt)
+            { voice.PlayDisappearance(); Cleanup(); removed = true; status = "Restoring " + targetRoom; }
             if (elapsed >= NextDuration) Finish(DirectorEventOutcome.Completed);
         }
 
