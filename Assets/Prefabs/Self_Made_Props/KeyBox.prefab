@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2748452438422464379}
   - component: {fileID: 8006187006295386735}
+  - component: {fileID: 7100000000000000003}
   m_Layer: 0
   m_Name: KeyBox
   m_TagString: Untagged
@@ -57,6 +58,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7100000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3274018260018429377}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65e99ae5e785491cb9700edea2b165dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 0}
+  openParameter: 
+  displayName: 
+  bodyCollider: {fileID: 0}
 --- !u!1 &3577756191622009469
 GameObject:
   m_ObjectHideFlags: 0

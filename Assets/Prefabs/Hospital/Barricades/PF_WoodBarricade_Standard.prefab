@@ -415,7 +415,7 @@ MonoBehaviour:
   - {fileID: 2133941812436867504}
   passageBlocker: {fileID: 6598231230860154748}
   obstacle: {fileID: 3856979517019381696}
-  plankHealth: 100
+  plankHealth: 25
   emitNoiseWhenCleared: 1
   clearedLoudness: 25
   logEvents: 0
