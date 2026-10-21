@@ -38,9 +38,23 @@ public class HunterDebugView : MonoBehaviour
 #endif
         }
 
+        HunterNavigator nav = brain.Navigator;
+        if (nav != null && nav.Route.Count > 1)
+        {
+            Gizmos.color = Color.cyan;
+            for (int i = 1; i < nav.Route.Count; i++)
+                Gizmos.DrawLine(nav.Route[i - 1].Position + Vector3.up * 0.3f, nav.Route[i].Position + Vector3.up * 0.3f);
+
+            if (nav.HoldIndex >= 0)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(nav.Route[nav.HoldIndex].Position + Vector3.up * 0.3f, 0.5f);
+            }
+        }
+
 #if UNITY_EDITOR
         string target = ears.HasTarget ? $"{ears.Target.Type} ({ears.TargetScore:0.0})" : "none";
-        Handles.Label(transform.position + Vector3.up * 2.5f, $"{brain.State}   hp {brain.Health:0}\ntarget: {target}");
+        Handles.Label(transform.position + Vector3.up * 2.5f, $"{brain.State}   hp {brain.Health:0}\nwalk: {(brain.Navigator != null ? brain.Navigator.Status.ToString() : "-")}   target: {target}");
 #endif
     }
 }

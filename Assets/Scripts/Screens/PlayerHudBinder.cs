@@ -6,9 +6,9 @@ using UnityEngine;
  * player's PlayerWeapon (rounds loaded against the magazine size), so it drops with each shot and refills on reload.
  * The key icon's outline draws in a quarter for each code digit found; it fills (with its pickup animation) once
  * PlayerStats says the player holds the exit key (ExitKeyChanged, starting from whether the key is already held).
- * Code digits: whenever ObjectiveState reports a change (a clue paper being read is one), every paper that has been read
- * puts its digit into the slot for its position in the code. This only reads public members that already exist on the
- * papers and ObjectiveState, so it works without any changes to them.
+ * Code digits come from ObjectiveState: each DigitFound puts the digit into its slot and draws another quarter of the key
+ * outline. On start, and whenever the state changes (for example a reset of the run), the slots are brought back in line
+ * with what TryGetDigit reports, so they only ever show digits the player has actually discovered, never the code itself.
  * The HUD itself never looks at the game, so swapping where a value comes from only changes this script.
  */
 [RequireComponent(typeof(PlayerHud))]
@@ -49,10 +49,14 @@ public class PlayerHudBinder : MonoBehaviour
         }
 
         objectives = FindAnyObjectByType<ObjectiveState>();
-        if (objectives != null) objectives.StateChanged += ShowReadClues;
+        if (objectives != null)
+        {
+            objectives.DigitFound += OnDigitFound;
+            objectives.StateChanged += SyncDigits;
+        }
 
         hud.ClearDigits();
-        ShowReadClues();
+        SyncDigits();
     }
 
     // Stops listening, so a destroyed HUD is never called by the player, the weapon or the objectives.
@@ -67,7 +71,11 @@ public class PlayerHudBinder : MonoBehaviour
         }
 
         if (weapon != null) weapon.MagazineChanged -= OnMagazineChanged;
-        if (objectives != null) objectives.StateChanged -= ShowReadClues;
+        if (objectives != null)
+        {
+            objectives.DigitFound -= OnDigitFound;
+            objectives.StateChanged -= SyncDigits;
+        }
     }
 
     private void OnHealthChanged(float current, float max) => hud.SetHealth(current, max);
@@ -76,19 +84,30 @@ public class PlayerHudBinder : MonoBehaviour
     private void OnMagazineChanged(int loaded, int size) => hud.SetMagazine(loaded, size);
     private void OnExitKeyChanged(bool held) => hud.SetKey(held);
 
-    /*
-     * Puts the digit of every clue paper the player has read into its slot (slots already showing that digit don't flash
-     * again), and draws the key icon's outline by the share of the four positions found.
-     */
-    private void ShowReadClues()
+    // A newly discovered digit: shown in its slot (which flashes), and the key outline grows to match.
+    private void OnDigitFound(int positionInCode, int digit)
     {
-        var found = new System.Collections.Generic.HashSet<int>();
-        foreach (ClueInteractable clue in FindObjectsByType<ClueInteractable>(FindObjectsInactive.Exclude))
+        hud.SetDigit(positionInCode, digit);
+        SyncDigits();
+    }
+
+    /*
+     * Shows exactly the digits ObjectiveState reports as discovered (slots already showing the same digit don't flash
+     * again; a run with none discovered, such as after a reset, empties them) and draws the key outline by their share.
+     */
+    private void SyncDigits()
+    {
+        if (objectives == null) return;
+
+        int found = 0;
+        for (int position = 1; position <= 4; position++)
         {
-            if (!clue.IsCollected) continue;
-            hud.SetDigit(clue.PositionInCode, clue.Digit);
-            found.Add(clue.PositionInCode);
+            if (!objectives.TryGetDigit(position, out int digit)) continue;
+            hud.SetDigit(position, digit);
+            found++;
         }
-        hud.SetKeyProgress(found.Count / 4f);
+
+        if (found == 0) hud.ClearDigits();
+        hud.SetKeyProgress(found / 4f);
     }
 }

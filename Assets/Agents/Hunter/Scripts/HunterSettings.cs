@@ -74,6 +74,9 @@ public sealed class HunterSettings : ScriptableObject
     [Tooltip("Search points are picked within this many metres (by path) of the spot the Hunter is searching.")]
     [SerializeField, Min(1f)] private float searchRadius = 8f;
 
+    [Tooltip("While searching, the Hunter stands this long at each search point before moving to the next.")]
+    [SerializeField, Min(0f)] private float searchPauseSeconds = 1.5f;
+
     // Chase and attack
 
     [Header("Chase")]
@@ -96,6 +99,12 @@ public sealed class HunterSettings : ScriptableObject
     [SerializeField, Min(0f)] private float attackDamage = 20f;
 
     [SerializeField, Min(0.1f)] private float attackCooldownSeconds = 1.2f;
+
+    [Tooltip("Pause between the Hunter reaching the player and its first hit, so the player gets a moment to react.")]
+    [SerializeField, Min(0f)] private float attackWindupSeconds = 0.4f;
+
+    [Tooltip("How often the Hunter checks on the player: how close they are by path, and whether they are within reach.")]
+    [SerializeField, Min(0.05f)] private float senseIntervalSeconds = 0.2f;
 
     [Tooltip("The player's position counts as a valid target only if it was confirmed within this many seconds. Stops attacks through walls or into vents.")]
     [SerializeField, Min(0.05f)] private float freshReachSeconds = 0.5f;
@@ -134,6 +143,9 @@ public sealed class HunterSettings : ScriptableObject
 
     [Tooltip("Re-plan the path at most this often while walking, to react to doors and barricades changing.")]
     [SerializeField, Min(0.05f)] private float replanIntervalSeconds = 0.5f;
+
+    [Tooltip("If the Hunter gets no closer to where it is heading for this long, it re-plans, and after a few tries gives up.")]
+    [SerializeField, Min(1f)] private float stuckSeconds = 6f;
 
     [Header("Doors")]
     [Tooltip("How far in front of a door the Hunter stops before opening it.")]
@@ -180,6 +192,7 @@ public sealed class HunterSettings : ScriptableObject
     public float PatrolLegTimeoutSeconds => patrolLegTimeoutSeconds;
     public float SearchSeconds => searchSeconds;
     public float SearchRadius => searchRadius;
+    public float SearchPauseSeconds => searchPauseSeconds;
 
     public float ChaseLoudness => chaseLoudness;
     public float ChaseProximity => chaseProximity;
@@ -189,6 +202,8 @@ public sealed class HunterSettings : ScriptableObject
     public float AttackExitRange => attackRange + attackExitMargin;
     public float AttackDamage => attackDamage;
     public float AttackCooldownSeconds => attackCooldownSeconds;
+    public float AttackWindupSeconds => attackWindupSeconds;
+    public float SenseIntervalSeconds => senseIntervalSeconds;
     public float FreshReachSeconds => freshReachSeconds;
 
     public float MaxHealth => maxHealth;
@@ -202,6 +217,7 @@ public sealed class HunterSettings : ScriptableObject
 
     public float ClosedDoorExtraCost => closedDoorExtraCost;
     public float ReplanIntervalSeconds => replanIntervalSeconds;
+    public float StuckSeconds => stuckSeconds;
     public float DoorApproachDistance => doorApproachDistance;
     public float DoorOpenTimeoutSeconds => doorOpenTimeoutSeconds;
     public float DoorBanSeconds => doorBanSeconds;

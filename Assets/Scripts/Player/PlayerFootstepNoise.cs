@@ -11,7 +11,7 @@ public class PlayerFootstepNoise : MonoBehaviour
     [Header("Speed bands (metres per second)")]
     [Tooltip("Slower than this counts as standing still: no noise.")]
     [SerializeField, Min(0f)] private float minMoveSpeed = 0.5f;
-    [Tooltip("Up to this speed counts as crouching (PlayerController crouch speed is 2).")]
+    [Tooltip("Only used if no PlayerController is found: up to this speed counts as crouching (crouch speed is 2). Normally the real crouch state is used.")]
     [SerializeField, Min(0f)] private float crouchMaxSpeed = 3f;
     [Tooltip("Up to this speed counts as walking (walk speed is 4). Faster is sprinting (sprint speed is 6.5).")]
     [SerializeField, Min(0f)] private float walkMaxSpeed = 5.25f;
@@ -27,11 +27,20 @@ public class PlayerFootstepNoise : MonoBehaviour
     [SerializeField, Min(0.1f)] private float sprintStride = 2.2f;
 
     private CharacterController controller;
+    private PlayerController playerController;
     private float walked;
+    private bool warnedNoController;
 
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
+        playerController = GetComponent<PlayerController>();
+
+        if (playerController == null && !warnedNoController)
+        {
+            Debug.LogWarning("PlayerFootstepNoise: no PlayerController on this object, so crouching is guessed from speed.", this);
+            warnedNoController = true;
+        }
     }
 
     private void Update()
@@ -48,7 +57,11 @@ public class PlayerFootstepNoise : MonoBehaviour
         }
 
         float stride, loudness;
-        if (speed <= crouchMaxSpeed) { stride = crouchStride; loudness = crouchLoudness; }
+        // The real crouch state decides crouching. Speed only separates walking from sprinting,
+        // and stands in for the crouch state only when there is no PlayerController.
+        bool crouching = playerController != null ? playerController.IsCrouching : speed <= crouchMaxSpeed;
+
+        if (crouching) { stride = crouchStride; loudness = crouchLoudness; }
         else if (speed <= walkMaxSpeed) { stride = walkStride; loudness = walkLoudness; }
         else { stride = sprintStride; loudness = sprintLoudness; }
 
