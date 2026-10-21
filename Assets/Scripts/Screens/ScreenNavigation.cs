@@ -28,11 +28,13 @@ public class ScreenNavigation : MonoBehaviour
         }
     }
 
+    // Reloads the current scene, starting the level over.
     public void Restart()
     {
         SceneLoader.Load(SceneManager.GetActiveScene().path);
     }
 
+    // Loads the main menu.
     public void ToMainMenu()
     {
         SceneLoader.Load(MainMenuPath);
@@ -46,6 +48,7 @@ public class ScreenNavigation : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // In the Editor, stores the chosen main menu scene's path, since a scene asset can't be referenced in a build.
     private void OnValidate()
     {
         mainMenuScenePath = mainMenuScene != null ? AssetDatabase.GetAssetPath(mainMenuScene) : string.Empty;

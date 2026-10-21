@@ -29,11 +29,13 @@ public static class GameUIBootstrap
         AddScreens();
     }
 
+    // Every newly loaded scene gets the screens if it needs them.
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         AddScreens();
     }
 
+    // Adds the screens to the current scene when it has a player and doesn't already have them, plus an EventSystem if missing.
     private static void AddScreens()
     {
         if (Object.FindAnyObjectByType<PlayerStats>() == null) return;

@@ -9,19 +9,27 @@ using UnityEngine;
  * Code digits come from ObjectiveState: each DigitFound puts the digit into its slot and draws another quarter of the key
  * outline. On start, and whenever the state changes (for example a reset of the run), the slots are brought back in line
  * with what TryGetDigit reports, so they only ever show digits the player has actually discovered, never the code itself.
+ * Low health and low sanity (below lowThreshold) switch the matching LowStatsEffects on and off. At 0 the picture effect
+ * stays on underneath the death or sanity screen as it fades in, while the heartbeat or headache stops.
  * The HUD itself never looks at the game, so swapping where a value comes from only changes this script.
  */
 [RequireComponent(typeof(PlayerHud))]
 public class PlayerHudBinder : MonoBehaviour
 {
+    [Tooltip("Health or sanity below this shows the low health or low sanity effect.")]
+    [SerializeField, Min(0f)] private float lowThreshold = 15f;
+
     private PlayerHud hud;
+    private LowStatsEffects lowStats;
     private PlayerStats player;
     private PlayerWeapon weapon;
     private ObjectiveState objectives;
 
+    // The HUD and the low-stat effects on the same object, which this script feeds.
     private void Awake()
     {
         hud = GetComponent<PlayerHud>();
+        lowStats = GetComponent<LowStatsEffects>();
     }
 
     // Start runs after every Awake, so the player and the objectives exist by now, and the HUD has been built.
@@ -78,8 +86,21 @@ public class PlayerHudBinder : MonoBehaviour
         }
     }
 
-    private void OnHealthChanged(float current, float max) => hud.SetHealth(current, max);
-    private void OnSanityChanged(float current, float max) => hud.SetSanity(current, max);
+    // Updates the health bar and switches the low-health effect: on below the threshold, silent at 0.
+    private void OnHealthChanged(float current, float max)
+    {
+        hud.SetHealth(current, max);
+        if (lowStats != null) lowStats.SetHealthLow(current < lowThreshold, current > 0f);
+    }
+
+    // Updates the sanity bar and switches the low-sanity effect: on below the threshold, silent at 0.
+    private void OnSanityChanged(float current, float max)
+    {
+        hud.SetSanity(current, max);
+        if (lowStats != null) lowStats.SetSanityLow(current < lowThreshold, current > 0f);
+    }
+
+    // Reserve ammo, magazine and key: passed straight on to the HUD.
     private void OnAmmoChanged(int reserve) => hud.SetAmmo(reserve, player.MaxReserveAmmo);
     private void OnMagazineChanged(int loaded, int size) => hud.SetMagazine(loaded, size);
     private void OnExitKeyChanged(bool held) => hud.SetKey(held);

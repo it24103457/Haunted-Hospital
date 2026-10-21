@@ -31,6 +31,7 @@ public class ControlsMenu : MonoBehaviour
 
     private RectTransform diagram;
 
+    // Builds the diagram the first time the screen opens, with the title and labels read from the text file.
     private void OnEnable()
     {
         if (diagram != null) return;
@@ -40,12 +41,14 @@ public class ControlsMenu : MonoBehaviour
         diagram = ControlsDiagram.Build(diagramArea, font, textColor, textSize, labels);
     }
 
+    // Esc closes the screen, the same as the Back button.
     private void Update()
     {
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) Back();
     }
 
+    // Closes the screen and raises onBack, so the main menu shows its buttons again.
     public void Back()
     {
         gameObject.SetActive(false);

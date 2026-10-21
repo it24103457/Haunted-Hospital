@@ -26,11 +26,13 @@ public class SanityScreen : MonoBehaviour
 
     public bool IsShowing { get; private set; }
 
+    // Starts hidden and see-through, so nothing shows until sanity runs out.
     private void Awake()
     {
         SetVisible(false, 0f);
     }
 
+    // Listens for the player's sanity changing.
     private void Start()
     {
         player = FindAnyObjectByType<PlayerStats>();
@@ -39,11 +41,13 @@ public class SanityScreen : MonoBehaviour
         player.SanityChanged += OnSanityChanged;
     }
 
+    // Stops listening, so a destroyed screen is never called by the player.
     private void OnDestroy()
     {
         if (player != null) player.SanityChanged -= OnSanityChanged;
     }
 
+    // Starts showing the screen once, when sanity reaches 0 while the player is still alive.
     private void OnSanityChanged(float current, float max)
     {
         if (IsShowing || current > 0f || player.IsDead) return;
@@ -51,6 +55,10 @@ public class SanityScreen : MonoBehaviour
         StartCoroutine(Show());
     }
 
+    /*
+     * Freezes the controls and waits the short delay; if the player died meanwhile the death screen is left to show instead.
+     * Otherwise hides the objective messages, plays the scream and fades the screen in, then stops game time and audio.
+     */
     private IEnumerator Show()
     {
         PlayerControlLock.Set(true);
