@@ -107,6 +107,7 @@ public class ThiefMessages : MonoBehaviour
         thief.OnItemDropped += ShowDropped;
     }
 
+    // Stops listening to the Thief's events, so a destroyed message HUD is never called by them.
     private void OnDestroy()
     {
         if (thief == null) return;
@@ -122,16 +123,21 @@ public class ThiefMessages : MonoBehaviour
     /*
      * Keeps the text where the settings put it when they are changed in the Inspector. The change happens
      * just after validation, since Unity doesn't allow layout changes during OnValidate itself.
+     * While entering Play mode it waits for Start, which applies the layout itself, because the text isn't
+     * fully set up before then and styling it early throws an error.
      */
     private void OnValidate()
     {
         UnityEditor.EditorApplication.delayCall += () =>
         {
-            if (this != null) ApplyLayout();
+            if (this == null) return;
+            if (Application.isPlaying && !didStart) return;
+            ApplyLayout();
         };
     }
 #endif
 
+    // Fades the messages every frame in whichever style is chosen.
     private void Update()
     {
         if (style == ThiefMessageStyle.Subtitle) UpdateSubtitles();
@@ -140,22 +146,26 @@ public class ThiefMessages : MonoBehaviour
 
     // Messages
 
+    // Announces that the Thief has come into the level.
     private void ShowAppeared()
     {
         if (style == ThiefMessageStyle.Subtitle) AddLine("Thief ", "appeared", "", appearColor);
         else ShowBanner("The Thief has appeared!", appearColor);
     }
 
+    // Announces that the Thief has left the level after a delivery.
     private void ShowVanished()
     {
         if (style == ThiefMessageStyle.Subtitle) AddLine("Thief ", "vanished", "", vanishColor);
         else ShowBanner("The Thief has vanished", vanishColor);
     }
 
+    // Item messages: each passes its own wording to ShowItem, so all three share one layout and colouring.
     private void ShowStolen(PickupInteractable item) => ShowItem("stole", "The Thief stole a {0}!", item);
     private void ShowDelivered(PickupInteractable item) => ShowItem("stashed", "The Thief stashed a {0}", item);
     private void ShowDropped(PickupInteractable item) => ShowItem("dropped", "The Thief dropped a {0}", item);
 
+    // Shows an item message with the item's name in its own colour, in the chosen style.
     private void ShowItem(string verb, string bannerFormat, PickupInteractable item)
     {
         string name = ItemName(item.Type);
@@ -167,6 +177,7 @@ public class ThiefMessages : MonoBehaviour
 
     // Subtitle style
 
+    // Adds a subtitle line and drops the oldest ones beyond maxLines, so the corner never fills up.
     private void AddLine(string before, string highlight, string after, Color highlightColor)
     {
         lines.Add(new Line { Before = before, Highlight = highlight, After = after, HighlightColor = highlightColor, ShownAt = Time.time });
@@ -208,11 +219,13 @@ public class ThiefMessages : MonoBehaviour
         SetBannerAlpha(1f);
     }
 
+    // Holds the banner fully visible, then fades it out.
     private void UpdateBanner()
     {
         SetBannerAlpha(FadeAlpha(Time.time - shownAt, holdSeconds, fadeSeconds));
     }
 
+    // Sets the banner's transparency, keeping its colour; does nothing in the subtitle style, which fades per line.
     private void SetBannerAlpha(float alpha)
     {
         if (messageText == null || style != ThiefMessageStyle.Banner) return;
@@ -286,12 +299,14 @@ public class ThiefMessages : MonoBehaviour
         return Mathf.Clamp01(1f - (age - hold) / Mathf.Max(fade, 0.01f));
     }
 
+    // A colour with the given transparency as an RGBA hex string, because TextMesh Pro rich text tags take hex colours.
     private static string Hex(Color color, float alpha)
     {
         color.a = Mathf.Clamp01(alpha);
         return ColorUtility.ToHtmlStringRGBA(color);
     }
 
+    // The name shown for an item type in the messages.
     private static string ItemName(PickupType type)
     {
         switch (type)
@@ -303,6 +318,7 @@ public class ThiefMessages : MonoBehaviour
         }
     }
 
+    // The colour an item's name is shown in, set per item type in the Inspector so each supply is recognisable at a glance.
     private Color ItemColor(PickupType type)
     {
         switch (type)

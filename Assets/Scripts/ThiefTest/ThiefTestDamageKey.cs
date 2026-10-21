@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 /*
  * Test-only stand-in for the player's weapon, used only on the Thief in the Thief test scene.
  * Pressing K deals damage to the Thief through IDamageable, the same way a shot would, so death,
- * dropping a carried item and respawning can be tried before the game has a working gun.
+ * dropping a carried item and respawning can be tried quickly without aiming and shooting.
  * Each hit and the remaining health are written to the Console.
  */
 [RequireComponent(typeof(ThiefAgent))]
@@ -17,6 +17,7 @@ public class ThiefTestDamageKey : MonoBehaviour
     private IDamageable target;
     private GameObject source;
 
+    // Finds the Thief to damage and the player, who is named as the source of each hit.
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
@@ -26,6 +27,7 @@ public class ThiefTestDamageKey : MonoBehaviour
         source = player != null ? player.gameObject : null;
     }
 
+    // Deals one hit per K press and logs the Thief's health and state.
     private void Update()
     {
         if (Keyboard.current == null || !Keyboard.current.kKey.wasPressedThisFrame) return;

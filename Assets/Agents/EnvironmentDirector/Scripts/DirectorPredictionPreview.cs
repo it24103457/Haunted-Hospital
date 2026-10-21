@@ -66,7 +66,7 @@ namespace HauntedHospital.EnvironmentAI
                     { eventId = definition.EventId, remaining = eventMemory.CooldownRemaining(definition.EventId) });
             return DirectorStatePredictor.TryCreate(Mathf.Clamp01(vulnerability), eventMemory.PlanningEventPressure,
                 damage, eventMemory.QuietSeconds, global, cooldowns.ToArray(), directorSettings,
-                tensionSettings, out state, out reason);
+                tensionSettings, out state, out reason, snapshot.SanityFraction, snapshot.MaxSanity);
         }
 
         [ContextMenu("Preview Predictions From Live State (Play mode)")]

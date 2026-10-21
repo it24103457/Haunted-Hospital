@@ -6,6 +6,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorRoomTracker : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindPlayer(Transform target) { player = target; }
+
         [SerializeField] private Transform player;
         [SerializeField] private DirectorSpatialRegistry registry;
         [SerializeField] private DirectorSettings settings;

@@ -34,6 +34,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
     private GUIStyle valueStyle;
     private GUIStyle buttonStyle;
 
+    // Finds the player's stats and controller on this object, and the Thief in the scene.
     private void Awake()
     {
         stats = GetComponent<PlayerStats>();
@@ -41,6 +42,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
         thief = FindAnyObjectByType<ThiefAgent>();
     }
 
+    // Tab toggles edit mode; the numpad keys change the stats at any time, so no cursor is needed.
     private void Update()
     {
         Keyboard keyboard = Keyboard.current;
@@ -71,6 +73,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
         Cursor.visible = true;
     }
 
+    // Draws the panel in the bottom-left corner: a title, then one row for the Thief and one per player stat.
     private void OnGUI()
     {
         if (valueStyle == null) valueStyle = new GUIStyle();
@@ -123,6 +126,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
         if (amount > 0f) stats.TakeDamage(new DamageInfo(amount, gameObject));
     }
 
+    // Step changes for the player's stats, all through PlayerStats' own methods so its limits and events still apply.
     private void RaiseHealth() => stats.Heal(healthStep);
     private void LowerSanity() => stats.DrainSanity(sanityStep);
     private void RaiseSanity() => stats.AddSanity(sanityStep);
@@ -135,6 +139,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
         if (thief != null) thief.TakeDamage(new DamageInfo(thiefHealthStep, gameObject));
     }
 
+    // Heals the Thief by one step through its own Heal method.
     private void RaiseThiefHealth()
     {
         if (thief != null) thief.Heal(thiefHealthStep);

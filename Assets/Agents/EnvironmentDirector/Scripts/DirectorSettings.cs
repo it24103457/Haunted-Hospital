@@ -16,7 +16,7 @@ namespace HauntedHospital.EnvironmentAI
 
         [Header("Pacing - seconds")]
         [SerializeField, Min(0f)]
-        private float minimumTimeBetweenEvents = 12f;
+        private float minimumTimeBetweenEvents = 24f;
 
         [SerializeField, Min(0f)]
         private float damageRecoverySeconds = 10f;

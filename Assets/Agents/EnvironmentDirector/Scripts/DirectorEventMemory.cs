@@ -30,12 +30,36 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorEventMemory : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindPlayer(PlayerStats target) { playerStats = target; }
+
         [Header("Configuration")]
         [SerializeField]
         private DirectorSettings directorSettings;
 
         [SerializeField]
         private DirectorTensionSettings tensionSettings;
+        [SerializeField] private PlayerStats playerStats;
+        [SerializeField] private bool activeSanityApplied;
+        private DirectorEventDefinition activeDefinition;
+        private float sightingClockStartedAt;
+        private bool activeApparitionSeen;
+        [SerializeField] private int apparitionSightings;
+        [SerializeField] private float lastApparitionSeenAt;
+        public float SecondsSinceApparitionSeen => Mathf.Max(0f, Time.time -
+            (apparitionSightings > 0 ? lastApparitionSeenAt : sightingClockStartedAt));
+
+        // Only the executor's unobstructed camera visibility check calls this.
+        // Independent of sanity, so a sighting is remembered even if its cost is zero.
+        public void RecordApparitionSighting()
+        {
+            if (!eventActive || activeDefinition == null || !activeDefinition.IsApparition ||
+                !activeEvent.effectDelivered || activeEvent.debugRecord || activeApparitionSeen ||
+                Time.timeScale <= 0f || AudioListener.pause) return;
+            activeApparitionSeen = true;
+            apparitionSightings++;
+            lastApparitionSeenAt = Time.time;
+        }
 
         [Header("Runtime display")]
         [SerializeField]
@@ -59,6 +83,31 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField]
         private List<DirectorEventRecord> history =
             new List<DirectorEventRecord>();
+
+        [Header("Shared voice cycle - completed clips only")]
+        [SerializeField] private int phoneClipsCompleted;
+        [SerializeField] private int whisperClipsCompleted;
+        [SerializeField] private int announcementClipsCompleted;
+        [SerializeField] private int completedVoiceCycles;
+
+        // These match the validated distinct clip counts required by the three executors.
+        // This memory is independent of the bounded diagnostic history.
+        public bool VoiceCycleExhausted(DirectorEventType type) =>
+            type == DirectorEventType.PhoneRing ? phoneClipsCompleted >= 3 :
+            type == DirectorEventType.Whisper ? whisperClipsCompleted >= 4 :
+            type == DirectorEventType.HospitalAnnouncement && announcementClipsCompleted >= 4;
+
+        private void CompleteVoiceClip(DirectorEventType type)
+        {
+            if (type == DirectorEventType.PhoneRing) phoneClipsCompleted = Math.Min(3, phoneClipsCompleted + 1);
+            else if (type == DirectorEventType.Whisper) whisperClipsCompleted = Math.Min(4, whisperClipsCompleted + 1);
+            else if (type == DirectorEventType.HospitalAnnouncement) announcementClipsCompleted = Math.Min(4, announcementClipsCompleted + 1);
+            if (phoneClipsCompleted == 3 && whisperClipsCompleted == 4 && announcementClipsCompleted == 4)
+            {
+                completedVoiceCycles++;
+                phoneClipsCompleted = whisperClipsCompleted = announcementClipsCompleted = 0;
+            }
+        }
 
         private IReadOnlyList<DirectorEventRecord> historyView;
 
@@ -87,7 +136,7 @@ namespace HauntedHospital.EnvironmentAI
         // Read-only projection for planning; unlike EventPressure this does not advance memory.
         public float PlanningEventPressure => IsReady
             ? Mathf.Clamp(eventPressure - tensionSettings.EventPressureDecayPerSecond *
-                Mathf.Max(0f, Time.time - lastPressureUpdate), 0f, tensionSettings.MaximumEventPressure)
+                (eventActive && activeEvent.effectDelivered ? 0f : Mathf.Max(0f, Time.time - lastPressureUpdate)), 0f, tensionSettings.MaximumEventPressure)
             : 0f;
 
         public IReadOnlyList<DirectorEventRecord> History =>
@@ -108,7 +157,7 @@ namespace HauntedHospital.EnvironmentAI
 
         public float QuietSeconds =>
             initialized
-                ? Mathf.Max(0f, Time.time - lastDeliveredAt)
+                ? (eventActive && activeEvent.effectDelivered ? 0f : Mathf.Max(0f, Time.time - lastDeliveredAt))
                 : 0f;
 
         public float SecondsSinceEventEnded =>
@@ -127,6 +176,11 @@ namespace HauntedHospital.EnvironmentAI
 
         private void Awake()
         {
+            sightingClockStartedAt = Time.time;
+            apparitionSightings = 0;
+            lastApparitionSeenAt = 0f;
+            activeApparitionSeen = false;
+            phoneClipsCompleted = whisperClipsCompleted = announcementClipsCompleted = completedVoiceCycles = 0;
             history.Clear();
             cooldownEnds.Clear();
 
@@ -173,7 +227,7 @@ namespace HauntedHospital.EnvironmentAI
                 return;
 
             float now = Time.time;
-            float elapsed = Mathf.Max(0f, now - lastPressureUpdate);
+            float elapsed = eventActive && activeEvent.effectDelivered ? 0f : Mathf.Max(0f, now - lastPressureUpdate);
 
             eventPressure = Mathf.Clamp(
                 eventPressure -
@@ -197,6 +251,7 @@ namespace HauntedHospital.EnvironmentAI
                 !IsReady ||
                 eventActive ||
                 eventType == DirectorEventType.Rest ||
+                (!debugRecord && VoiceCycleExhausted(eventType)) ||
                 !Enum.IsDefined(typeof(DirectorEventType), eventType) ||
                 string.IsNullOrWhiteSpace(eventId) ||
                 string.IsNullOrWhiteSpace(anchorId) ||
@@ -217,6 +272,11 @@ namespace HauntedHospital.EnvironmentAI
                 debugRecord = debugRecord
             };
 
+            activeDefinition = null;
+            foreach (var definition in directorSettings.Events)
+                if (definition != null && definition.EventId == eventId) { activeDefinition = definition; break; }
+            activeSanityApplied = false;
+            activeApparitionSeen = false;
             eventActive = true;
             return true;
         }
@@ -245,6 +305,20 @@ namespace HauntedHospital.EnvironmentAI
                 tensionSettings.MaximumEventPressure);
 
             lastDeliveredAt = Time.time;
+            if (activeDefinition != null && !activeDefinition.IsApparition)
+                TryApplyActiveSanityLoss();
+            return true;
+        }
+
+        // Kept separately from pressure: an apparition may be heard before it is seen.
+        // Set the guard before notifying PlayerStats, whose listeners may open a screen.
+        public bool TryApplyActiveSanityLoss()
+        {
+            if (!IsReady || !eventActive || !activeEvent.effectDelivered || activeEvent.debugRecord ||
+                activeSanityApplied || activeDefinition == null || playerStats == null ||
+                Time.timeScale <= 0f || AudioListener.pause) return false;
+            activeSanityApplied = true;
+            if (activeDefinition.SanityCost > 0f) playerStats.DrainSanity(activeDefinition.SanityCost);
             return true;
         }
 
@@ -258,9 +332,13 @@ namespace HauntedHospital.EnvironmentAI
                 return false;
             }
 
+            AdvancePressure();
+            if (activeEvent.effectDelivered) lastDeliveredAt = Time.time;
             activeEvent.endedAt = Time.time;
             activeEvent.outcome = outcome;
 
+            if (!activeEvent.debugRecord && activeEvent.effectDelivered && outcome == DirectorEventOutcome.Completed)
+                CompleteVoiceClip(activeEvent.eventType);
             history.Add(activeEvent);
             if (!activeEvent.debugRecord)
                 foreach (var definition in directorSettings.Events)
@@ -277,6 +355,8 @@ namespace HauntedHospital.EnvironmentAI
             hasEndedEvent = true;
             eventActive = false;
             activeEvent = default;
+            activeDefinition = null;
+            activeSanityApplied = false;
 
             return true;
         }

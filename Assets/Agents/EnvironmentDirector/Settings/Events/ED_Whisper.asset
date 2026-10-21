@@ -15,10 +15,11 @@ MonoBehaviour:
   eventId: whisper
   eventType: 4
   availableForSelection: 1
-  duration: 3
+  duration: 21.518164
   cooldown: 55
   intensity: 1
   predictedTensionIncrease: 0.14
+  sanityCost: 2
   requiredTarget: 2
   minimumPlayerDistance: 2
   maximumPlayerDistance: 8

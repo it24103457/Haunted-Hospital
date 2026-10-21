@@ -5,6 +5,9 @@ namespace HauntedHospital.EnvironmentAI
 {
     public sealed class EnvironmentDirectorSetup : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindScene(PlayerStats player, Transform director, Transform essential) { playerStats = player; directorLightsRoot = director; essentialLightsRoot = essential; }
+
         [Header("Required scene references")]
         [SerializeField] private PlayerStats playerStats;
         [SerializeField] private Transform directorLightsRoot;

@@ -15,13 +15,14 @@ MonoBehaviour:
   eventId: light_flicker
   eventType: 1
   availableForSelection: 1
-  duration: 3
+  duration: 10
   cooldown: 45
   intensity: 0
   predictedTensionIncrease: 0.08
+  sanityCost: 1
   requiredTarget: 0
   minimumPlayerDistance: 0
   maximumPlayerDistance: 15
   requiresVisibility: 0
-  blockDuringImmediateDanger: 1
+  blockDuringImmediateDanger: 0
   blockDuringKeypadEntry: 1
