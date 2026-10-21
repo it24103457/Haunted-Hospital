@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -30,6 +30,9 @@ public class HunterAudioDriver : MonoBehaviour
     [Tooltip("Individual footstep sounds for Patrol / Investigate / Search.")]
     [SerializeField] private AudioClip[] walkStepClips;
 
+    [Tooltip("Optional continuous walking track (walk-1.mp3) played when walkStepClips is not used.")]
+    [SerializeField] private AudioClip walkClip;
+
     [Header("Clips - Voice")]
     [Tooltip("One-shot growl/roar played on alerts, attacks, and flinches.")]
     [SerializeField] private AudioClip growlClip;
@@ -37,10 +40,14 @@ public class HunterAudioDriver : MonoBehaviour
     [Header("Audio Sources (auto-created if null)")]
     [SerializeField] private AudioSource footstepSource;
     [SerializeField] private AudioSource growlSource;
+    [SerializeField] private AudioSource walkSource;
 
     [Header("Volume & Tuning")]
     [Tooltip("Volume for footstep sounds.")]
     [SerializeField, Range(0f, 1f)] private float footstepVolume = 0.85f;
+
+    [Tooltip("Volume for continuous walk audio.")]
+    [SerializeField, Range(0f, 1f)] private float walkVolume = 0.85f;
 
     [Tooltip("Volume for growl one-shots.")]
     [SerializeField, Range(0f, 1f)] private float growlVolume = 1.0f;
@@ -92,6 +99,7 @@ public class HunterAudioDriver : MonoBehaviour
 
         EnsureAudioSource(ref footstepSource, "AudioSource_Footsteps");
         EnsureAudioSource(ref growlSource,    "AudioSource_Growl");
+        EnsureAudioSource(ref walkSource,     "AudioSource_Walk");
     }
 
     private void OnEnable()
@@ -121,6 +129,29 @@ public class HunterAudioDriver : MonoBehaviour
         if (!hunter.IsAlive || animator == null) return;
 
         float speed = agent.velocity.magnitude;
+        var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        bool isWalking = hunter.IsAlive && speed > 0.1f && stateInfo.IsName("Walk");
+
+        // Continuous walk audio track option (if walkStepClips is not used)
+        if (walkSource != null && walkClip != null && (walkStepClips == null || walkStepClips.Length == 0))
+        {
+            float targetVol = isWalking ? walkVolume : 0f;
+            walkSource.volume = Mathf.MoveTowards(walkSource.volume, targetVol, Time.deltaTime * 5f);
+            if (walkSource.volume > 0.001f)
+            {
+                if (!walkSource.isPlaying)
+                {
+                    walkSource.clip = walkClip;
+                    walkSource.loop = true;
+                    walkSource.Play();
+                }
+            }
+            else if (walkSource.isPlaying)
+            {
+                walkSource.Stop();
+            }
+        }
+
         if (speed <= 0.1f)
         {
             // Reset step indices when stopped so resuming immediately detects the next contact
@@ -128,8 +159,6 @@ public class HunterAudioDriver : MonoBehaviour
             lastWalkStepIndex = -1;
             return;
         }
-
-        var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
         float norm = stateInfo.normalizedTime % 1.0f;
         if (norm < 0f) norm += 1.0f;
 
@@ -216,6 +245,7 @@ public class HunterAudioDriver : MonoBehaviour
     {
         if (footstepSource != null) footstepSource.Stop();
         if (growlSource    != null) growlSource.Stop();
+        if (walkSource     != null) walkSource.Stop();
     }
 
     private void HandleSpawned()

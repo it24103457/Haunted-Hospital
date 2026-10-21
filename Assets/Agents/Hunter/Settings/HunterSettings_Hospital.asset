@@ -30,7 +30,7 @@ MonoBehaviour:
   thrownObjectImportance: 0.6
   footstepImportance: 0.4
   otherImportance: 0.3
-  patrolWaitSeconds: 3
+  patrolWaitSeconds: 3.5
   arrivalRadius: 1
   patrolMinLegDistance: 6
   patrolLegTimeoutSeconds: 45
@@ -41,10 +41,10 @@ MonoBehaviour:
   chaseProximity: 8
   chaseLoseSeconds: 6
   attackRange: 1.5
-  attackExitMargin: 0.5
+  attackExitMargin: 1
   attackDamage: 20
-  attackCooldownSeconds: 1.2
-  attackWindupSeconds: 0.4
+  attackCooldownSeconds: 1.6
+  attackWindupSeconds: 0.55
   senseIntervalSeconds: 0.2
   freshReachSeconds: 0.5
   maxHealth: 100
@@ -61,8 +61,8 @@ MonoBehaviour:
   doorOpenTimeoutSeconds: 3
   doorBanSeconds: 6
   doorRetryLimit: 3
-  patrolSpeed: 0.82
-  investigateSpeed: 1.14
-  searchSpeed: 0.93
-  chaseSpeed: 1.5
+  patrolSpeed: 0.7
+  investigateSpeed: 1
+  searchSpeed: 0.8
+  chaseSpeed: 1.29
   enableDebugLogging: 0
