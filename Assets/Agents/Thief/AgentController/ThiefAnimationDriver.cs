@@ -25,10 +25,12 @@ public class ThiefAnimationDriver : MonoBehaviour
     [SerializeField] private float runAuthoredSpeed = 6.43f;
 
     [Tooltip("Seconds the Grab clip must stay visible; Stealing ends in one frame, so the crossfade to Locomotion is delayed this long.")]
-    [SerializeField] private float minGrabSeconds = 0.8f;
+    [SerializeField] private float minGrabSeconds = 0.85f;
 
     private const float Fade = 0.2f;
     private static readonly int SpeedParam = Animator.StringToHash("Speed");
+    private static readonly int IsCarryingParam = Animator.StringToHash("IsCarrying");
+    private static readonly int FlinchTrigger = Animator.StringToHash("Flinch");
 
     private static readonly Dictionary<ThiefState, string> StateClips = new Dictionary<ThiefState, string>
     {
@@ -38,17 +40,48 @@ public class ThiefAnimationDriver : MonoBehaviour
         { ThiefState.Dead, "Death" },
     };
 
+    [Header("Vanish Polish")]
+    [Tooltip("Seconds into Delivering before the ghost dissolve begins (stashPause is 3s, so ~2.2s gives 0.8s of smooth vanish).")]
+    [SerializeField] private float vanishFadeDelay = 2.2f;
+
+    [Tooltip("Duration of the smooth sink/fade out before vanishing.")]
+    [SerializeField] private float vanishFadeDuration = 0.8f;
+
+    [Header("Door Facing")]
+    [Tooltip("Seconds over which the Thief smoothly rotates to face the doorway upon arriving at a closed door.")]
+    [SerializeField] private float doorTurnDuration = 0.15f;
+
+    [Header("Flinch / Death Facing")]
+    [Tooltip("Seconds over which the Thief snaps to face the damage source on hit.")]
+    [SerializeField] private float flinchTurnDuration = 0.15f;
+
+    [Tooltip("Minimum seconds between successive flinch triggers to avoid animation spam.")]
+    [SerializeField] private float flinchCooldown = 0.6f;
+
     private ThiefAgent thief;
     private NavMeshAgent agent;
     private Coroutine hideRoutine;
     private Coroutine grabHold;
+    private Coroutine vanishRoutine;
+    private Coroutine flinchRoutine;
+    private Coroutine doorTurnRoutine;
     private float grabTime = float.NegativeInfinity;
+    private float lastKnownHealth;
+    private float lastFlinchTime = float.NegativeInfinity;
+    private Vector3 modelBaseLocalPos;
+    private Vector3 modelBaseLocalScale = Vector3.one;
 
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
         agent = GetComponent<NavMeshAgent>();
         if (animator == null && model != null) animator = model.GetComponentInChildren<Animator>();
+        if (model != null)
+        {
+            modelBaseLocalPos = model.localPosition;
+            modelBaseLocalScale = model.localScale;
+        }
+        lastKnownHealth = thief.MaxHealth;
     }
 
     private void OnEnable()
@@ -61,17 +94,36 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         thief.OnStateChanged -= HandleStateChanged;
         thief.OnSpawned -= HandleSpawned;
+        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
+        if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
+        ResetModelTransform();
     }
 
     private void Update()
     {
         if (animator == null || !animator.gameObject.activeInHierarchy) return;
 
+        // Detect non-lethal damage by polling health (ThiefAgent has no OnDamaged event)
+        if (thief.IsInPlay && thief.Health < lastKnownHealth && thief.Health > 0f)
+        {
+            OnDamageDetected();
+        }
+        lastKnownHealth = thief.Health;
+
         float speed = agent.velocity.magnitude;
         animator.SetFloat(SpeedParam, speed);
 
-        // Stride scaling only while actually moving, or the one-shots would crawl at near-zero speed.
-        bool locomoting = thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash;
+        float held = Time.time - grabTime;
+        bool isPlayingGrab = held < minGrabSeconds;
+
+        // Only activate upper-body carry pose while actively traveling to stash with the item and after grab finishes.
+        // During WaitAtDoor, Stealing, Delivering, Dead or Grab playback, this drops to false so action clips play clean.
+        bool isCarryingToStash = thief.IsCarrying && thief.State == ThiefState.GoToStash && !isPlayingGrab;
+        animator.SetBool(IsCarryingParam, isCarryingToStash);
+
+        // Stride scaling only while actually moving and not playing grab, or the one-shots would crawl at near-zero speed.
+        bool locomoting = (thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash) && !isPlayingGrab;
         animator.speed = locomoting && runAuthoredSpeed > 0f ? speed / runAuthoredSpeed : 1f;
     }
 
@@ -79,9 +131,14 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
+        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
+        if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
 
         if (state == ThiefState.Dead)
         {
+            ResetModelTransform();
+            FacePlayerInstant();
             if (model != null) model.gameObject.SetActive(true);
             if (animator != null)
             {
@@ -93,6 +150,17 @@ public class ThiefAnimationDriver : MonoBehaviour
         }
 
         if (state == ThiefState.Inactive || state == ThiefState.Vanished || animator == null) return;
+
+        if (state == ThiefState.Delivering)
+        {
+            ResetModelTransform();
+            vanishRoutine = StartCoroutine(SmoothVanishAfterDelivery());
+        }
+
+        if (state == ThiefState.WaitAtDoor)
+        {
+            doorTurnRoutine = StartCoroutine(FaceDoor());
+        }
 
         if (StateClips.TryGetValue(state, out string clip))
         {
@@ -114,10 +182,46 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
+        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
+        if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
+        ResetModelTransform();
         grabTime = float.NegativeInfinity;
+        lastKnownHealth = thief.Health;
+        lastFlinchTime = float.NegativeInfinity;
         if (animator == null) return;
         animator.speed = 1f;
         animator.CrossFadeInFixedTime("Locomotion", Fade);
+    }
+
+    private IEnumerator SmoothVanishAfterDelivery()
+    {
+        if (vanishFadeDelay > 0f)
+            yield return new WaitForSeconds(vanishFadeDelay);
+
+        if (model == null) yield break;
+
+        float elapsed = 0f;
+        while (elapsed < vanishFadeDuration)
+        {
+            if (model == null || thief.State != ThiefState.Delivering) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / vanishFadeDuration);
+            model.localPosition = Vector3.Lerp(modelBaseLocalPos, modelBaseLocalPos - Vector3.up * 0.9f, t);
+            model.localScale = Vector3.Lerp(modelBaseLocalScale, new Vector3(modelBaseLocalScale.x * 0.1f, modelBaseLocalScale.y * 0.01f, modelBaseLocalScale.z * 0.1f), t);
+            yield return null;
+        }
+
+        vanishRoutine = null;
+    }
+
+    private void ResetModelTransform()
+    {
+        if (model != null)
+        {
+            model.localPosition = modelBaseLocalPos;
+            model.localScale = modelBaseLocalScale;
+        }
     }
 
     private IEnumerator ResumeLocomotionAfterGrab(float wait)
@@ -136,5 +240,97 @@ public class ThiefAnimationDriver : MonoBehaviour
         yield return new WaitForSeconds(info.length + 0.2f);
         if (thief.State == ThiefState.Dead && model != null) model.gameObject.SetActive(false);
         hideRoutine = null;
+    }
+
+    // ── Door facing ──────────────────────────────────────────────────
+
+    private IEnumerator FaceDoor()
+    {
+        IReadOnlyList<Vector3> path = thief != null ? thief.CurrentPath : null;
+        if (path == null || path.Count < 2)
+        {
+            doorTurnRoutine = null;
+            yield break;
+        }
+
+        Vector3 dir = path[path.Count - 1] - path[path.Count - 2];
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.001f)
+        {
+            doorTurnRoutine = null;
+            yield break;
+        }
+
+        Quaternion startRot = transform.rotation;
+        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+        float elapsed = 0f;
+
+        while (elapsed < doorTurnDuration)
+        {
+            if (thief.State != ThiefState.WaitAtDoor) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / doorTurnDuration);
+            transform.rotation = Quaternion.Slerp(startRot, targetRot, t);
+            yield return null;
+        }
+
+        if (thief.State == ThiefState.WaitAtDoor)
+            transform.rotation = targetRot;
+
+        doorTurnRoutine = null;
+    }
+
+    // ── Flinch / Death facing ────────────────────────────────────────
+
+    private void OnDamageDetected()
+    {
+        if (animator == null || thief.State == ThiefState.Dead) return;
+        if (Time.time - lastFlinchTime < flinchCooldown) return;
+
+        lastFlinchTime = Time.time;
+
+        // Trigger flinch animation and reset stride scaling so it plays at authored speed
+        animator.speed = 1f;
+        animator.SetTrigger(FlinchTrigger);
+
+        // Snap-rotate to face the player (damage source)
+        if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
+        if (flinchRoutine != null) StopCoroutine(flinchRoutine);
+        flinchRoutine = StartCoroutine(FacePlayerOnHit());
+    }
+
+    private IEnumerator FacePlayerOnHit()
+    {
+        PlayerStats player = FindAnyObjectByType<PlayerStats>();
+        if (player == null) yield break;
+
+        Vector3 dir = player.transform.position - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.001f) yield break;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+        float elapsed = 0f;
+
+        while (elapsed < flinchTurnDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / flinchTurnDuration);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, t);
+            yield return null;
+        }
+
+        transform.rotation = targetRot;
+        flinchRoutine = null;
+    }
+
+    private void FacePlayerInstant()
+    {
+        PlayerStats player = FindAnyObjectByType<PlayerStats>();
+        if (player == null) return;
+
+        Vector3 dir = player.transform.position - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.LookRotation(dir.normalized);
     }
 }

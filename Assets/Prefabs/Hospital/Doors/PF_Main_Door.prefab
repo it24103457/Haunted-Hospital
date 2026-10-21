@@ -41,6 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 626377774225136842}
+  - component: {fileID: 2644745755259703375}
   m_Layer: 0
   m_Name: PF_Main_Door
   m_TagString: Untagged
@@ -64,6 +65,27 @@ Transform:
   - {fileID: 2383079218903558344}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2644745755259703375
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5515318565037924272}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.9, y: 2.2, z: 0.1}
+  m_Center: {x: 0, y: 1.1, z: 0}
 --- !u!1001 &2962082739813174774
 PrefabInstance:
   m_ObjectHideFlags: 0

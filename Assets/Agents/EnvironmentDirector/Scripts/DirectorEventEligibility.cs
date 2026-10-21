@@ -6,6 +6,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorEventEligibility : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindScene(Transform director, Transform essential, Camera camera) { directorLightsRoot = director; essentialLightsRoot = essential; playerCamera = camera; }
+
         [SerializeField] private DirectorSettings settings;
         [SerializeField] private DirectorObservation observation;
         [SerializeField] private DirectorRoomTracker roomTracker;
@@ -73,6 +76,7 @@ namespace HauntedHospital.EnvironmentAI
         {
             distance = 0f;
             if (!Application.isPlaying || !isActiveAndEnabled) return "Requires active component in Play mode";
+            if (Time.timeScale <= 0f || AudioListener.pause) return "Game paused";
             if (settings == null || observation == null || roomTracker == null || registry == null ||
                 eventMemory == null || reservations == null || !registry.isActiveAndEnabled ||
                 !roomTracker.isActiveAndEnabled || !reservations.isActiveAndEnabled)
@@ -96,6 +100,7 @@ namespace HauntedHospital.EnvironmentAI
             if (!state.IsValid || Time.time - state.SampledAt > maximumObservationAge ||
                 state.SampledAt > Time.time) return "Observation unavailable or stale";
             if (!state.IsAlive) return "Player dead";
+            if (state.Sanity <= 0f) return "Player sanity depleted";
             if (roomTracker.CurrentRoom == null || roomTracker.CurrentRoomId != state.RoomId)
                 return "Player room unavailable or changing";
             distance = Vector3.Distance(state.PlayerPosition, anchor.Position);
@@ -112,13 +117,14 @@ namespace HauntedHospital.EnvironmentAI
             if (!planning && eventMemory.CooldownRemaining(definition.EventId) > 0f) return "Event type cooldown";
             if (reservations.IsReserved && !reservations.Owns(anchor, reservationToken))
                 return "A target is already reserved";
-            if (!planning && state.DamageRecoveryActive) return "Damage recovery";
+            if (!planning && !definition.CanStartDuringCombat && state.DamageRecoveryActive) return "Damage recovery";
             if (state.Victory != DirectorSignalState.Inactive) return "Victory state active or unavailable";
             if (definition.BlockDuringKeypadEntry && state.KeypadInteraction != DirectorSignalState.Inactive)
                 return "Keypad state active or unavailable";
             if (definition.BlockDuringImmediateDanger && state.HunterDanger != DirectorSignalState.Inactive)
                 return "Hunter danger active or unavailable";
-            if (state.RecentGunfire != DirectorSignalState.Inactive) return "Gunfire recovery active or unavailable";
+            if (!definition.CanStartDuringCombat && state.RecentGunfire != DirectorSignalState.Inactive)
+                return "Gunfire recovery active or unavailable";
             if (anchor.TargetType == DirectorTargetType.ApparitionAnchor)
             {
                 string rejection = ApparitionPlacementRejection(definition, anchor);
@@ -128,7 +134,7 @@ namespace HauntedHospital.EnvironmentAI
             return null;
         }
 
-        // Used before selection and immediately before reveal; facing direction is irrelevant.
+        // Admission check before an event starts; facing direction is irrelevant.
         public string ApparitionPlacementRejection(DirectorEventDefinition definition, DirectorEventAnchor anchor)
         {
             if (definition == null || anchor == null || roomTracker == null || roomTracker.Player == null ||
@@ -153,7 +159,7 @@ namespace HauntedHospital.EnvironmentAI
 
         public bool IsVisible(DirectorEventAnchor anchor)
         {
-            if (playerCamera == null || !playerCamera.isActiveAndEnabled || roomTracker.Player == null ||
+            if (anchor == null || roomTracker == null || playerCamera == null || !playerCamera.isActiveAndEnabled || roomTracker.Player == null ||
                 !playerCamera.transform.IsChildOf(roomTracker.Player)) return false;
             Vector3 target = anchor.Position;
             if (anchor.TargetType == DirectorTargetType.ApparitionAnchor) target += Vector3.up * apparitionEyeHeight;
@@ -163,7 +169,7 @@ namespace HauntedHospital.EnvironmentAI
             Vector3 origin = playerCamera.transform.position;
             Vector3 delta = target - origin;
             foreach (var hit in Physics.RaycastAll(origin, delta.normalized, delta.magnitude,
-                         visibilityMask, QueryTriggerInteraction.Ignore))
+                         anchor.TargetType == DirectorTargetType.ApparitionAnchor ? ~0 : visibilityMask.value, QueryTriggerInteraction.Ignore))
             {
                 if (hit.transform.IsChildOf(roomTracker.Player)) continue;
                 if (anchor.SourceObject != null && hit.transform.IsChildOf(anchor.SourceObject)) continue;

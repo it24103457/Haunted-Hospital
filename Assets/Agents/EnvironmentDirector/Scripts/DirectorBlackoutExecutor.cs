@@ -6,6 +6,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorBlackoutExecutor : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindLighting(Transform director, Transform essential) { directorLightsRoot = director; essentialLightsRoot = essential; }
+
         [SerializeField] private DirectorEventEligibility eligibility;
         [SerializeField] private DirectorTargetReservations reservations;
         [SerializeField] private DirectorEventMemory memory;
@@ -55,7 +58,7 @@ namespace HauntedHospital.EnvironmentAI
             sound.transform.position = lights[0].transform.position;
             sound.Stop(); sound.clip = blackoutSound; sound.volume = volume; sound.loop = false; sound.pitch = 1f;
             sound.time = Mathf.Clamp(blackoutSoundStartSeconds, 0f, Mathf.Max(0f, blackoutSound.length - .05f));
-            sound.Play();
+            sound.ignoreListenerPause = false; sound.Play();
             ApplyBrightness(1f);
             memory.MarkEffectDelivered(candidate.definition.PredictedTensionIncrease);
             status = "Fading out hospital Director lights";
@@ -65,23 +68,11 @@ namespace HauntedHospital.EnvironmentAI
         private void Update()
         {
             if (!running) return;
-            var state = observation == null ? default : observation.Current;
-            if (Time.timeScale <= 0 || observation == null || !observation.isActiveAndEnabled || sound == null || !sound.isActiveAndEnabled || directorLightsRoot == null || essentialLightsRoot == null || eligibility == null || !eligibility.isActiveAndEnabled ||
-                memory == null || !memory.IsReady || !memory.EventActive ||
-                reservations == null || !reservations.isActiveAndEnabled ||
-                !reservations.Owns(action.anchor,token) ||
-                !state.IsValid || Time.time-state.SampledAt > .5f || state.SampledAt > Time.time ||
-                !state.IsAlive || state.DamageRecoveryActive ||
-                state.Victory != DirectorSignalState.Inactive ||
-                state.KeypadInteraction != DirectorSignalState.Inactive ||
-                state.RecentGunfire != DirectorSignalState.Inactive ||
-                state.HunterDanger != DirectorSignalState.Inactive ||
-                action.anchor == null || !action.anchor.IsAvailable)
+            // Gameplay restrictions apply only to admission. Pause preserves this event.
+            // The existing pause menu freezes both scaled time and the audio DSP clock.
+            if (Time.timeScale <= 0f || AudioListener.pause) return;
+            if (memory == null || sound == null || directorLightsRoot == null || essentialLightsRoot == null)
             { Finish(DirectorEventOutcome.Cancelled); return; }
-            foreach (var light in lights)
-                if (light == null || !light.isActiveAndEnabled ||
-                    !light.transform.IsChildOf(directorLightsRoot) || light.transform.IsChildOf(essentialLightsRoot))
-                { Finish(DirectorEventOutcome.Cancelled); return; }
             float elapsed = Time.time-startedAt;
             float duration = action.definition.Duration;
             if (elapsed >= duration) { Finish(DirectorEventOutcome.Completed); return; }

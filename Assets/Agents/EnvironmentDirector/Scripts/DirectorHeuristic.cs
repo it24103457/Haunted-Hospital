@@ -13,6 +13,7 @@ namespace HauntedHospital.EnvironmentAI
         public float overshootPenalty;
         public float eventRepetitionPenalty;
         public float anchorRepetitionPenalty;
+        public float apparitionSightingBonus;
         public float total;
     }
 
@@ -28,18 +29,21 @@ namespace HauntedHospital.EnvironmentAI
     public static class DirectorHeuristic
     {
         public static DirectorScoreBreakdown Score(float predictedPressure, float desiredTension,
-            float vulnerability, bool isRest, DirectorRepetitionEvidence repetition, DirectorScoringSettings settings)
+            float vulnerability, bool isRest, DirectorRepetitionEvidence repetition, DirectorScoringSettings settings,
+            float apparitionSightingBonus = 0f)
         {
             var result = new DirectorScoreBreakdown { reason = "Invalid scoring settings or input", total = float.PositiveInfinity };
             if (settings == null || !settings.IsValid() || !Unit(predictedPressure) || !Unit(desiredTension) ||
-                !Unit(vulnerability) || !Unit(repetition.eventRecency) || !Unit(repetition.anchorRecency)) return result;
+                !Unit(vulnerability) || !Unit(repetition.eventRecency) || !Unit(repetition.anchorRecency) ||
+                !Unit(apparitionSightingBonus)) return result;
             result.targetDifference = Mathf.Abs(predictedPressure - desiredTension) * settings.TargetDifferenceWeight;
             result.overshootPenalty = Mathf.Max(0f, predictedPressure - desiredTension) * settings.OvershootWeight *
                 (1f + vulnerability * settings.VulnerabilityOvershootMultiplier);
             result.eventRepetitionPenalty = isRest ? 0f : repetition.eventRecency * settings.EventRepetitionWeight;
             result.anchorRepetitionPenalty = isRest ? 0f : repetition.anchorRecency * settings.AnchorRepetitionWeight;
+            result.apparitionSightingBonus = isRest ? 0f : apparitionSightingBonus;
             result.total = result.targetDifference + result.overshootPenalty +
-                result.eventRepetitionPenalty + result.anchorRepetitionPenalty;
+                result.eventRepetitionPenalty + result.anchorRepetitionPenalty - result.apparitionSightingBonus;
             result.valid = !float.IsNaN(result.total) && !float.IsInfinity(result.total);
             result.reason = result.valid ? "Scored; lower is preferable" : "Score overflow; reject candidate";
             if (!result.valid) result.total = float.PositiveInfinity;
@@ -67,6 +71,12 @@ namespace HauntedHospital.EnvironmentAI
         }
 
         private static bool Unit(float value) => Finite(value) && value >= 0f && value <= 1f;
+        public static float ApparitionPreference(float secondsUnseen, DirectorScoringSettings settings)
+        {
+            if (settings == null || !settings.IsValid() || !Finite(secondsUnseen)) return 0f;
+            return Mathf.Clamp01((secondsUnseen - settings.ApparitionPreferenceStartsAfter) /
+                settings.ApparitionPreferenceRampSeconds) * settings.MaximumApparitionPreference;
+        }
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

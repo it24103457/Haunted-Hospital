@@ -5,6 +5,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorObservation : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindPlayer(PlayerStats target) { playerStats = target; playerTransform = target == null ? null : target.transform; if (Application.isPlaying) Bind(); }
+
         [SerializeField] private PlayerStats playerStats;
         [SerializeField] private Transform playerTransform;
         [SerializeField] private DirectorRoomTracker roomTracker;

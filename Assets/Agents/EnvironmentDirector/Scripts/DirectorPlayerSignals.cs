@@ -5,6 +5,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorPlayerSignals : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindScene(PlayerWeapon targetWeapon, ObjectiveState targetObjectives) { weapon = targetWeapon; objectives = targetObjectives; if (Application.isPlaying) Bind(); }
+
         [SerializeField] private PlayerWeapon weapon;
         [SerializeField] private ObjectiveState objectives;
         [SerializeField] private DirectorSettings settings;
@@ -39,7 +42,7 @@ namespace HauntedHospital.EnvironmentAI
                 objectives.gameObject.scene == gameObject.scene)
             {
                 keypad = objectives.IsKeypadOpen ? DirectorSignalState.Active : DirectorSignalState.Inactive;
-                ending = objectives.HasWon || objectives.IsEscapeInProgress || objectives.IsPaused
+                ending = objectives.HasWon || objectives.IsEscapeInProgress
                     ? DirectorSignalState.Active : DirectorSignalState.Inactive;
             }
         }

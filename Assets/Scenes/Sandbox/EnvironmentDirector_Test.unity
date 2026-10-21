@@ -27066,6 +27066,7 @@ GameObject:
   - component: {fileID: 593751888}
   - component: {fileID: 593751889}
   - component: {fileID: 593751890}
+  - component: {fileID: 593751891}
   m_Layer: 0
   m_Name: EnvironmentDirector
   m_TagString: Untagged
@@ -27164,7 +27165,7 @@ MonoBehaviour:
   playerTransform: {fileID: 936268515}
   roomTracker: {fileID: 593751869}
   settings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
-  hunterSource: {fileID: 593751881}
+  hunterSource: {fileID: 593751891}
   playerSignals: {fileID: 593751884}
   maximumHunterSignalAge: 0.5
   observationInterval: 0.1
@@ -27207,6 +27208,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorEventMemory
   directorSettings: {fileID: 11400000, guid: 35d4375c0a6264a45a97a4edec22d2d8, type: 2}
   tensionSettings: {fileID: 11400000, guid: 812fd4cc88937984a972f1959fb83e7e, type: 2}
+  playerStats: {fileID: 936268510}
+  activeSanityApplied: 0
+  apparitionSightings: 0
+  lastApparitionSeenAt: 0
   eventPressure: 0
   quietSeconds: 0
   secondsSinceEventEnded: 0
@@ -27436,6 +27441,8 @@ MonoBehaviour:
     quietSeconds: 20
     globalCooldownRemaining: 0
     estimatedPressure: 0.5
+    sanityFraction: 0
+    maxSanity: 0
     cooldowns: []
   predictions:
   - action: Rest
@@ -27449,6 +27456,8 @@ MonoBehaviour:
       quietSeconds: 25
       globalCooldownRemaining: 0
       estimatedPressure: 0.4
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns: []
   - action: light_flicker
     valid: 1
@@ -27461,6 +27470,8 @@ MonoBehaviour:
       quietSeconds: 3
       globalCooldownRemaining: 12
       estimatedPressure: 0.52000004
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns:
       - eventId: light_flicker
         remaining: 45
@@ -27475,6 +27486,8 @@ MonoBehaviour:
       quietSeconds: 4
       globalCooldownRemaining: 12
       estimatedPressure: 0.64000005
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns:
       - eventId: local_blackout
         remaining: 100
@@ -27489,6 +27502,8 @@ MonoBehaviour:
       quietSeconds: 4
       globalCooldownRemaining: 12
       estimatedPressure: 0.52000004
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns:
       - eventId: phone_ring
         remaining: 60
@@ -27503,6 +27518,8 @@ MonoBehaviour:
       quietSeconds: 3
       globalCooldownRemaining: 12
       estimatedPressure: 0.58000004
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns:
       - eventId: whisper
         remaining: 55
@@ -27517,6 +27534,8 @@ MonoBehaviour:
       quietSeconds: 2
       globalCooldownRemaining: 12
       estimatedPressure: 0.56
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns:
       - eventId: knock
         remaining: 45
@@ -27531,6 +27550,8 @@ MonoBehaviour:
       quietSeconds: 6
       globalCooldownRemaining: 12
       estimatedPressure: 0.49999997
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns:
       - eventId: hospital_announcement
         remaining: 90
@@ -27545,6 +27566,8 @@ MonoBehaviour:
       quietSeconds: 0
       globalCooldownRemaining: 0
       estimatedPressure: 0
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns: []
   - action: light_pulse_apparition
     valid: 0
@@ -27557,6 +27580,8 @@ MonoBehaviour:
       quietSeconds: 0
       globalCooldownRemaining: 0
       estimatedPressure: 0
+      sanityFraction: 0
+      maxSanity: 0
       cooldowns: []
 --- !u!114 &593751879
 MonoBehaviour:
@@ -27590,6 +27615,7 @@ MonoBehaviour:
     overshootPenalty: 0
     eventRepetitionPenalty: 0
     anchorRepetitionPenalty: 0
+    apparitionSightingBonus: 0
     total: 0.07000002
   status: No preview requested
   targetUsed: 0
@@ -27652,6 +27678,8 @@ MonoBehaviour:
         quietSeconds: 25
         globalCooldownRemaining: 0
         estimatedPressure: 0.4
+        sanityFraction: 0
+        maxSanity: 0
         cooldowns: []
       localScore:
         valid: 1
@@ -27660,6 +27688,7 @@ MonoBehaviour:
         overshootPenalty: 0
         eventRepetitionPenalty: 0
         anchorRepetitionPenalty: 0
+        apparitionSightingBonus: 0
         total: 0.15
       branchScore: 0.15
     - action:
@@ -27676,6 +27705,8 @@ MonoBehaviour:
         quietSeconds: 30
         globalCooldownRemaining: 0
         estimatedPressure: 0.3
+        sanityFraction: 0
+        maxSanity: 0
         cooldowns: []
       localScore:
         valid: 1
@@ -27684,6 +27715,7 @@ MonoBehaviour:
         overshootPenalty: 0
         eventRepetitionPenalty: 0
         anchorRepetitionPenalty: 0
+        apparitionSightingBonus: 0
         total: 0.25
       branchScore: 0.25
     - action:
@@ -27700,6 +27732,8 @@ MonoBehaviour:
         quietSeconds: 35
         globalCooldownRemaining: 0
         estimatedPressure: 0.20000002
+        sanityFraction: 0
+        maxSanity: 0
         cooldowns: []
       localScore:
         valid: 1
@@ -27708,6 +27742,7 @@ MonoBehaviour:
         overshootPenalty: 0
         eventRepetitionPenalty: 0
         anchorRepetitionPenalty: 0
+        apparitionSightingBonus: 0
         total: 0.35
       branchScore: 0.35
     expansionTrace:
@@ -27731,7 +27766,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 593751866}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 65e8cf6d33697274195cc7376d5bf34a, type: 3}
   m_Name: 
@@ -27763,7 +27798,7 @@ MonoBehaviour:
   announcementExecutor: {fileID: 593751888}
   knockExecutor: {fileID: 593751889}
   apparitionExecutor: {fileID: 593751890}
-  decisionInterval: 1
+  decisionInterval: 0.25
   maximumObservationAge: 0.5
   status: Waiting for Play mode
   planningAttempts: 0
@@ -27998,6 +28033,20 @@ MonoBehaviour:
   currentAnimation: 
   targetRoom: 
   affectedLights: 0
+--- !u!114 &593751891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593751866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4218fca795bebd4183ddb699eab2127, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HauntedHospital.EnvironmentAI.DirectorLiveHunterSource
+  hunter: {fileID: 0}
+  status: Waiting for Hunter
 --- !u!1 &597336292
 GameObject:
   m_ObjectHideFlags: 0

@@ -10,21 +10,22 @@ namespace HauntedHospital.EnvironmentAI
         public static bool TryCreate(float vulnerability, float eventPressure, float damageRemaining,
             float quietSeconds, float globalRemaining, DirectorPlanningCooldown[] cooldowns,
             DirectorSettings director, DirectorTensionSettings tension,
-            out DirectorPlanningState state, out string reason)
+            out DirectorPlanningState state, out string reason, float sanityFraction = 1f, float maxSanity = 100f)
         {
             state = null;
             if (!ValidSettings(director, tension, out reason)) return false;
             if (!NonNegative(vulnerability) || vulnerability > 1f || !NonNegative(eventPressure) ||
                 eventPressure > tension.MaximumEventPressure || !NonNegative(damageRemaining) ||
                 damageRemaining > director.DamageRecoverySeconds || !NonNegative(quietSeconds) ||
-                !NonNegative(globalRemaining) || cooldowns == null)
+                !NonNegative(globalRemaining) || cooldowns == null ||
+                !NonNegative(sanityFraction) || sanityFraction > 1f || !NonNegative(maxSanity) || maxSanity <= 0f)
             { reason = "Invalid planning inputs"; return false; }
             var ids = new HashSet<string>();
             foreach (var item in cooldowns)
                 if (string.IsNullOrWhiteSpace(item.eventId) || !NonNegative(item.remaining) || !ids.Add(item.eventId))
                 { reason = "Invalid or duplicate cooldown entry"; return false; }
             state = Make(0f, vulnerability, eventPressure, damageRemaining, quietSeconds,
-                globalRemaining, cooldowns, director, tension);
+                globalRemaining, cooldowns, director, tension, sanityFraction, maxSanity);
             reason = "Ready";
             return true;
         }
@@ -51,8 +52,10 @@ namespace HauntedHospital.EnvironmentAI
             foreach (var item in director.Events) if (item == definition) registered = true;
             if (!registered || !definition.AvailableForSelection)
             { reason = "Event disabled or outside catalogue"; return false; }
+            if (source.SanityFraction <= 0f)
+            { reason = "Predicted sanity depleted; no further event may start"; return false; }
             if (source.GlobalCooldownRemaining > 0f || source.CooldownRemaining(definition.EventId) > 0f ||
-                source.DamageRecoveryRemaining > 0f)
+                (!definition.CanStartDuringCombat && source.DamageRecoveryRemaining > 0f))
             { reason = "Predicted cooldown or damage recovery blocks event; predict Rest first"; return false; }
             if (!NonNegative(durationOverride)) { reason = "Invalid duration override"; return false; }
             return Transition(source, definition, durationOverride > 0f ? durationOverride : definition.Duration,
@@ -83,22 +86,29 @@ namespace HauntedHospital.EnvironmentAI
                 var entry = new DirectorPlanningCooldown { eventId = definition.EventId, remaining = definition.Cooldown };
                 if (index < 0) cooldowns.Add(entry); else cooldowns[index] = entry;
             }
-            next = Make(elapsed, source.Vulnerability, pressure,
+            // Forecast a delivered sighting for apparitions; actual loss waits for visibility.
+            // Clamp the drain at zero sanity and carry it through each branch independently.
+            float sanity = Mathf.Max(0f, source.SanityFraction -
+                (definition == null ? 0f : definition.SanityCost / source.MaxSanity));
+            float vulnerability = Mathf.Clamp01(source.Vulnerability + (source.SanityFraction - sanity) *
+                tension.SanityWeight / (tension.HealthWeight + tension.SanityWeight));
+            next = Make(elapsed, vulnerability, pressure,
                 Mathf.Max(0f, source.DamageRecoveryRemaining - duration), quiet,
                 definition == null ? Mathf.Max(0f, source.GlobalCooldownRemaining - duration) : director.MinimumTimeBetweenEvents,
-                cooldowns.ToArray(), director, tension);
+                cooldowns.ToArray(), director, tension, sanity, source.MaxSanity);
             reason = "Predicted only; live eligibility and executor readiness still required";
             return true;
         }
 
         private static DirectorPlanningState Make(float elapsed, float vulnerability, float pressure,
             float damage, float quiet, float global, DirectorPlanningCooldown[] cooldowns,
-            DirectorSettings director, DirectorTensionSettings tension)
+            DirectorSettings director, DirectorTensionSettings tension, float sanityFraction, float maxSanity)
         {
             float damageContribution = director.DamageRecoverySeconds > 0f
                 ? damage / director.DamageRecoverySeconds * tension.MaximumDamageContribution : 0f;
             float total = Mathf.Clamp01(vulnerability * tension.VulnerabilityContribution + damageContribution + pressure);
-            return new DirectorPlanningState(elapsed, vulnerability, pressure, damage, quiet, global, total, cooldowns);
+            return new DirectorPlanningState(elapsed, vulnerability, pressure, damage, quiet, global, total,
+                cooldowns, sanityFraction, maxSanity);
         }
 
         private static bool ValidSettings(DirectorSettings director, DirectorTensionSettings tension, out string reason)

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 /*
@@ -9,6 +10,8 @@ using UnityEngine.UI;
  * then every script, collider, physics body, NavMesh part, animator and sound is removed before it is shown.
  * The copy is centred and the camera distance is fitted to its size, so small and large prefabs both fill the view.
  * It turns on unscaled time, so it keeps turning while the game is paused.
+ * The stage's two lights are directional, and a directional light reaches the whole scene, so they are switched on only
+ * while the stage's own camera is drawing and off for every other camera; the level's lighting is never changed.
  */
 public class ModelPreview : MonoBehaviour
 {
@@ -24,6 +27,7 @@ public class ModelPreview : MonoBehaviour
     private Transform turntable;
     private Transform holder;
     private Camera stageCamera;
+    private Light[] stageLights;
     private RenderTexture texture;
     private GameObject current;
 
@@ -34,11 +38,13 @@ public class ModelPreview : MonoBehaviour
 
     private void OnEnable()
     {
+        RenderPipelineManager.beginCameraRendering += LightOnlyForStage;
         if (stage != null) stage.gameObject.SetActive(true);
     }
 
     private void OnDisable()
     {
+        RenderPipelineManager.beginCameraRendering -= LightOnlyForStage;
         if (stage != null) stage.gameObject.SetActive(false);
     }
 
@@ -80,6 +86,16 @@ public class ModelPreview : MonoBehaviour
         Frame(current);
     }
 
+    // Before each camera draws: the stage lights are on only for the stage's own camera, so they never light the level.
+    private void LightOnlyForStage(ScriptableRenderContext context, Camera drawing)
+    {
+        if (stageLights == null) return;
+
+        bool own = drawing == stageCamera;
+        foreach (Light l in stageLights)
+            if (l != null) l.enabled = own;
+    }
+
     private void BuildStage()
     {
         stage = new GameObject("ModelPreviewStage").transform;
@@ -104,6 +120,10 @@ public class ModelPreview : MonoBehaviour
         fill.color = new Color(0.75f, 0.8f, 1f);
         fill.transform.SetParent(stage, false);
         fill.transform.rotation = Quaternion.Euler(20f, 150f, 0f);
+
+        // Off until the stage camera draws (see LightOnlyForStage).
+        stageLights = new[] { key, fill };
+        foreach (Light l in stageLights) l.enabled = false;
 
         texture = new RenderTexture(resolution, resolution, 24) { name = "ModelPreviewTexture", antiAliasing = 4 };
 

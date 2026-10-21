@@ -975,6 +975,8 @@ GameObject:
   - component: {fileID: 695040597333226500}
   - component: {fileID: 6979608175966292118}
   - component: {fileID: 3954183002642399879}
+  - component: {fileID: 2719725375370201027}
+  - component: {fileID: 6650126312444528365}
   m_Layer: 0
   m_Name: PF_GameUI
   m_TagString: Untagged
@@ -1188,6 +1190,68 @@ MonoBehaviour:
   sound: {fileID: 8300000, guid: c90a2ed2f739cdb4d9dc6a4934356f7a, type: 3}
   soundVolume: 0.9
   soundStartFrom: 1
+--- !u!114 &2719725375370201027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1956618726812749134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70fdc665245b88f4897b086a0ffc812d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHud
+  font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  healthColor: {r: 0.85, g: 0.1, b: 0.08, a: 1}
+  ammoColor: {r: 1, g: 0.9, b: 0.2, a: 1}
+  sanityColor: {r: 0.34, g: 0.74, b: 0.91, a: 1}
+  borderColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
+  slotFill: {r: 0, g: 0, b: 0, a: 0.45}
+  barBackground: {r: 0, g: 0, b: 0, a: 0.5}
+  digitColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
+  magazineTextColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
+  keyColor: {r: 0.82, g: 0.82, b: 0.78, a: 1}
+  keyGhostOpacity: 0.18
+  keyGoldColor: {r: 1, g: 0.76, b: 0.3, a: 1}
+  keyTraceSeconds: 0.9
+  keyFillLag: 0.15
+  keyGoldFadeSeconds: 0.8
+  keyShimmerClip: {fileID: 8300000, guid: 5a35c87d1d0e29a44a041aed6189135d, type: 3}
+  keyShimmerStart: 0.55
+  keyShimmerVolume: 0.8
+  acquiredText: KEY ACQUIRED
+  acquiredTextSize: 28
+  acquiredFadeInSeconds: 0.3
+  acquiredHoldSeconds: 1.6
+  acquiredFadeOutSeconds: 0.7
+  margin: {x: 28, y: 28}
+  iconSize: 30
+  barWidth: 320
+  barHeight: 22
+  border: 3
+  rowGap: 14
+  slotGap: 8
+  slotsToBarsGap: 24
+  digitSize: 34
+  keySlotSize: 116
+  magazineGap: 22
+  magazineLabelSize: 22
+  magazineNumberSize: 32
+  flashFill: {r: 0.82, g: 0.82, b: 0.78, a: 0.55}
+  flashSeconds: 1.5
+--- !u!114 &6650126312444528365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1956618726812749134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb361ec9668eee3438a6e6294c4dee97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHudBinder
 --- !u!1 &1993781757931554406
 GameObject:
   m_ObjectHideFlags: 0

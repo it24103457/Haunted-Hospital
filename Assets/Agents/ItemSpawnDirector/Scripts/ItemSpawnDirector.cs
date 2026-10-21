@@ -68,7 +68,9 @@ public class ItemSpawnDirector : MonoBehaviour
     [SerializeField] private bool useHardSplit = true;
 
     [Header("Initial layout")]
-    [Tooltip("Fallback only (Hard Split off): how many items are placed at start.")]
+    [Tooltip("Test mode: spawns an item on every found marker in the scene (all 20), ignoring initial caps and split, for reachability and visibility testing.")]
+    [SerializeField] private bool spawnOnAllMarkers = false;
+    [Tooltip("Fallback only (Hard Split and All Markers off): how many items are placed at start.")]
     [SerializeField, Min(0)] private int targetCount = 9;
     [Tooltip("Hard Split on: items placed on barricaded markers.")]
     [SerializeField] private SupplyCount barricadedCounts = new SupplyCount { health = 1, ammo = 1, sanity = 1 };
@@ -222,12 +224,27 @@ public class ItemSpawnDirector : MonoBehaviour
             Debug.LogWarning($"ItemSpawnDirector: minSpawnDistance is {minSpawnDistance}m but no PlayerStats " +
                              "was found, so the distance rule is off.", this);
 
-        int placed = useHardSplit ? PlaceHardSplit() : PlaceRandomFill();
+        int placed = spawnOnAllMarkers
+            ? PlaceAllMarkers()
+            : (useHardSplit ? PlaceHardSplit() : PlaceRandomFill());
 
         if (logDetails)
             Log($"start: placed {placed}/{markerSummary()} items ({CapSummary(true)}), " +
                 $"{FreeMarkerCount} markers free, distance relaxations: {distanceRelaxations}" +
-                (useHardSplit ? $", CSP: stage {solverStopStage}/5, {solverBacktracks} backtracks" : ""));
+                (!spawnOnAllMarkers && useHardSplit ? $", CSP: stage {solverStopStage}/5, {solverBacktracks} backtracks" : ""));
+    }
+
+    // Test mode: fills every marker in the scene, cycling through the available supply types.
+    private int PlaceAllMarkers()
+    {
+        int placed = 0;
+        for (int i = 0; i < markers.Count; i++)
+        {
+            PickupType type = supplyTypes[i % supplyTypes.Count];
+            if (Spawn(type, markers[i]))
+                placed++;
+        }
+        return placed;
     }
 
     // Initial layout: the hard split solved as a constraint problem. Every planned item is a

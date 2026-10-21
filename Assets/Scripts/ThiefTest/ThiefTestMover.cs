@@ -20,6 +20,7 @@ public class ThiefTestMover : MonoBehaviour
     private readonly List<Vector3> path = new List<Vector3>();
     private int index;
 
+    // Reads the NavMeshAgent's base speed once, so SpeedMultiplier always scales the original speed.
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
@@ -27,6 +28,7 @@ public class ThiefTestMover : MonoBehaviour
         baseSpeed = agent.speed;
     }
 
+    // Follows published paths only while enabled, so it can be switched off when another mover takes over.
     private void OnEnable() => thief.OnPathChanged += FollowPath;
     private void OnDisable() => thief.OnPathChanged -= FollowPath;
 
@@ -43,6 +45,7 @@ public class ThiefTestMover : MonoBehaviour
         else agent.SetDestination(path[0]);
     }
 
+    // Applies the speed multiplier and moves on to the next path point once the current one is reached.
     private void Update()
     {
         agent.speed = baseSpeed * thief.SpeedMultiplier;

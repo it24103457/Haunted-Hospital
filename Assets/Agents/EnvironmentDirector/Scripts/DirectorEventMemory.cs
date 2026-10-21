@@ -30,12 +30,36 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorEventMemory : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindPlayer(PlayerStats target) { playerStats = target; }
+
         [Header("Configuration")]
         [SerializeField]
         private DirectorSettings directorSettings;
 
         [SerializeField]
         private DirectorTensionSettings tensionSettings;
+        [SerializeField] private PlayerStats playerStats;
+        [SerializeField] private bool activeSanityApplied;
+        private DirectorEventDefinition activeDefinition;
+        private float sightingClockStartedAt;
+        private bool activeApparitionSeen;
+        [SerializeField] private int apparitionSightings;
+        [SerializeField] private float lastApparitionSeenAt;
+        public float SecondsSinceApparitionSeen => Mathf.Max(0f, Time.time -
+            (apparitionSightings > 0 ? lastApparitionSeenAt : sightingClockStartedAt));
+
+        // Only the executor's unobstructed camera visibility check calls this.
+        // Independent of sanity, so a sighting is remembered even if its cost is zero.
+        public void RecordApparitionSighting()
+        {
+            if (!eventActive || activeDefinition == null || !activeDefinition.IsApparition ||
+                !activeEvent.effectDelivered || activeEvent.debugRecord || activeApparitionSeen ||
+                Time.timeScale <= 0f || AudioListener.pause) return;
+            activeApparitionSeen = true;
+            apparitionSightings++;
+            lastApparitionSeenAt = Time.time;
+        }
 
         [Header("Runtime display")]
         [SerializeField]
@@ -152,6 +176,10 @@ namespace HauntedHospital.EnvironmentAI
 
         private void Awake()
         {
+            sightingClockStartedAt = Time.time;
+            apparitionSightings = 0;
+            lastApparitionSeenAt = 0f;
+            activeApparitionSeen = false;
             phoneClipsCompleted = whisperClipsCompleted = announcementClipsCompleted = completedVoiceCycles = 0;
             history.Clear();
             cooldownEnds.Clear();
@@ -244,6 +272,11 @@ namespace HauntedHospital.EnvironmentAI
                 debugRecord = debugRecord
             };
 
+            activeDefinition = null;
+            foreach (var definition in directorSettings.Events)
+                if (definition != null && definition.EventId == eventId) { activeDefinition = definition; break; }
+            activeSanityApplied = false;
+            activeApparitionSeen = false;
             eventActive = true;
             return true;
         }
@@ -272,6 +305,20 @@ namespace HauntedHospital.EnvironmentAI
                 tensionSettings.MaximumEventPressure);
 
             lastDeliveredAt = Time.time;
+            if (activeDefinition != null && !activeDefinition.IsApparition)
+                TryApplyActiveSanityLoss();
+            return true;
+        }
+
+        // Kept separately from pressure: an apparition may be heard before it is seen.
+        // Set the guard before notifying PlayerStats, whose listeners may open a screen.
+        public bool TryApplyActiveSanityLoss()
+        {
+            if (!IsReady || !eventActive || !activeEvent.effectDelivered || activeEvent.debugRecord ||
+                activeSanityApplied || activeDefinition == null || playerStats == null ||
+                Time.timeScale <= 0f || AudioListener.pause) return false;
+            activeSanityApplied = true;
+            if (activeDefinition.SanityCost > 0f) playerStats.DrainSanity(activeDefinition.SanityCost);
             return true;
         }
 
@@ -308,6 +355,8 @@ namespace HauntedHospital.EnvironmentAI
             hasEndedEvent = true;
             eventActive = false;
             activeEvent = default;
+            activeDefinition = null;
+            activeSanityApplied = false;
 
             return true;
         }
