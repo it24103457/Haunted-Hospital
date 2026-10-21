@@ -62,8 +62,7 @@ flowchart TB
     T[Resource Thief] -. steals the supplies<br>you need .-> B
     ED[Environment Director] -. scares that<br>drain sanity .-> B
 
-    B -- health or sanity runs out --> R([Start again])
-    R --> A
+    B -- health or sanity runs out --> R([Start again from Wake up])
 ```
 
 <table>
