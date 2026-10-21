@@ -19,7 +19,7 @@ MonoBehaviour:
   cooldown: 90
   intensity: 1
   predictedTensionIncrease: 0.12
-  sanityCost: 2
+  sanityCost: 5
   requiredTarget: 3
   minimumPlayerDistance: 0
   maximumPlayerDistance: 18

@@ -10,13 +10,13 @@ The Director uses custom C# fuzzy inference, state prediction and informed searc
 
 | Event | Behaviour | Sanity cost per delivered event |
 | --- | --- | --- |
-| Local light flicker | Fluctuates the current room's Director lights for 10 seconds, with accompanying audio, then restores them. | 1 |
-| Hospital blackout | Fades the hospital's Director lighting out and back in over a 30-second event. Essential lights remain independent. | 1 |
-| Phone call | Plays a spatial phone ring, followed by one complete voice line. | 2 |
-| Whisper | Plays one complete spatial whisper at an authored nearby anchor. | 2 |
-| Hospital announcement | Plays one complete announcement from an authored loudspeaker anchor. | 2 |
-| Knock | Plays the door-knocking recording at a nearby anchor; it does not move or slam a door. | 1 |
-| Apparition | Darkens the target room's Director lights, reveals the woman with her voice, plays UnsettlingIdle, BodyJolt and PulsePose, then removes her and restores the lights. | 3, only after an actual visible sighting |
+| Local light flicker | Fluctuates the current room's Director lights for 10 seconds, with accompanying audio, then restores them. | 3 |
+| Hospital blackout | Fades the hospital's Director lighting out and back in over a 30-second event. Essential lights remain independent. | 3 |
+| Phone call | Plays a spatial phone ring, followed by one complete voice line. | 5 |
+| Whisper | Plays one complete spatial whisper at an authored nearby anchor. | 5 |
+| Hospital announcement | Plays one complete announcement from an authored loudspeaker anchor. | 5 |
+| Knock | Plays the door-knocking recording at a nearby anchor; it does not move or slam a door. | 3 |
+| Apparition | Darkens the target room's Director lights, reveals the woman with her voice, plays UnsettlingIdle, BodyJolt and PulsePose, then removes her and restores the lights. | 10, only after an actual visible sighting |
 | Rest | Starts no effect and allows pressure and cooldowns to recover. | 0 |
 
 Phone, whisper and announcement durations follow the selected recordings so their voice lines can finish. The apparition plays its arrival stinger at reveal, followed by one complete Monster_03 performance after the arrival cue finishes. The monster clip never loops. A separate disappearance sound continues after the model is removed. The event duration accommodates the animation sequence and the delayed monster clip. Its temporary reveal light makes the figure readable during the room's darkness.
