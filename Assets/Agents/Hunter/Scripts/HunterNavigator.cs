@@ -95,6 +95,22 @@ public sealed class HunterNavigator
         return false;
     }
 
+    /// <summary>
+    /// Every node the Hunter could walk to from a position within maxCost (metres; closed doors cost extra), the start
+    /// node excluded. Locked doors, intact barricades and doors the Hunter is currently avoiding are not crossed, so the
+    /// answer always agrees with what GoTo can actually do.
+    /// </summary>
+    public List<WaypointNode> NodesWithin(Vector3 from, float maxCost)
+    {
+        return HunterPathfinder.FindReachableWithin(graph.GetNearestNode(from), maxCost, settings, isBanned);
+    }
+
+    /// <summary>Every node the Hunter can walk to from a position, however far (see NodesWithin).</summary>
+    public List<WaypointNode> NodesReachable(Vector3 from)
+    {
+        return NodesWithin(from, float.MaxValue);
+    }
+
     /// <summary>Stops walking and clears the path.</summary>
     public void Stop()
     {

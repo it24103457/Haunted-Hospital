@@ -5,9 +5,11 @@ using UnityEngine.AI;
 
 /*
  * The Sound Hunter's decision maker. It spawns, patrols, takes damage and respawns out of the player's sight.
+ * It listens through HunterEars: a noise worth following sends it to Investigate, and when it gets there it
+ * Searches the area (HunterSearch picks the points) before going back to Patrol. Chase and Attack come later.
  * It never moves itself: it publishes CurrentPath, State, SpeedMultiplier and LookTarget, and a mover
  * (HunterTestMover for now) acts on them. Other scripts only read it, through IHunterStatus.
- * Hearing and the other states are added in later steps.
+ * All walking, and every question about what is reachable, goes through HunterNavigator.
  */
 public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 {
@@ -44,7 +46,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     // The tuning numbers, shared with HunterEars so they are only assigned once.
     public HunterSettings Settings => settings;
 
-    /// <summary>Walks routes (doors included). Used by Patrol now, and by Investigate and Chase later.</summary>
+    /// <summary>Walks routes (doors included). Used by Patrol, Investigate and Search, and by Chase later.</summary>
     public HunterNavigator Navigator => navigator;
 
     public float Health { get; private set; }
@@ -87,12 +89,10 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 
     // Investigate and Search
     private int investigateTargetId = -1;
-    private Vector3 searchCenter;
+    private HunterSearch search;
     private float searchEndTime;
     private float searchWaitUntil;
     private bool hasSearchPoint;
-    private WaypointNode lastSearchNode;
-    private readonly List<WaypointNode> searchNodes = new List<WaypointNode>();
 
     // The body: what gets switched off on death and back on at respawn.
     private Renderer[] renderers;
@@ -150,7 +150,11 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         else
             IsReady = true;
 
-        if (IsReady) navigator = new HunterNavigator(settings, graph, transform, gameObject, SetPath);
+        if (IsReady)
+        {
+            navigator = new HunterNavigator(settings, graph, transform, gameObject, SetPath);
+            search = new HunterSearch(navigator, settings);
+        }
 
         // Without the player the Hunter still works; it just cannot keep respawns away from them.
         if (IsReady && player == null)
@@ -343,23 +347,40 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     }
 
     // Picks a random Normal node that is far enough away and that the navigator can find a full route to.
+    // The candidates come from one flood fill of what the Hunter can really reach from here, so a Hunter shut in by a
+    // locked door or barricade chooses among the nodes inside its area instead of mostly missing on unreachable ones.
     private void PickPatrolDestination()
     {
+        List<WaypointNode> reachable = navigator.NodesReachable(transform.position);
+
         candidates.Clear();
         float minDistance = settings.PatrolMinLegDistance;
+        WaypointNode farthest = null;
+        float farthestDistance = 0f;
 
-        foreach (WaypointNode node in graph.Nodes)
+        foreach (WaypointNode node in reachable)
         {
             if (node == null || node.Type != WaypointType.Normal) continue;
 
             Vector3 offset = node.Position - transform.position;
             offset.y = 0f;
-            if (offset.magnitude >= minDistance) candidates.Add(node);
+            float distance = offset.magnitude;
+
+            if (distance >= minDistance) candidates.Add(node);
+            if (distance > farthestDistance)
+            {
+                farthestDistance = distance;
+                farthest = node;
+            }
         }
+
+        // A small closed-in area has nothing far enough away: walk to its far end instead of standing still.
+        if (candidates.Count == 0 && farthest != null && farthestDistance > settings.ArrivalRadius)
+            candidates.Add(farthest);
 
         int totalCandidates = candidates.Count;
 
-        // Try a handful of random candidates, which is cheaper than checking all of them.
+        // Try a handful of random candidates (a banned door can still make one of them unreachable for a moment).
         for (int attempt = 0; attempt < 12 && candidates.Count > 0; attempt++)
         {
             int i = UnityEngine.Random.Range(0, candidates.Count);
@@ -377,7 +398,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         // Nothing reachable right now (doors locked, no far node). Try again in a moment, and say so only once.
         if (!reportedNoPatrolPoint && settings.EnableDebugLogging)
         {
-            Debug.Log($"[Hunter] No reachable patrol point found; will keep trying. Far Normal nodes: {totalCandidates}, " +
+            Debug.Log($"[Hunter] No reachable patrol point found; will keep trying. Reachable nodes: {reachable.Count}, candidates: {totalCandidates}, " +
                       $"position: {transform.position}.", this);
             reportedNoPatrolPoint = true;
         }
@@ -405,7 +426,8 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         hasPatrolDestination = false;
 
         if (settings.EnableDebugLogging)
-            Debug.Log($"[Hunter] Investigating {noise.Type} (score {ears.ScoreOf(noise):0.#}).", this);
+            Debug.Log($"[Hunter] Investigating {noise.Type} (score {ears.ScoreOf(noise):0.#})" +
+                      $"{(navigator.IsPartialRoute ? ", can only get near it" : "")}.", this);
 
         SetState(HunterState.Investigate);
         return true;
@@ -443,11 +465,10 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     // Looks around the place it just reached: visits a few nearby points for a while, then goes back to patrolling.
     private void BeginSearch(Vector3 center)
     {
-        searchCenter = center;
+        search.Begin(center);
         searchEndTime = Time.time + settings.SearchSeconds;
         searchWaitUntil = Time.time + settings.SearchPauseSeconds;
         hasSearchPoint = false;
-        lastSearchNode = null;
 
         navigator.Stop();
 
@@ -488,38 +509,21 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         }
     }
 
-    // Picks a random Normal node within the search radius BY PATH of where the search began.
+    // Walks to the next unvisited search point (HunterSearch knows which are within the radius by path).
     private void PickSearchPoint()
     {
-        WaypointNode center = graph.GetNearestNode(searchCenter);
-
-        searchNodes.Clear();
-        foreach (WaypointNode node in HunterPathfinder.FindReachableWithin(center, settings.SearchRadius, settings, null))
+        // Try the next point if the Hunter cannot get to one right now.
+        while (search.TryPickNext(out Vector3 point))
         {
-            if (node.Type == WaypointType.Normal && node != lastSearchNode) searchNodes.Add(node);
-        }
+            if (!navigator.GoTo(point, false)) continue;
 
-        // Nowhere to look (a small sealed room, say): the search is over.
-        if (searchNodes.Count == 0)
-        {
-            EnterPatrol();
-            return;
-        }
-
-        for (int attempt = 0; attempt < 6 && searchNodes.Count > 0; attempt++)
-        {
-            int i = UnityEngine.Random.Range(0, searchNodes.Count);
-            WaypointNode node = searchNodes[i];
-            searchNodes.RemoveAt(i);
-
-            if (!navigator.GoTo(node.Position, false)) continue;
-
-            lastSearchNode = node;
             hasSearchPoint = true;
             return;
         }
 
-        searchWaitUntil = Time.time + 1f;   // none of the picks could be reached right now; try again shortly
+        // Every nearby point has been looked at (or there were none, in a small sealed room): the search is over.
+        if (settings.EnableDebugLogging) Debug.Log("[Hunter] Nowhere left to look, back to patrol.", this);
+        EnterPatrol();
     }
 
     private void EnterPatrol()
