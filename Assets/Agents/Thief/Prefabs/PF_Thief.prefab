@@ -192,6 +192,7 @@ MonoBehaviour:
   minGrabSeconds: 0.8
   vanishFadeDelay: 2.2
   vanishFadeDuration: 0.8
+  doorTurnDuration: 0.15
   flinchTurnDuration: 0.15
   flinchCooldown: 0.6
 --- !u!114 &8364301554020682613
