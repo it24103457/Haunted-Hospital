@@ -938,8 +938,8 @@ MonoBehaviour:
   growlClip: {fileID: 8300000, guid: 3d2bdfd0faf38864482b70dfd772c941, type: 3}
   footstepSource: {fileID: 0}
   growlSource: {fileID: 0}
-  footstepVolume: 0.85
-  growlVolume: 1
+  footstepVolume: 0.226
+  growlVolume: 0.878
   footstepPitchVariation: 0.06
   growlCooldown: 3
   attackGrowlCooldown: 1.5
