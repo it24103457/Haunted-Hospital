@@ -22,6 +22,8 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private float quietSeconds;
         [SerializeField] private float globalCooldownRemaining;
         [SerializeField] private float estimatedPressure;
+        [SerializeField] private float sanityFraction;
+        [SerializeField] private float maxSanity;
         [SerializeField] private DirectorPlanningCooldown[] cooldowns;
 
         public float ElapsedSeconds => elapsedSeconds;
@@ -31,11 +33,13 @@ namespace HauntedHospital.EnvironmentAI
         public float QuietSeconds => quietSeconds;
         public float GlobalCooldownRemaining => globalCooldownRemaining;
         public float EstimatedPressure => estimatedPressure;
+        public float SanityFraction => sanityFraction;
+        public float MaxSanity => maxSanity;
         public IReadOnlyList<DirectorPlanningCooldown> Cooldowns => Array.AsReadOnly(cooldowns);
 
         internal DirectorPlanningState(float elapsed, float vulnerabilityValue, float pressure,
             float damageRemaining, float quiet, float globalRemaining, float total,
-            DirectorPlanningCooldown[] eventCooldowns)
+            DirectorPlanningCooldown[] eventCooldowns, float sanityValue = 1f, float maximumSanity = 100f)
         {
             elapsedSeconds = elapsed;
             vulnerability = vulnerabilityValue;
@@ -44,6 +48,8 @@ namespace HauntedHospital.EnvironmentAI
             quietSeconds = quiet;
             globalCooldownRemaining = globalRemaining;
             estimatedPressure = total;
+            sanityFraction = sanityValue;
+            maxSanity = maximumSanity;
             cooldowns = (DirectorPlanningCooldown[])eventCooldowns.Clone();
         }
 

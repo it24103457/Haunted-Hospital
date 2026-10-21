@@ -85,7 +85,8 @@ namespace HauntedHospital.EnvironmentAI
             return DirectorGreedyPlanner.Search(source, actions, new List<DirectorEventRecord>(eventMemory.History),
                 desiredTension.DesiredTension, now, false, directorSettings, tensionSettings, scoringSettings,
                 scoreWholeTrajectory: executor != null || blackoutExecutor != null || phoneExecutor != null || whisperExecutor != null || announcementExecutor != null || knockExecutor != null || apparitionExecutor != null,
-                varyLiveChoice: executor != null || blackoutExecutor != null || phoneExecutor != null || whisperExecutor != null || announcementExecutor != null || knockExecutor != null || apparitionExecutor != null);
+                varyLiveChoice: executor != null || blackoutExecutor != null || phoneExecutor != null || whisperExecutor != null || announcementExecutor != null || knockExecutor != null || apparitionExecutor != null,
+                secondsSinceApparitionSeen: eventMemory.SecondsSinceApparitionSeen);
         }
 
         [ContextMenu("Preview Live Search (Play mode, no effects)")]

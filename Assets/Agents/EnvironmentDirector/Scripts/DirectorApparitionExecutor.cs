@@ -8,6 +8,9 @@ namespace HauntedHospital.EnvironmentAI
     [DisallowMultipleComponent]
     public sealed class DirectorApparitionExecutor : MonoBehaviour
     {
+        // Scene binding for the reusable Director prefab.
+        public void BindLighting(Transform director, Transform essential) { directorLightsRoot = director; essentialLightsRoot = essential; }
+
         [SerializeField] private DirectorEventEligibility eligibility;
         [SerializeField] private DirectorTargetReservations reservations;
         [SerializeField] private DirectorEventMemory memory;
@@ -22,7 +25,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private string currentAnimation;
         [SerializeField] private string targetRoom;
         [SerializeField] private int affectedLights;
-        private const float FadeOut = .4f, DarkBeat = .25f, FadeIn = .75f, Blend = .12f;
+        private const float FadeOut = .25f, DarkBeat = .15f, FadeIn = .75f, Blend = .12f;
         private const float RevealAt = FadeOut + DarkBeat;
         private readonly List<Light> lights = new List<Light>();
         private readonly List<float> intensities = new List<float>();
@@ -104,6 +107,7 @@ namespace HauntedHospital.EnvironmentAI
             voice = model.GetComponentInChildren<DirectorApparitionVoice>(true);
             if (animator == null || voice == null || voice.Clip == null) throw new InvalidOperationException("Prefab needs Animator and voice.");
             animator.applyRootMotion = false;
+            animator.updateMode = AnimatorUpdateMode.Normal;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             // A small shadowless fill reveals the figure without relighting the room.
             var fill = new GameObject("ApparitionRevealLight");
@@ -118,15 +122,10 @@ namespace HauntedHospital.EnvironmentAI
         private void Update()
         {
             if (!running) return;
-            var sample = observation == null ? default : observation.Current;
-            if (Time.timeScale <= 0 || AudioListener.pause || observation == null || !observation.isActiveAndEnabled ||
-                eligibility == null || !eligibility.isActiveAndEnabled || memory == null || !memory.IsReady || !memory.EventActive ||
-                reservations == null || !reservations.isActiveAndEnabled || !reservations.Owns(action.anchor, token) ||
-                !sample.IsValid || Time.time - sample.SampledAt > .5f || sample.SampledAt > Time.time || !sample.IsAlive ||
-                sample.DamageRecoveryActive || sample.Victory != DirectorSignalState.Inactive ||
-                sample.KeypadInteraction != DirectorSignalState.Inactive || sample.RecentGunfire != DirectorSignalState.Inactive ||
-                sample.HunterDanger != DirectorSignalState.Inactive || action.anchor == null || !action.anchor.IsAvailable ||
-                directorLightsRoot == null || essentialLightsRoot == null || (!removed && appearance == null))
+            // Gameplay restrictions apply only to admission. Pause preserves this event.
+            // The existing pause menu freezes both scaled time and the audio DSP clock.
+            if (Time.timeScale <= 0f || AudioListener.pause) return;
+            if (memory == null || directorLightsRoot == null || essentialLightsRoot == null || (!removed && (appearance == null || animator == null || voice == null)))
             { Finish(DirectorEventOutcome.Cancelled); return; }
             float elapsed = Time.time - startedAt;
             float recoveryAt = NextDuration - FadeIn;
@@ -135,10 +134,7 @@ namespace HauntedHospital.EnvironmentAI
             else ApplyBrightness(Mathf.SmoothStep(0, 1, (elapsed - recoveryAt) / FadeIn));
             if (!revealed && elapsed >= RevealAt)
             {
-                // Recheck actual room membership and unobstructed 360-degree sight after darkening.
-                string placementRejection = eligibility.ApparitionPlacementRejection(action.definition, action.anchor);
-                if (placementRejection != null)
-                { Finish(DirectorEventOutcome.Cancelled); status = placementRejection; return; }
+                // Placement was checked at admission; committed effects finish even if the player moves.
                 startedAt = Time.time - RevealAt;
                 elapsed = RevealAt;
                 appearance.SetActive(true);
@@ -149,6 +145,11 @@ namespace HauntedHospital.EnvironmentAI
             }
             if (revealed && !removed)
             {
+                if (eligibility != null && eligibility.IsVisible(action.anchor))
+                {
+                    memory.RecordApparitionSighting();
+                    memory.TryApplyActiveSanityLoss();
+                }
                 float age = elapsed - RevealAt;
                 int stage = age < idleClip.length ? 0 : age < idleClip.length + Blend + joltClip.length ? 1 : 2;
                 if (stage != animationStage)

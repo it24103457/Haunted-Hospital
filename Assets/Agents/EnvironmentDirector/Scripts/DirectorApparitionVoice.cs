@@ -35,6 +35,7 @@ namespace HauntedHospital.EnvironmentAI
                 apparitionAnimator.ResetTrigger("Jolt");
                 apparitionAnimator.SetTrigger("Jolt");
             }
+            voice.ignoreListenerPause = false;
             voice.Play();
         }
 

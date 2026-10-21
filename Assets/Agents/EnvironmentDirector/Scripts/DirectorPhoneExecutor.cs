@@ -118,22 +118,16 @@ namespace HauntedHospital.EnvironmentAI
         {
             source.Stop(); source.transform.position = position; source.clip = clip;
             source.volume = volume; source.pitch = 1f; source.loop = false;
-            source.playOnAwake = false; source.dopplerLevel = 0f; source.spatialBlend = 1f;
+            source.ignoreListenerPause = false; source.playOnAwake = false; source.dopplerLevel = 0f; source.spatialBlend = 1f;
         }
 
         private void Update()
         {
             if (!running) return;
-            var sample = observation == null ? default : observation.Current;
-            if (Time.timeScale <= 0f || AudioListener.pause || observation == null || !observation.isActiveAndEnabled ||
-                eligibility == null || !eligibility.isActiveAndEnabled || memory == null || !memory.IsReady ||
-                !memory.EventActive || reservations == null || !reservations.isActiveAndEnabled ||
-                !reservations.Owns(action.anchor, token) || !sample.IsValid ||
-                Time.time - sample.SampledAt > .5f || sample.SampledAt > Time.time || !sample.IsAlive ||
-                sample.DamageRecoveryActive || sample.Victory != DirectorSignalState.Inactive ||
-                sample.KeypadInteraction != DirectorSignalState.Inactive || sample.RecentGunfire != DirectorSignalState.Inactive ||
-                sample.HunterDanger != DirectorSignalState.Inactive || action.anchor == null || !action.anchor.IsAvailable ||
-                ringSource == null || voiceSource == null || !ringSource.isActiveAndEnabled || !voiceSource.isActiveAndEnabled)
+            // Gameplay restrictions apply only to admission. Pause preserves this event.
+            // The existing pause menu freezes both scaled time and the audio DSP clock.
+            if (Time.timeScale <= 0f || AudioListener.pause) return;
+            if (memory == null || ringSource == null || voiceSource == null)
             { Finish(DirectorEventOutcome.Cancelled); return; }
             // A room boundary alone must not cut a sentence short. Both sounds stay at the phone.
             double now = AudioSettings.dspTime;
@@ -157,7 +151,7 @@ namespace HauntedHospital.EnvironmentAI
                 if (completedInCycle == order.Length)
                 { completedInCycle = 0; completedCycles++; ShuffleCycle(); }
             }
-            // A safety interruption retries the unfinished line at the next eligible event.
+            // A teardown or missing audio object retries the unfinished line at the next eligible event.
             Release(); status = outcome + ": " + currentVoice;
         }
 

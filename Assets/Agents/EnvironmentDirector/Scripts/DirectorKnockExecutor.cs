@@ -110,22 +110,16 @@ namespace HauntedHospital.EnvironmentAI
         {
             source.Stop(); source.transform.position = position; source.clip = clip;
             source.volume = volume; source.pitch = 1f; source.loop = false;
-            source.playOnAwake = false; source.dopplerLevel = 0f; source.spatialBlend = 1f;
+            source.ignoreListenerPause = false; source.playOnAwake = false; source.dopplerLevel = 0f; source.spatialBlend = 1f;
         }
 
         private void Update()
         {
             if (!running) return;
-            var sample = observation == null ? default : observation.Current;
-            if (Time.timeScale <= 0f || AudioListener.pause || observation == null || !observation.isActiveAndEnabled ||
-                eligibility == null || !eligibility.isActiveAndEnabled || memory == null || !memory.IsReady ||
-                !memory.EventActive || reservations == null || !reservations.isActiveAndEnabled ||
-                !reservations.Owns(action.anchor, token) || !sample.IsValid ||
-                Time.time - sample.SampledAt > .5f || sample.SampledAt > Time.time || !sample.IsAlive ||
-                sample.DamageRecoveryActive || sample.Victory != DirectorSignalState.Inactive ||
-                sample.KeypadInteraction != DirectorSignalState.Inactive || sample.RecentGunfire != DirectorSignalState.Inactive ||
-                sample.HunterDanger != DirectorSignalState.Inactive || action.anchor == null || !action.anchor.IsAvailable ||
-                knockSource == null || !knockSource.isActiveAndEnabled)
+            // Gameplay restrictions apply only to admission. Pause preserves this event.
+            // The existing pause menu freezes both scaled time and the audio DSP clock.
+            if (Time.timeScale <= 0f || AudioListener.pause) return;
+            if (memory == null || knockSource == null)
             { Finish(DirectorEventOutcome.Cancelled); return; }
             // A room boundary alone must not cut the knock sequence short. The sound stays at its anchor.
             double now = AudioSettings.dspTime;

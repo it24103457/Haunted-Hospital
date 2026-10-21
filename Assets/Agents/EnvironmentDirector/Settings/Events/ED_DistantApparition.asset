@@ -15,12 +15,13 @@ MonoBehaviour:
   eventId: distant_apparition
   eventType: 7
   availableForSelection: 1
-  duration: 11.04
+  duration: 10.79
   cooldown: 120
   intensity: 2
   predictedTensionIncrease: 0.25
+  sanityCost: 3
   requiredTarget: 4
-  minimumPlayerDistance: 2.5
+  minimumPlayerDistance: 1.5
   maximumPlayerDistance: 18
   requiresVisibility: 0
   blockDuringImmediateDanger: 1

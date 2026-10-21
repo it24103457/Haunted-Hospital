@@ -18,7 +18,7 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorAnnouncementExecutor announcementExecutor;
         [SerializeField] private DirectorKnockExecutor knockExecutor;
         [SerializeField] private DirectorApparitionExecutor apparitionExecutor;
-        [SerializeField, Min(0.1f)] private float decisionInterval = 1f;
+        [SerializeField, Min(0.1f)] private float decisionInterval = .25f;
         [SerializeField, Min(0.02f)] private float maximumObservationAge = 0.5f;
         [Header("Runtime decisions and execution")]
         [SerializeField] private string status = "Waiting for Play mode";
@@ -30,18 +30,22 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorPlanningAction decision;
         [SerializeField] private DirectorSearchPlan latestPlan;
         private float nextDecisionAt;
+        private string lastPlanningRoom;
 
         private void OnEnable() { Clear("Waiting for observations"); nextDecisionAt = 0; }
         private void OnDisable() => Clear("Decision loop disabled");
 
         private void LateUpdate()
         {
-            if (Time.timeScale <= 0f) { Clear("Paused"); return; }
+            if (Time.timeScale <= 0f || AudioListener.pause) { Clear("Paused"); return; }
             if (!Ready(out var reason)) { Clear(reason); return; }
+            if (lastPlanningRoom != observation.Current.RoomId)
+                nextDecisionAt = 0f;
             if (decisionAvailable && decisionRoom != observation.Current.RoomId)
                 Clear("Player changed room; waiting for next planning tick");
             if (Time.time < nextDecisionAt) return;
             nextDecisionAt = Time.time + decisionInterval;
+            lastPlanningRoom = observation.Current.RoomId;
             planningAttempts++;
             latestPlan = planner.BuildLivePlan(executor, blackoutExecutor, phoneExecutor, whisperExecutor, announcementExecutor, knockExecutor, apparitionExecutor);
             decisionAvailable = false;
@@ -73,7 +77,7 @@ namespace HauntedHospital.EnvironmentAI
         public bool TryGetCurrentDecision(out DirectorPlanningAction action)
         {
             action = default;
-            if (!isActiveAndEnabled || !decisionAvailable || Time.timeScale <= 0 || !Ready(out _) ||
+            if (!isActiveAndEnabled || !decisionAvailable || Time.timeScale <= 0 || AudioListener.pause || !Ready(out _) ||
                 Time.time - decidedAt > decisionInterval || decisionRoom != observation.Current.RoomId)
                 return false;
             if (!decision.IsRest && !eligibility.Evaluate(decision.definition, decision.anchor).eligible)
@@ -99,6 +103,7 @@ namespace HauntedHospital.EnvironmentAI
                 else if (!sample.IsAlive) reason = "Player is dead";
                 else if (sample.Victory == DirectorSignalState.Active) reason = "Victory active";
                 else if (eventMemory.EventActive) reason = "Waiting for active event to finish";
+                else if (!eventMemory.GlobalIntervalReady) reason = "Waiting for minimum event spacing";
             }
             return reason == null;
         }

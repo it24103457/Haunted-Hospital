@@ -950,3 +950,49 @@ The 360-degree apparition update set requiresVisibility=false, but DirectorEvent
 Added 15 NormalOnly apparition anchors in EnvironmentDirector_Test, retaining the existing 18 anchors. The normal apparition now has 28 compatible points across 28 distinct room/corridor zones; the five pulse-only anchors remain reserved for the future pulse executor (33 physical apparition anchors total). Each new position was selected on the existing NavMesh with body clearance and at least one unobstructed same-room viewing position beyond the 2.5 m minimum. Existing points, event timing, player controls, and selection rules were preserved.
 The five excluded zones are operating_service_shaft, elevator_service_strip, stair_footprint, north_service_alcove, and elevator: no Director light group is assigned and no candidate passed the current placement checks. These need suitable space/navigation and room lighting before a functional apparition point can be added. Registry validation passed after placement; no Play-mode test was run. More points increase location coverage, not a guarantee of selection during each room visit.
 
+
+## Persistent events, sanity and live Hunter integration (20 October 2026)
+
+This policy supersedes earlier cancellation and manual-Hunter instructions above.
+
+- Delivered events drain sanity once: flicker 1, blackout 1, phone 2, whisper 2, announcement 2, knock 1. Apparitions drain 3 on their first visible, unobstructed sighting, not merely when spawned or heard. There is no low-sanity floor.
+- The minimum rest after an event finishes is 24 seconds (previously 12). Event-type cooldowns and search decisions can make the actual gap longer. This does not double event durations or every cooldown.
+- Shooting, damage, Hunter danger, keypad entry and room changes do not cancel an already running event. The existing pause menu freezes scaled time and audio; the event resumes from that point. Death/victory do not cancel the executor either, but a game-ending screen that freezes the game suspends it. Disabling/destroying the executor or its required objects still cleans up safely.
+- New non-light events respect gunfire recovery (6 seconds), damage recovery (10 seconds), and Hunter danger. Flicker and blackout bypass these combat restrictions, while retaining spacing, cooldowns, target validity, single-event ownership and pause/objective restrictions.
+- Planning carries predicted sanity loss through each branch. An apparition forecast assumes a sighting; actual loss requires visibility. The fuzzy/search selection architecture remains in use.
+- `DirectorLiveHunterSource` reads `IHunterStatus` from the same scene. Missing/not-ready status is unavailable, not falsely safe. The test scene now contains the existing functional `PF_Hunter` prefab with player, camera and graph references; the manual signal source is disabled. MainHospital has not been overwritten.
+- The light-pulse event asset has the same 3-point cost prepared, but remains disabled; this change does not implement its executor.
+
+### Manual checks (not run by the assistant)
+
+Open EnvironmentDirector_Test and enter Play mode. Use the PlayerStats Inspector to watch sanity and Event Memory to identify which event is active. Other gameplay systems may also drain sanity, so compare changes with the active event and Hunter/Thief behaviour.
+
+1. Confirm the live Hunter source reports a ready non-combat or chase/attack state once the Hunter initializes. Check that the functional Hunter can navigate the existing graph.
+2. During a blackout, fire the gun: the blackout should complete normally. Repeat with phone/whisper audio and with taking damage. Starting a new non-light event should remain blocked during the relevant recovery period.
+3. Pause halfway through blackout or a voice line; wait several seconds, then resume. Lights/audio/animation should continue where paused, without restarting or charging sanity again.
+4. Watch each event's one-time sanity charge. For the apparition, look away at spawn, then turn toward it; charge 3 only on the first visible sighting, never repeatedly while watching it.
+5. Measure from one event's completion to the next start: at least 24 unpaused seconds. Longer waits may be caused by cooldowns, eligibility or Rest being chosen.
+6. During Hunter combat, lighting events remain eligible if their other conditions are met; sound/apparition events are blocked from starting. No event is guaranteed on every decision tick.
+7. Confirm lights restore and voices finish after moving rooms. Exit Play mode and confirm cleanup restores the scene normally.
+
+No gameplay tests were run for this change. Player controller and Hunter behaviour scripts were not modified.
+
+## Moving-player apparition opportunities (21 October 2026)
+
+The Director has no room-dwell requirement. Room tracking retains its existing 0.15-second doorway confirmation. Decisions now check every 0.25 seconds and immediately on a newly observed room, while retaining the 24-second minimum rest, cooldowns and all admission checks. Existing apparition locations remain unchanged. Minimum distance is reduced from 2.5 to 1.5 metres; the existing maximum is retained for larger rooms. Same-room containment and clear line of sight are still required; facing the location is not required to spawn.
+
+Reveal starts 0.4 seconds after selection (previously 0.65), with the full voice and all animation states still played. Actual runtime duration is passed into the planner.
+
+Event Memory tracks actual apparition sightings independently of sanity loss. After 60 seconds without a sighting, a bounded heuristic bonus grows linearly over 180 seconds to 0.35. Seeing her resets this clock. Merely spawning out of view does not. Paused time does not advance it. The planner retains tension/overshoot/repetition penalties, eligibility and near-best variation; there is no fixed event order or forced deadline. A branch earns the sighting bonus once, carries it through Rest, and cannot gain a larger bonus simply by predicting more waiting. Forecasts assume a sighting; real memory only changes on a visibility-confirmed sighting. Score previews expose the bonus.
+
+Manual check: walk between rooms without waiting in them. Inspect eligibility for the existing anchors and confirm a clear same-room position can qualify at 1.5 metres. After several minutes without seeing her, inspect the live plan's apparitionSightingBonus. It should be capped at 0.35, then reset after a sighting. Confirm no bonus-driven spawn bypasses a wall, Hunter danger, cooldown or another active event. She is not guaranteed to appear within a fixed time. No gameplay tests were run by the assistant.
+
+## Reusable prefab
+
+`Assets/Agents/EnvironmentDirector/Prefabs/PF_EnvironmentDirector.prefab` packages the configured Director, its audio sources, internal component references, asset references, room zones and event anchors. `DirectorSceneBinding` resolves external scene objects before normal component initialization. No Player, Hunter, world meshes or hospital lights are embedded in the prefab.
+
+Usage in another copy of this hospital: remove the old EnvironmentDirector instance if present, drag this prefab into the scene, and retain its authored transform so the included room zones/anchors align with the hospital. Use the binding component's **Bind Scene References** context menu outside Play mode to inspect references, or let Awake bind automatically. Do not apply scene-object reference overrides back to the prefab asset. The destination needs PlayerStats, PlayerWeapon, the player's active camera, ObjectiveState, Director/Essential lighting groups, and the named phone/speaker/light targets. Hunter status is discovered through IHunterStatus; a missing Hunter is unavailable and continues to block non-light events under the existing safety policy.
+
+The binder first matches recorded hierarchy paths, then accepts a unique matching object name if a root was renamed/reparented. Ambiguous or missing objects are reported and the prefab disables itself rather than running partially configured. An existing active Director also prevents the added duplicate from running. Only one Director should be kept in a scene.
+
+A different floor plan requires adapting the included room volumes, anchor positions and binding paths. Automatic binding cannot infer valid rooms or scare positions in arbitrary geometry. Scene copies with the same authored hospital layout are supported directly. The prefab does not replace MainHospital or verify that the test scene contains every newer change from other branches.
