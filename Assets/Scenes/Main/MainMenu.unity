@@ -43193,8 +43193,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73f3e202d0e26c441af51f4313cc8eec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenu
-  gameScene: {fileID: 102900000, guid: 025d2e9fb65f96e4588c19db97d07a4a, type: 3}
-  gameScenePath: Assets/Scenes/Sandbox/TestMainHospital_Screens.unity
+  gameScene: {fileID: 102900000, guid: 38a89d1a486f4184eb3374b88b414353, type: 3}
+  gameScenePath: Assets/Scenes/Main/MainHospital.unity
   mainPanel: {fileID: 615319666}
   howToPlayPanel: {fileID: 1130290638}
   howToPlayButton: {fileID: 925646913}
