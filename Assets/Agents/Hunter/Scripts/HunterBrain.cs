@@ -83,6 +83,16 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private NavMeshAgent agent;
     private NavMeshQueryFilter navFilter;
     private HunterNavigator navigator;
+    private HunterEars ears;
+
+    // Investigate and Search
+    private int investigateTargetId = -1;
+    private Vector3 searchCenter;
+    private float searchEndTime;
+    private float searchWaitUntil;
+    private bool hasSearchPoint;
+    private WaypointNode lastSearchNode;
+    private readonly List<WaypointNode> searchNodes = new List<WaypointNode>();
 
     // The body: what gets switched off on death and back on at respawn.
     private Renderer[] renderers;
@@ -107,6 +117,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
+        ears = GetComponent<HunterEars>();
 
         // Path checks use the Hunter's own agent type, the one the hospital NavMesh is baked for.
         navFilter = new NavMeshQueryFilter { areaMask = NavMesh.AllAreas };
@@ -162,10 +173,16 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
             case HunterState.Patrol:
                 UpdatePatrol();
                 break;
+            case HunterState.Investigate:
+                UpdateInvestigate();
+                break;
+            case HunterState.Search:
+                UpdateSearch();
+                break;
             case HunterState.Dead:
                 UpdateDead();
                 break;
-            // The other states are added in later build steps.
+            // Chase and Attack are added in a later build step.
         }
     }
 
@@ -194,6 +211,7 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
         MoveTo(position);
 
         navigator.Stop();
+        investigateTargetId = -1;
         hasPatrolDestination = false;
         patrolWaitUntil = 0f;
         reportedNoPatrolPoint = false;
@@ -290,6 +308,8 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 
     private void UpdatePatrol()
     {
+        if (TryStartInvestigating()) return;
+
         if (!hasPatrolDestination)
         {
             if (Time.time >= patrolWaitUntil) PickPatrolDestination();
@@ -362,6 +382,152 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
             reportedNoPatrolPoint = true;
         }
         patrolWaitUntil = Time.time + 1f;
+    }
+
+    // Investigate and Search
+
+    // Patrol -> Investigate when the ears have a noise strong enough to go and look at.
+    private bool TryStartInvestigating()
+    {
+        return ears != null && ears.WantsToInvestigate && BeginInvestigate(ears.Target);
+    }
+
+    // Walks to where the noise came from. If it cannot be reached, the Hunter goes as near as the building allows.
+    private bool BeginInvestigate(HeardNoise noise)
+    {
+        if (!navigator.GoTo(noise.Position, true))
+        {
+            ears.Forget(noise.Id);   // no node anywhere near it, so there is nothing to walk to
+            return false;
+        }
+
+        investigateTargetId = noise.Id;
+        hasPatrolDestination = false;
+
+        if (settings.EnableDebugLogging)
+            Debug.Log($"[Hunter] Investigating {noise.Type} (score {ears.ScoreOf(noise):0.#}).", this);
+
+        SetState(HunterState.Investigate);
+        return true;
+    }
+
+    private void UpdateInvestigate()
+    {
+        // A clearly better noise (the ears only change target once it beats the current one by the margin).
+        if (ears != null && ears.HasTarget && ears.Target.Id != investigateTargetId && ears.WantsToInvestigate)
+        {
+            if (BeginInvestigate(ears.Target)) return;
+        }
+
+        switch (navigator.Status)
+        {
+            case HunterNavStatus.Arrived:
+                ForgetInvestigated();      // so the same noise is not investigated twice
+                BeginSearch(transform.position);
+                break;
+
+            case HunterNavStatus.Failed:
+            case HunterNavStatus.Idle:
+                ForgetInvestigated();
+                EnterPatrol();
+                break;
+        }
+    }
+
+    private void ForgetInvestigated()
+    {
+        if (ears != null && investigateTargetId >= 0) ears.Forget(investigateTargetId);
+        investigateTargetId = -1;
+    }
+
+    // Looks around the place it just reached: visits a few nearby points for a while, then goes back to patrolling.
+    private void BeginSearch(Vector3 center)
+    {
+        searchCenter = center;
+        searchEndTime = Time.time + settings.SearchSeconds;
+        searchWaitUntil = Time.time + settings.SearchPauseSeconds;
+        hasSearchPoint = false;
+        lastSearchNode = null;
+
+        navigator.Stop();
+
+        if (settings.EnableDebugLogging) Debug.Log("[Hunter] Searching around here.", this);
+        SetState(HunterState.Search);
+    }
+
+    private void UpdateSearch()
+    {
+        // A new noise interrupts the search.
+        if (TryStartInvestigating()) return;
+
+        if (Time.time >= searchEndTime)
+        {
+            if (settings.EnableDebugLogging) Debug.Log("[Hunter] Search finished, back to patrol.", this);
+            EnterPatrol();
+            return;
+        }
+
+        if (!hasSearchPoint)
+        {
+            if (Time.time >= searchWaitUntil) PickSearchPoint();
+            return;
+        }
+
+        switch (navigator.Status)
+        {
+            case HunterNavStatus.Arrived:
+                hasSearchPoint = false;
+                searchWaitUntil = Time.time + settings.SearchPauseSeconds;
+                break;
+
+            case HunterNavStatus.Failed:
+            case HunterNavStatus.Idle:
+                hasSearchPoint = false;
+                searchWaitUntil = Time.time + 0.5f;
+                break;
+        }
+    }
+
+    // Picks a random Normal node within the search radius BY PATH of where the search began.
+    private void PickSearchPoint()
+    {
+        WaypointNode center = graph.GetNearestNode(searchCenter);
+
+        searchNodes.Clear();
+        foreach (WaypointNode node in HunterPathfinder.FindReachableWithin(center, settings.SearchRadius, settings, null))
+        {
+            if (node.Type == WaypointType.Normal && node != lastSearchNode) searchNodes.Add(node);
+        }
+
+        // Nowhere to look (a small sealed room, say): the search is over.
+        if (searchNodes.Count == 0)
+        {
+            EnterPatrol();
+            return;
+        }
+
+        for (int attempt = 0; attempt < 6 && searchNodes.Count > 0; attempt++)
+        {
+            int i = UnityEngine.Random.Range(0, searchNodes.Count);
+            WaypointNode node = searchNodes[i];
+            searchNodes.RemoveAt(i);
+
+            if (!navigator.GoTo(node.Position, false)) continue;
+
+            lastSearchNode = node;
+            hasSearchPoint = true;
+            return;
+        }
+
+        searchWaitUntil = Time.time + 1f;   // none of the picks could be reached right now; try again shortly
+    }
+
+    private void EnterPatrol()
+    {
+        navigator.Stop();
+        hasPatrolDestination = false;
+        patrolWaitUntil = Time.time;
+        SetState(HunterState.Patrol);
     }
 
     // Damage and death
