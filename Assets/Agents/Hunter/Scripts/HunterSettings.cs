@@ -74,6 +74,9 @@ public sealed class HunterSettings : ScriptableObject
     [Tooltip("Search points are picked within this many metres (by path) of the spot the Hunter is searching.")]
     [SerializeField, Min(1f)] private float searchRadius = 8f;
 
+    [Tooltip("While searching, the Hunter stands this long at each search point before moving to the next.")]
+    [SerializeField, Min(0f)] private float searchPauseSeconds = 1.5f;
+
     // Chase and attack
 
     [Header("Chase")]
@@ -183,6 +186,7 @@ public sealed class HunterSettings : ScriptableObject
     public float PatrolLegTimeoutSeconds => patrolLegTimeoutSeconds;
     public float SearchSeconds => searchSeconds;
     public float SearchRadius => searchRadius;
+    public float SearchPauseSeconds => searchPauseSeconds;
 
     public float ChaseLoudness => chaseLoudness;
     public float ChaseProximity => chaseProximity;

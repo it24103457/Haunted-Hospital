@@ -100,11 +100,15 @@ public class HunterEars : MonoBehaviour
     // Forgets the current target, for example once the Hunter has reached it. The next best noise (if any) takes over.
     public void RemoveTarget()
     {
-        if (!HasTarget) return;
+        if (HasTarget) Forget(targetId);
+    }
 
+    // Forgets one remembered noise by its Id. The next best noise (if any) becomes the target.
+    public void Forget(int id)
+    {
         for (int i = 0; i < memory.Count; i++)
         {
-            if (memory[i].Id != targetId) continue;
+            if (memory[i].Id != id) continue;
             memory.RemoveAt(i);
             break;
         }
