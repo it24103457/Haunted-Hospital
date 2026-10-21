@@ -50,20 +50,9 @@ The only way out is the elevator. Its four-digit code is written one digit at a 
 
 While you search, keep your health, ammo and sanity up. The Hunter follows every noise you make, the Thief takes the supplies you were counting on, and the Environment Director wears down your sanity with things that should not be happening.
 
-```mermaid
-flowchart TB
-    A([Wake up]) --> B[Find the 4 code notes]
-    B --> C[Open the elevator with the keypad]
-    C --> D[Find the exit key]
-    D --> E([Escape])
-
-    ISD[Item Spawn Director] -. places supplies,<br>notes and the key .-> B
-    H[Sound Hunter] -. hears your noise<br>and chases you .-> B
-    T[Resource Thief] -. steals the supplies<br>you need .-> B
-    ED[Environment Director] -. scares that<br>drain sanity .-> B
-
-    B -- health or sanity runs out --> R([Start again from Wake up])
-```
+<p align="center">
+  <img src="For_README/gameplay_loop.svg" alt="Gameplay loop: wake up, find the 4 code notes, open the elevator, find the exit key, escape" width="100%">
+</p>
 
 <table>
   <tr>
