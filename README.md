@@ -237,7 +237,7 @@ An invisible agent that controls the hospital's pacing. It observes the player's
 
 ### Item Spawn Director
 
-Places the starting supplies as a **constraint satisfaction problem**: every item needs its own marker, in the right pool (behind barricades or not), a minimum distance away. It solves this with **backtracking, MRV and forward checking**. During play it replaces taken and stolen items (stolen ones after a longer delay), allows more of a supply while that stat is low, and keeps some of each type on reachable markers. Its Objective Spawner generates the code and places the code notes and the exit key.
+Places the starting supplies as a **constraint satisfaction problem**: every item needs its own marker, in the right pool (behind barricades or not), a minimum distance away. It solves this with **backtracking, MRV and forward checking**. During play it replaces taken and stolen items (stolen ones after a longer delay), allows fewer of a supply while the player's matching stat is low, and keeps some of each type on reachable markers. Its Objective Spawner generates the code and places the code notes and the exit key.
 
 [Item Spawn Director folder](Assets/Agents/ItemSpawnDirector)
 
