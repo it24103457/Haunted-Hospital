@@ -40,13 +40,6 @@ public class ThiefAnimationDriver : MonoBehaviour
         { ThiefState.Dead, "Death" },
     };
 
-    [Header("Vanish Polish")]
-    [Tooltip("Seconds into Delivering before the ghost dissolve begins (stashPause is 3s, so ~2.2s gives 0.8s of smooth vanish).")]
-    [SerializeField] private float vanishFadeDelay = 2.2f;
-
-    [Tooltip("Duration of the smooth sink/fade out before vanishing.")]
-    [SerializeField] private float vanishFadeDuration = 0.8f;
-
     [Header("Door Facing")]
     [Tooltip("Seconds over which the Thief smoothly rotates to face the doorway upon arriving at a closed door.")]
     [SerializeField] private float doorTurnDuration = 0.15f;
@@ -62,7 +55,6 @@ public class ThiefAnimationDriver : MonoBehaviour
     private NavMeshAgent agent;
     private Coroutine hideRoutine;
     private Coroutine grabHold;
-    private Coroutine vanishRoutine;
     private Coroutine flinchRoutine;
     private Coroutine doorTurnRoutine;
     private float grabTime = float.NegativeInfinity;
@@ -94,7 +86,6 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         thief.OnStateChanged -= HandleStateChanged;
         thief.OnSpawned -= HandleSpawned;
-        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
         if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
         if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
         ResetModelTransform();
@@ -131,7 +122,6 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
-        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
         if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
         if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
 
@@ -150,12 +140,6 @@ public class ThiefAnimationDriver : MonoBehaviour
         }
 
         if (state == ThiefState.Inactive || state == ThiefState.Vanished || animator == null) return;
-
-        if (state == ThiefState.Delivering)
-        {
-            ResetModelTransform();
-            vanishRoutine = StartCoroutine(SmoothVanishAfterDelivery());
-        }
 
         if (state == ThiefState.WaitAtDoor)
         {
@@ -182,7 +166,6 @@ public class ThiefAnimationDriver : MonoBehaviour
     {
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         if (grabHold != null) { StopCoroutine(grabHold); grabHold = null; }
-        if (vanishRoutine != null) { StopCoroutine(vanishRoutine); vanishRoutine = null; }
         if (flinchRoutine != null) { StopCoroutine(flinchRoutine); flinchRoutine = null; }
         if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
         ResetModelTransform();
@@ -192,27 +175,6 @@ public class ThiefAnimationDriver : MonoBehaviour
         if (animator == null) return;
         animator.speed = 1f;
         animator.CrossFadeInFixedTime("Locomotion", Fade);
-    }
-
-    private IEnumerator SmoothVanishAfterDelivery()
-    {
-        if (vanishFadeDelay > 0f)
-            yield return new WaitForSeconds(vanishFadeDelay);
-
-        if (model == null) yield break;
-
-        float elapsed = 0f;
-        while (elapsed < vanishFadeDuration)
-        {
-            if (model == null || thief.State != ThiefState.Delivering) yield break;
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / vanishFadeDuration);
-            model.localPosition = Vector3.Lerp(modelBaseLocalPos, modelBaseLocalPos - Vector3.up * 0.9f, t);
-            model.localScale = Vector3.Lerp(modelBaseLocalScale, new Vector3(modelBaseLocalScale.x * 0.1f, modelBaseLocalScale.y * 0.01f, modelBaseLocalScale.z * 0.1f), t);
-            yield return null;
-        }
-
-        vanishRoutine = null;
     }
 
     private void ResetModelTransform()
@@ -235,7 +197,7 @@ public class ThiefAnimationDriver : MonoBehaviour
 
     private IEnumerator HideAfterClip()
     {
-        // Wait out the clip itself (fixed duration 1x playback), then fade the hidden model out of sight.
+        // Wait out the clip itself (fixed duration 1x playback), then hide the model.
         AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
         yield return new WaitForSeconds(info.length + 0.2f);
         if (thief.State == ThiefState.Dead && model != null) model.gameObject.SetActive(false);
