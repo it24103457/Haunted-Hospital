@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69f14fb58e31a24459e61204dba6c98b, type: 3}
+  m_Name: HunterSettings_Hospital
+  m_EditorClassIdentifier: Assembly-CSharp::HunterSettings
+  hearingThreshold: 1
+  propagation:
+    attenuationPerMetre: 0.12
+    closedDoorFactor: 0.4
+    barricadeFactor: 0.25
+  ignoreOwnSounds: 1
+  memoryTimeConstant: 12
+  memoryCapacity: 8
+  memoryMergeRadius: 2
+  forgetBelowScore: 0.1
+  retargetMargin: 0.25
+  investigateThreshold: 1.5
+  gunshotImportance: 1
+  barricadeBreakImportance: 0.8
+  doorSlamImportance: 0.7
+  thrownObjectImportance: 0.6
+  footstepImportance: 0.4
+  otherImportance: 0.3
+  patrolWaitSeconds: 3.5
+  arrivalRadius: 1
+  patrolMinLegDistance: 6
+  patrolLegTimeoutSeconds: 45
+  searchSeconds: 10
+  searchRadius: 8
+  searchPauseSeconds: 1.5
+  chaseLoudness: 12
+  chaseProximity: 8
+  chaseLoseSeconds: 6
+  attackRange: 1.5
+  attackExitMargin: 1
+  attackDamage: 20
+  attackCooldownSeconds: 1.6
+  attackWindupSeconds: 0.55
+  senseIntervalSeconds: 0.2
+  freshReachSeconds: 0.5
+  maxHealth: 100
+  shotAlertSeconds: 4
+  deathLingerSeconds: 3
+  respawnDelaySeconds: 45
+  respawnMinDistanceFromPlayer: 20
+  respawnAvoidPlayerView: 1
+  respawnRetrySeconds: 3
+  closedDoorExtraCost: 3
+  replanIntervalSeconds: 0.5
+  stuckSeconds: 6
+  doorApproachDistance: 1.2
+  doorOpenTimeoutSeconds: 3
+  doorBanSeconds: 6
+  doorRetryLimit: 3
+  patrolSpeed: 0.7
+  investigateSpeed: 1
+  searchSpeed: 0.8
+  chaseSpeed: 1.29
+  enableDebugLogging: 0

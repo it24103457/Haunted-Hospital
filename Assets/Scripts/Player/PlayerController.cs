@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxPitch = 85f;
 
     [Header("Body")]
-    [SerializeField] private float standRadius = 0.5f;
+    [SerializeField] private float standRadius = 0.4f;
     [SerializeField] private float crouchRadius = 0.3f;
 
     [Header("Crouch")]
@@ -51,6 +51,9 @@ public class PlayerController : MonoBehaviour
     private float pitch;
     private float verticalVelocity;
     private bool isCrouching;
+
+    // True while the player is crouching (read by Door to make a quiet close).
+    public bool IsCrouching => isCrouching;
 
     private void Awake()
     {

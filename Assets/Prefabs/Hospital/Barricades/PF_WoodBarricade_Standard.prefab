@@ -314,6 +314,7 @@ GameObject:
   - component: {fileID: 4075234241511043767}
   - component: {fileID: 3856979517019381696}
   - component: {fileID: 6598231230860154748}
+  - component: {fileID: 4246045285085976601}
   m_Layer: 0
   m_Name: PF_WoodBarricade_Standard
   m_TagString: Untagged
@@ -394,6 +395,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.2, y: 2.2, z: 0.3}
   m_Center: {x: 0, y: 1.1, z: 0}
+--- !u!114 &4246045285085976601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5716761999382721728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 480dbe14626973146b053b0b789284eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HospitalBarricade
+  planks:
+  - {fileID: 1263543866260005227}
+  - {fileID: 3734775960462525931}
+  - {fileID: 4673991428657644525}
+  - {fileID: 8859806391428534800}
+  - {fileID: 2133941812436867504}
+  passageBlocker: {fileID: 6598231230860154748}
+  obstacle: {fileID: 3856979517019381696}
+  plankHealth: 25
+  emitNoiseWhenCleared: 1
+  clearedLoudness: 25
+  logEvents: 0
 --- !u!1 &8566022545706850341
 GameObject:
   m_ObjectHideFlags: 0
@@ -580,6 +605,11 @@ PrefabInstance:
       addedObject: {fileID: 2133941812436867504}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ba87680c7bca0b40a52538495e380f4, type: 3}
+--- !u!4 &3734775960462525931 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4064192314214886883, guid: 4ba87680c7bca0b40a52538495e380f4, type: 3}
+  m_PrefabInstance: {fileID: 8380495688509741046}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8342699576514162717 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ba87680c7bca0b40a52538495e380f4, type: 3}

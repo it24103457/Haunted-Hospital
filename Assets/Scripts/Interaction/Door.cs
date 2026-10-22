@@ -23,11 +23,20 @@ public class Door : MonoBehaviour, IInteractable
     [SerializeField] private float openSpeed = 120f;
     [SerializeField] private bool isLocked;
 
+    [Header("Noise")]
+    [Tooltip("How loud it is when the PLAYER closes this door (a slam). 0 = silent.")]
+    [SerializeField, Min(0f)] private float closeLoudness = NoiseLevels.DoorSlam;
+    [Tooltip("How loud it is when the PLAYER closes this door while crouching. 0 = silent.")]
+    [SerializeField, Min(0f)] private float crouchCloseLoudness = 3f;
+    [Tooltip("How loud it is when the PLAYER opens this door. 0 = silent. Doors opened by agents make no noise.")]
+    [SerializeField, Min(0f)] private float openLoudness = 0f;
+
     private Rigidbody leafBody;
     private Vector3 closedLocalPosition;
     private Quaternion closedLocalRotation;
     private float currentAngle;
     private bool isOpen;
+    private bool passable; // true while the NavMeshObstacle is off (door opening, open or closing)
 
     private void Awake()
     {
@@ -63,10 +72,52 @@ public class Door : MonoBehaviour, IInteractable
 
         isOpen = !isOpen;
         if (isOpen) SetObstacle(false); // AI can path through as soon as it starts opening
+
+        float loudness = isOpen ? openLoudness : (IsCrouching(interactor) ? crouchCloseLoudness : closeLoudness);
+        if (loudness > 0f && leaf != null)
+            Noise.Emit(leaf.position, loudness, NoiseType.DoorSlam, interactor != null ? interactor.gameObject : null);
+    }
+
+    // Asks the player's PlayerController whether they are crouching right now.
+    private bool IsCrouching(PlayerInteractor interactor)
+    {
+        if (interactor == null) return false;
+
+        PlayerController player = interactor.GetComponentInParent<PlayerController>();
+        return player != null && player.IsCrouching;
     }
 
     // Call this from a key/lever/pickup later.
     public void Unlock() => isLocked = false;
+
+    // Public API for the AI agents (Thief / Hunter).
+
+    // True once the door is passable (from the moment it starts opening).
+    public bool IsOpen => passable;
+
+    // True only once the door has finished swinging, so the doorway is clear to walk through.
+    public bool IsFullyOpen => isOpen && Mathf.Approximately(currentAngle, openAngle);
+
+    // Who last asked for this door to open (an agent), or null. Handy for debugging two agents at one door.
+    public GameObject LastRequester { get; private set; }
+
+    // True while the door can't be opened.
+    public bool IsLocked => isLocked;
+
+    // Opens the door.
+    public void Open() => Open(null);
+
+    // Opens the door on behalf of an agent. Asking for a door that is already opening is harmless.
+    public void Open(GameObject requester)
+    {
+        if (leaf == null || isLocked) return;
+
+        if (requester != null) LastRequester = requester;
+        if (isOpen) return;
+
+        isOpen = true;
+        SetObstacle(false);
+    }
 
     private void FixedUpdate()
     {
@@ -100,6 +151,8 @@ public class Door : MonoBehaviour, IInteractable
 
     private void SetObstacle(bool blocked)
     {
+        passable = !blocked;
+
         if (obstacle != null && obstacle.enabled != blocked)
             obstacle.enabled = blocked;
     }
