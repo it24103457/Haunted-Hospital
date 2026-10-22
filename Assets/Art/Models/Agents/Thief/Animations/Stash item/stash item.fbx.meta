@@ -38,7 +38,7 @@ ModelImporter:
     clipAnimations:
     - serializedVersion: 16
       name: Stash
-      takeName: Armature|motion_20261020095338 Retarget
+      takeName: Armature|Armature|motion_20261020095338 Retarget
       internalID: 5870979888494816387
       firstFrame: 113
       lastFrame: 237
