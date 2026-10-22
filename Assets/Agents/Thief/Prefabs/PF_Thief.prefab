@@ -174,7 +174,7 @@ MonoBehaviour:
   grabPauseSeconds: 0.85
   faceItemTurnSpeed: 12
   faceStashTurnSpeed: 10
-  flinchStaggerSeconds: 0.4
+  flinchStaggerSeconds: 0.5
 --- !u!114 &1971315693549221161
 MonoBehaviour:
   m_ObjectHideFlags: 0
