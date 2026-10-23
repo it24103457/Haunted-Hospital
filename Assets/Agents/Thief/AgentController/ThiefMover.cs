@@ -8,8 +8,9 @@ using UnityEngine.AI;
  * point, with the existing NavMeshAgent. Intermediate points are passed once the Thief is near them and the
  * last one is stopped at; a new or empty path from OnPathChanged replaces the old one straight away. The
  * NavMeshAgent's speed is its base speed times ThiefAgent.SpeedMultiplier. It never calls into ThiefAgent and
- * only ever sends the published points to the agent. When this mover is enabled it retires a ThiefTestMover
- * on the same object; test scenes that disable this mover can still use that stand-in.
+ * only ever sends the published points to the agent. A damage flinch locks the agent in place for the
+ * same window as the visible hit reaction, then resumes the stored path. When this mover is enabled it
+ * retires a ThiefTestMover on the same object; test scenes that disable this mover can still use that stand-in.
  */
 [RequireComponent(typeof(ThiefAgent), typeof(NavMeshAgent))]
 public class ThiefMover : MonoBehaviour
@@ -28,8 +29,8 @@ public class ThiefMover : MonoBehaviour
     [SerializeField] private float faceStashTurnSpeed = 10f;
 
     [Header("Flinch Stagger")]
-    [Tooltip("Seconds the Thief pauses movement after taking a non-lethal hit.")]
-    [SerializeField] private float flinchStaggerSeconds = 0.4f;
+    [Tooltip("Seconds the Thief stays planted after a non-lethal hit, matching the visible flinch window.")]
+    [SerializeField] private float flinchStaggerSeconds = 0.5f;
 
     private ThiefAgent thief;
     private NavMeshAgent agent;
@@ -41,17 +42,17 @@ public class ThiefMover : MonoBehaviour
     private Coroutine flinchStaggerRoutine;
     private bool isPausedForGrab;
     private bool isFacingStash;
-    private float lastKnownHealth;
     private bool defaultAgentUpdateRotation;
     private int manualTurnDepth;
+    private ThiefAnimationDriver animationDriver;
 
     private void Awake()
     {
         thief = GetComponent<ThiefAgent>();
         agent = GetComponent<NavMeshAgent>();
+        animationDriver = GetComponent<ThiefAnimationDriver>();
         baseSpeed = agent.speed;
         defaultAgentUpdateRotation = agent.updateRotation;
-        lastKnownHealth = thief.MaxHealth;
 
         // If this real mover is enabled, retire the test-only stand-in so only one drives the agent.
         // Scenes that deliberately disable this mover keep using their ThiefTestMover.
@@ -69,6 +70,7 @@ public class ThiefMover : MonoBehaviour
             thief.OnDied += HandleCancelGrab;
             thief.OnVanished += HandleCancelGrab;
         }
+        if (animationDriver != null) animationDriver.FlinchStarted += HandleFlinchStarted;
     }
 
     private void OnDisable()
@@ -81,10 +83,10 @@ public class ThiefMover : MonoBehaviour
             thief.OnDied -= HandleCancelGrab;
             thief.OnVanished -= HandleCancelGrab;
         }
+        if (animationDriver != null) animationDriver.FlinchStarted -= HandleFlinchStarted;
         HandleCancelGrab();
         if (deliverTurnRoutine != null) { StopCoroutine(deliverTurnRoutine); deliverTurnRoutine = null; }
         if (flinchStaggerRoutine != null) { StopCoroutine(flinchStaggerRoutine); flinchStaggerRoutine = null; }
-        EndManualTurn();
     }
 
     private void BeginManualTurn()
@@ -99,6 +101,12 @@ public class ThiefMover : MonoBehaviour
         if (agent == null) return;
         manualTurnDepth = Mathf.Max(0, manualTurnDepth - 1);
         if (manualTurnDepth == 0) agent.updateRotation = defaultAgentUpdateRotation;
+    }
+
+    private void ResetManualTurn()
+    {
+        manualTurnDepth = 0;
+        if (agent != null) agent.updateRotation = defaultAgentUpdateRotation;
     }
 
     private void HandleStateChanged(ThiefState state)
@@ -126,6 +134,20 @@ public class ThiefMover : MonoBehaviour
         grabPauseRoutine = StartCoroutine(HoldForGrab(item));
     }
 
+    private void HandleFlinchStarted()
+    {
+        // A flinch during the grab hold is already stationary and owned by that turn.
+        if (!IsTraveling() || isPausedForGrab) return;
+
+        if (flinchStaggerRoutine != null)
+        {
+            StopCoroutine(flinchStaggerRoutine);
+            flinchStaggerRoutine = null;
+            EndManualTurn();
+        }
+        flinchStaggerRoutine = StartCoroutine(FlinchStagger());
+    }
+
     private void HandleCancelGrab()
     {
         if (grabPauseRoutine != null)
@@ -145,7 +167,7 @@ public class ThiefMover : MonoBehaviour
         }
         isPausedForGrab = false;
         isFacingStash = false;
-        EndManualTurn();
+        ResetManualTurn();
         if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
     }
 
@@ -360,8 +382,8 @@ public class ThiefMover : MonoBehaviour
             return;
         }
 
-        // If paused for the grab or facing the stash, do not dispatch the agent until that turn completes.
-        if (!isPausedForGrab && !isFacingStash)
+        // If paused for a grab, stash turn or flinch, do not dispatch the agent until that turn completes.
+        if (!isPausedForGrab && !isFacingStash && flinchStaggerRoutine == null)
         {
             agent.SetDestination(path[0]);
         }
@@ -371,16 +393,7 @@ public class ThiefMover : MonoBehaviour
     {
         agent.speed = baseSpeed * thief.SpeedMultiplier;
 
-        // Detect non-lethal damage → brief movement stagger (only while actively traveling)
-        bool isTraveling = thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash;
-        if (isTraveling && thief.Health < lastKnownHealth && thief.Health > 0f && !isPausedForGrab)
-        {
-            if (flinchStaggerRoutine != null) StopCoroutine(flinchStaggerRoutine);
-            flinchStaggerRoutine = StartCoroutine(FlinchStagger());
-        }
-        lastKnownHealth = thief.Health;
-
-        if (isPausedForGrab || isFacingStash || path.Count == 0 || !agent.isOnNavMesh) return;
+        if (isPausedForGrab || isFacingStash || flinchStaggerRoutine != null || path.Count == 0 || !agent.isOnNavMesh) return;
 
         Vector3 toTarget = path[index] - transform.position;
         toTarget.y = 0f;
@@ -398,16 +411,40 @@ public class ThiefMover : MonoBehaviour
         if (!agent.hasPath) agent.SetDestination(path[index]);
     }
 
+    private bool IsTraveling()
+    {
+        return thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash;
+    }
+
     private IEnumerator FlinchStagger()
     {
-        if (agent.isOnNavMesh) agent.isStopped = true;
-        yield return new WaitForSeconds(flinchStaggerSeconds);
+        BeginManualTurn();
+        FreezeAgent();
+
+        float elapsed = 0f;
+        while (elapsed < flinchStaggerSeconds)
+        {
+            // Arrival, delivery, death or vanish takes ownership of the agent immediately.
+            if (!IsTraveling())
+            {
+                flinchStaggerRoutine = null;
+                EndManualTurn();
+                yield break;
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
 
         flinchStaggerRoutine = null;
-        if (agent.isOnNavMesh) agent.isStopped = false;
+        animationDriver?.RecoverFromFlinch();
+        EndManualTurn();
 
-        // Re-issue current destination so the Thief resumes cleanly
-        if (path.Count > 0 && index < path.Count && agent.isOnNavMesh)
-            agent.SetDestination(path[index]);
+        if (!IsTraveling()) yield break;
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+            if (path.Count > 0 && index < path.Count) agent.SetDestination(path[index]);
+        }
     }
 }

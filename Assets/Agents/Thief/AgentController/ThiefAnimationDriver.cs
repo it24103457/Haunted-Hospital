@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -31,6 +32,12 @@ public class ThiefAnimationDriver : MonoBehaviour
     private static readonly int SpeedParam = Animator.StringToHash("Speed");
     private static readonly int IsCarryingParam = Animator.StringToHash("IsCarrying");
     private static readonly int FlinchTrigger = Animator.StringToHash("Flinch");
+
+    /// <summary>
+    /// Raised when a damage flinch actually starts playing. Hits suppressed by flinchCooldown do not
+    /// raise it, so the mover's stagger always matches a visible hit reaction.
+    /// </summary>
+    public event Action FlinchStarted;
 
     private static readonly Dictionary<ThiefState, string> StateClips = new Dictionary<ThiefState, string>
     {
@@ -113,8 +120,10 @@ public class ThiefAnimationDriver : MonoBehaviour
         bool isCarryingToStash = thief.IsCarrying && thief.State == ThiefState.GoToStash && !isPlayingGrab;
         animator.SetBool(IsCarryingParam, isCarryingToStash);
 
-        // Stride scaling only while actually moving and not playing grab, or the one-shots would crawl at near-zero speed.
-        bool locomoting = (thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash) && !isPlayingGrab;
+        // Stride scaling only while actually moving and not playing grab or a flinch, or the one-shots
+        // would crawl at near-zero speed (and a stopped agent would freeze the hit reaction).
+        bool flinching = IsFlinchActive();
+        bool locomoting = (thief.State == ThiefState.GoToItem || thief.State == ThiefState.GoToStash) && !isPlayingGrab && !flinching;
         animator.speed = locomoting && runAuthoredSpeed > 0f ? speed / runAuthoredSpeed : 1f;
     }
 
@@ -255,10 +264,31 @@ public class ThiefAnimationDriver : MonoBehaviour
         animator.speed = 1f;
         animator.SetTrigger(FlinchTrigger);
 
+        // Let the mover lock its movement for this exact hit reaction before the facing turn starts.
+        FlinchStarted?.Invoke();
+
         // Snap-rotate to face the player (damage source)
         if (doorTurnRoutine != null) { StopCoroutine(doorTurnRoutine); doorTurnRoutine = null; }
         if (flinchRoutine != null) StopCoroutine(flinchRoutine);
         flinchRoutine = StartCoroutine(FacePlayerOnHit());
+    }
+
+    /// <summary>
+    /// Ends a hit reaction early so it can blend back to locomotion when the mover releases its
+    /// stagger. Only touches the Animator while the Thief is travelling; other states own their clips.
+    /// </summary>
+    public void RecoverFromFlinch()
+    {
+        if (animator == null) return;
+        if (thief.State != ThiefState.GoToItem && thief.State != ThiefState.GoToStash) return;
+        if (IsFlinchActive()) animator.CrossFadeInFixedTime("Locomotion", Fade);
+    }
+
+    private bool IsFlinchActive()
+    {
+        if (animator == null) return false;
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Flinch")) return true;
+        return animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName("Flinch");
     }
 
     private IEnumerator FacePlayerOnHit()
