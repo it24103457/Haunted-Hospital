@@ -16,7 +16,7 @@ There is only ever one Thief. It reuses the same object every time it comes back
 | --- | --- |
 | Appears | Arrives at one of three Thief spawn points 20–30 seconds into the game, and again after each disappearance or death. |
 | Steals | Picks the most valuable supply it can reach, walks to it and takes it. |
-| Carries to a stash | Takes the item to the nearest of four stashes, hands it over and pauses for 3 seconds. |
+| Carries to a stash | Takes the item to one of four stashes, usually a nearby one away from the player and never the same one twice in a row, hands it over and pauses for 3 seconds. |
 | Vanishes | Disappears with the item, then returns 24–45 seconds later to steal again. |
 | Opens doors | Opens closed doors itself and waits for them to swing fully open before walking through. |
 | Avoids barricades | Discovers intact barricades in its way, remembers them and goes round. |
@@ -119,7 +119,37 @@ A simple rule such as "steal the nearest item" or "steal what the player needs m
 
 ## Choosing a stash
 
-Once it is carrying an item, the Thief heads for the stash whose drop point is nearest in a straight line. If no route to it exists, it tries the others in order of distance. The player's position plays no part here: the item is already stolen, and the Thief's goal is to get it home quickly.
+Once it is carrying an item, the Thief chooses a stash once, before it starts walking, and commits to it. It chooses again only if the trip has to be replanned.
+
+1. **Find reachable stashes:** plan an A\* route to each of the four stashes and keep those that have one.
+2. **Skip the last one:** drop the stash of the previous delivery, unless it is the only reachable one, so the Thief never uses the same stash twice in a row.
+3. **Weigh them:** give every remaining stash a weight.
+4. **Draw one:** pick a stash at random, with a chance proportional to its weight (roulette-wheel selection).
+
+```text
+weight = e^(−L / 15) × (1 − 0.5 × Q)
+```
+
+- **L** is the length of the route to the stash in metres, so a stash just behind a wall does not count as near.
+- **Q** is 1 − the stash's distance from the player ÷ the largest such distance among the candidates. It is 0 for the stash furthest from the player and nears 1 for a stash right beside them.
+
+The player is the one sampled for the item decision, so choosing a stash takes no new look at the player.
+
+### Example
+
+| Stash | Route length | From player | e^(−L/15) | 1 − 0.5 × Q | Weight | Chance |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | 10 m | 8 m | 0.513 | 0.633 | 0.325 | **51%** |
+| B | 20 m | 20 m | 0.264 | 0.833 | 0.220 | **34%** |
+| C | 35 m | 30 m | 0.097 | 1.000 | 0.097 | **15%** |
+
+The nearest stash is the most likely, but it sits close to the player, which lowers its chance. The far stash is still possible.
+
+### Why a weighted random choice
+
+Always taking the nearest stash made the Thief predictable and kept every carry as short as possible, which left the player little chance to catch it. A weighted draw keeps the choice sensible (near stashes, away from the player) without being fixed, and skipping the last stash spreads deliveries across the hospital.
+
+The last stash used is remembered through vanishing and forgotten when the Thief is killed, like its memory of barricades and locked doors.
 
 ## Pathfinding: A* on the shared waypoint graph
 
@@ -180,7 +210,7 @@ This is more interesting than giving the Thief a perfect map. It visibly tries r
 
 - The Thief has 100 health and takes damage from the player's gun through the shared damage interface, the same one the Hunter and barricades use.
 - **Killed while carrying:** it drops the item on the floor where it fell. The item can be picked up again and still counts towards the Item Spawn Director's limits, so nothing is duplicated.
-- **Killed:** it disappears, forgets the barricades and locked doors it learned, and returns after 30–45 seconds at a random Thief spawn point with full health.
+- **Killed:** it disappears, forgets the barricades and locked doors it learned and the last stash it used, and returns after 30–45 seconds at a random Thief spawn point with full health.
 - **Vanished** after a delivery: it keeps its memory and returns after 24–45 seconds at a random spawn point, with its health restored.
 - While it is not in the level (`Inactive`, `Vanished`, `Dead`) it cannot be hit or seen.
 
@@ -197,7 +227,8 @@ When a new sighting starts, the player loses **5 sanity** once. Staying in view 
 | The target is taken (by the player) while the Thief is on its way | Notices it is no longer stealable and decides again. |
 | The best item cannot be reached | Removes it from this decision and tries the next best item. |
 | No item can be reached | Waits one second and looks again. |
-| The nearest stash cannot be reached | Tries the other stashes in order of distance. |
+| A stash cannot be reached | Leaves it out of the draw and chooses among the stashes it can reach. |
+| Only the last stash used can be reached | Uses it anyway rather than holding on to the item. |
 | A door is found locked, or a barricade intact | Remembers it, replans and goes round. |
 | A remembered barricade is later cleared | Forgets it when passing nearby, and can use the route again. |
 | A door is already open | Walks through without stopping. |
