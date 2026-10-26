@@ -55,7 +55,7 @@ Each decision follows the same steps:
 1. **Observe:** take one snapshot of the player: position, health, sanity and reserve ammo.
 2. **List targets:** find every supply in the level that is free to steal.
 3. **Score:** rate every item with the utility function below.
-4. **Plan:** try to plan a route to the best item. If it cannot be reached, drop it from this decision and try the next best.
+4. **Plan:** try to plan a route to the best item. If it cannot be reached, drop it from this decision, score the remaining items again and try the new best.
 5. **Act:** walk the route, open doors, steal, then choose a stash and plan the route there.
 6. **Replan:** decide again whenever the plan stops making sense: the target is taken by someone else, a door turns out to be locked, a barricade turns out to be intact, or the Thief reappears.
 
@@ -93,6 +93,8 @@ score = 0.5 × P + 0.3 × N + 0.2 × T
 
 The highest score wins. Distances are measured flat, ignoring height, because items sit on beds, shelves and trolleys at different heights. Each factor is divided by the largest value among the current items, so the three factors stay on the same scale wherever the items are.
 
+Because of that scaling, a score only means something next to the other items being scored with it. When the best item turns out to be unreachable, the Thief removes it and scores the remaining items again from scratch. The largest distances can change once an item is gone, so the new best is not always the runner-up from the first pass.
+
 ### Why these weights
 
 - **Far from the player (0.5)** is strongest. The Thief steals where the player isn't. This keeps it out of the player's way most of the time and makes losses feel like the hospital working against the player, rather than the Thief walking into their line of fire.
@@ -112,6 +114,17 @@ The player has 20/100 health, full sanity and 40/120 reserve ammo. Three items a
 | Sanity Bottle | 16 m | 3 m | 0.80 | 0.00 | 0.80 | 0.40 + 0.00 + 0.16 = **0.56** |
 
 The Ammo Box wins. The Medkit is what the player needs most, but it is close to them. The Ammo Box is still needed and is as far from the player as any item can be. If the player moved away from the Medkit, it would become the target.
+
+#### If the Ammo Box cannot be reached
+
+The Thief drops the Ammo Box and scores the other two again on their own:
+
+| Item | From player | From Thief | P | N | T | Score |
+| --- | --- | --- | --- | --- | --- | --- |
+| Medkit | 10 m | 6 m | 0.63 | 0.80 | 0.00 | 0.31 + 0.24 + 0.00 = **0.55** |
+| Sanity Bottle | 16 m | 3 m | 1.00 | 0.00 | 0.50 | 0.50 + 0.00 + 0.10 = **0.60** |
+
+The Sanity Bottle comes next, even though the Medkit scored higher in the first pass. With the Ammo Box gone, the Sanity Bottle is now the item furthest from the player, so its P rises to 1.00. The Medkit is now the item furthest from the Thief, so its T drops to 0. If the Sanity Bottle cannot be reached either, the Medkit is the only item left.
 
 ### Why utility scoring
 
@@ -271,6 +284,23 @@ The Thief was tested in `Thief_Test`, a copy of the hospital with test tools, by
 | Killed while carrying | Dropped the item on the floor, collectable; reappeared 44.7 s later at full health. |
 | Locked door | Found it locked, replanned through two other doors, and avoided it on the next route as well. |
 | Hit while vanished | Damage ignored. |
+| Stash chances | Added up to 100% in all 9 stash choices. |
+| No repeated stash | Never chose the stash it had just used while another was reachable (8 choices), and marked that stash as skipped each time. |
+| Delivers where it aimed | All 6 deliveries happened at the chosen stash; the Agent Controller stopped the Thief 0.2–0.5 m from its drop point. |
+| Stash memory through vanishing | Still remembered its last stash after each of 5 vanishes and respawns. |
+| Stash memory on death | Killed while it remembered a stash: the memory was cleared at once, and its next choice skipped nothing. |
+| Stash variety | Used all four stashes. When a route turned out blocked mid-trip, it chose again and still avoided the stash it had just used. |
+
+The stash tests ran at 4× speed, with pass or fail checked automatically against the stash state the Thief publishes.
+
+### Editor checks
+
+Two checks test the Thief's decisions directly, without playing the game. Both run from **Tools > Thief Test** in the editor: they open `Thief_Test`, call the Thief's real choice code and reopen the scene that was open before, without saving anything.
+
+- **Check Stash Draw:** from 6 different starting spots, draws a stash 5,000 times each and compares how often each stash won with the chance the Thief gave it. Every stash's share matched its chance to within about 1.7 percentage points, and every chi-square value was under 7.81, the 5% threshold for four stashes. The low-chance picks seen while playing are the draw working as designed.
+- **Check Item Choice:** sets up fixed scenarios with known answers. All 8 checks passed, covering the worked example above, the rescored fallback order, the effect of each of the three factors and ties.
+
+The full results are in the [appendix](#appendix-editor-checks).
 
 ## How the implementation is organized
 
@@ -280,6 +310,40 @@ The Thief was tested in `Thief_Test`, a copy of the hospital with test tools, by
 | A* search, independent of any agent's rules | `Scripts/ThiefPathfinder.cs` |
 | Shared waypoint graph | `Assets/Scripts/Navigation/WaypointGraph.cs`, `WaypointNode.cs`, `PF_WaypointGraph` |
 | Theft support on pickups (stolen flag, carrying, dropping) | `PickupInteractable` (`MarkStolen`, `Release`, `WasStolen`) |
-| Test tools | `Assets/Scripts/ThiefTest/` (used only in `Thief_Test`) |
+| Test tools | `Assets/Scripts/ThiefTest/` (used only in `Thief_Test`): stats panel, world labels including each stash's chance, target and last use, and the two editor checks in `Editor/` |
 
 Every number above is an Inspector setting on `ThiefAgent`, so it can be tuned without changing code. The result is an agent with its own observations, a utility-based decision, cost-aware A* planning and a memory of the building that it builds up and loses. It reacts to what the player does, and pulls the player towards the Hunter.
+
+## Appendix: editor checks
+
+Full results of the two editor checks summarised under [Testing](#testing).
+
+### Check Stash Draw
+
+5,000 draws from each starting spot. Expected is the chance the Thief gave each stash; Got is the share of draws it won. A chi-square under 7.81 (3 degrees of freedom, 5% level) means the wins match the chances.
+
+| Starting spot | S1 expected / got | S2 expected / got | S3 expected / got | S4 expected / got | Chi-square |
+| --- | --- | --- | --- | --- | --- |
+| Post-op recovery | 29.9% / 29.0% | 49.6% / 50.7% | 11.8% / 11.3% | 8.6% / 8.9% | 3.92 |
+| Nurse office | 44.1% / 45.3% | 28.8% / 28.8% | 15.7% / 14.9% | 11.5% / 11.1% | 4.30 |
+| Diagnostics and tests | 9.0% / 9.4% | 5.9% / 6.1% | 41.5% / 39.8% | 43.6% / 44.7% | 6.22 |
+| Pre-op boards | 33.5% / 32.8% | 21.9% / 21.3% | 25.8% / 26.0% | 18.9% / 19.9% | 4.43 |
+| Office north door | 44.1% / 43.8% | 28.8% / 28.8% | 15.7% / 16.3% | 11.5% / 11.2% | 1.57 |
+| WC door | 10.3% / 10.5% | 6.7% / 6.7% | 22.6% / 22.2% | 60.4% / 60.6% | 0.44 |
+
+The skip of the last stash used happens before the draw, so it is covered by the play tests rather than this check.
+
+### Check Item Choice
+
+The Thief stands 14 m from the player, and each item is placed at the exact distances given. Weights in the scene: 0.5 far from the player, 0.3 player need, 0.2 close to the Thief.
+
+| Check | Chosen | Expected | Result |
+| --- | --- | --- | --- |
+| Worked example (20/100 health, full sanity, 40/120 ammo) | Ammo Box | Ammo Box | Pass |
+| Fallback order, rescored after each removal | Ammo Box, Sanity Bottle, Medkit | Ammo Box, Sanity Bottle, Medkit | Pass |
+| Same items, player moved away from the Medkit | Medkit | Medkit | Pass |
+| Sanity Bottle and Ammo Box at equal distances, low sanity | Sanity Bottle | Sanity Bottle | Pass |
+| The same two items, low ammo | Ammo Box | Ammo Box | Pass |
+| Two Medkits equally far from the Thief | The one further from the player | The one further from the player | Pass |
+| Two identical Medkits, A listed first | Medkit A | Medkit A | Pass |
+| Two identical Medkits, B listed first | Medkit B | Medkit B | Pass |
