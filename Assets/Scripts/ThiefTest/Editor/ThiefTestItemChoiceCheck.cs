@@ -167,7 +167,9 @@ public static class ThiefTestItemChoiceCheck
         return new PlayerSnapshot { Position = position, HealthNeed = healthNeed, SanityNeed = sanityNeed, AmmoNeed = ammoNeed };
     }
 
+    // The item's object name as shown in the results, or "nothing" when no item was chosen.
     private static string Name(PickupInteractable item) => item != null ? item.name : "nothing";
 
+    // One of the Thief's item choice weights as set in the scene, read from its private field.
     private static float Weight(ThiefAgent thief, string field) => (float)typeof(ThiefAgent).GetField(field, Private).GetValue(thief);
 }
