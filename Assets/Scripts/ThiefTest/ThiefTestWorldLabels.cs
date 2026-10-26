@@ -10,6 +10,10 @@ using UnityEngine;
  * Items are labelled in a colour per type (Medkit pink, Ammo yellow, Sanity cyan), with Claimed or Carried
  * added once someone has taken them, and Dropped once a Thief has let go of a stolen item until it is taken
  * again. Items come and go, so their list is refreshed a few times a second.
+ * Each Thief stash is labelled with its number and how it fared in the Thief's most recent stash choice: its chance
+ * of being drawn, No route, or Skipped (Skipped (last used) while it is still the last stash used, Skipped in last
+ * draw once another delivery has replaced it). The stash the Thief is carrying an item to shows Target in the
+ * Thief's magenta, and the stash of its last delivery shows Last used.
  */
 [RequireComponent(typeof(Camera))]
 public class ThiefTestWorldLabels : MonoBehaviour
@@ -18,6 +22,8 @@ public class ThiefTestWorldLabels : MonoBehaviour
     [SerializeField] private float labelHeight = 2.5f;
     [Tooltip("Height above each item where its label is anchored.")]
     [SerializeField] private float itemLabelHeight = 1f;
+    [Tooltip("Height above each stash drop point where its label is anchored.")]
+    [SerializeField] private float stashLabelHeight = 1.5f;
     [SerializeField] private int fontSize = 18;
     [Tooltip("Seconds between refreshes of the item list.")]
     [SerializeField] private float itemRefreshInterval = 0.25f;
@@ -26,7 +32,11 @@ public class ThiefTestWorldLabels : MonoBehaviour
     private static readonly Color AmmoColor = new Color(1f, 0.9f, 0.2f);
     private static readonly Color SanityColor = new Color(0.3f, 0.85f, 1f);
 
+    // Same magenta as the Thief's path line, state label and panel row.
+    private static readonly Color ThiefColor = new Color(1f, 0.2f, 1f);
+
     private Camera view;
+    private ThiefAgent thief;
     private Door[] doors;
     private ThiefTestBreakableBarricade[] barricades;
     private PickupInteractable[] items = new PickupInteractable[0];
@@ -65,6 +75,7 @@ public class ThiefTestWorldLabels : MonoBehaviour
     {
         doors = FindObjectsByType<Door>(FindObjectsInactive.Exclude);
         barricades = FindObjectsByType<ThiefTestBreakableBarricade>(FindObjectsInactive.Exclude);
+        thief = FindAnyObjectByType<ThiefAgent>();
     }
 
     // Refreshes the item list a few times a second instead of every frame, to keep the search cheap.
@@ -118,6 +129,54 @@ public class ThiefTestWorldLabels : MonoBehaviour
                          : dropped.Contains(item) ? "\nDropped"
                          : "";
             DrawLabel(item.transform.position, ItemName(item.Type) + state, ItemColor(item.Type), itemLabelHeight);
+        }
+
+        DrawStashLabels();
+    }
+
+    /*
+     * One label per Thief stash: "Stash" and its number, then its result in the Thief's most recent stash choice,
+     * then Last used for the stash of its last delivery. The stash it is carrying an item to reads Target with its
+     * chance, in magenta; a stash with no route is red and the last used one grey.
+     */
+    private void DrawStashLabels()
+    {
+        if (thief == null) return;
+
+        bool heading = thief.IsCarrying && (thief.State == ThiefState.GoToStash || thief.State == ThiefState.WaitAtDoor);
+
+        for (int i = 0; i < thief.StashCount; i++)
+        {
+            Transform dropPoint = thief.StashDropPoint(i);
+            if (dropPoint == null) continue;
+
+            float chance = thief.StashChance(i);
+            bool isTarget = heading && i == thief.TargetStashIndex;
+            bool isLast = i == thief.LastStashIndex;
+
+            string result;
+            Color color = Color.white;
+            switch (thief.StashOutcomeOf(i))
+            {
+                case StashOutcome.Candidate: result = $"{chance:0%}"; break;
+                case StashOutcome.NoRoute: result = "No route"; color = new Color(1f, 0.3f, 0.3f); break;
+                // Draw results stay until the next choice, so a stash skipped then may no longer be the last one used.
+                case StashOutcome.SkippedLast: result = isLast ? "Skipped (last used)" : "Skipped in last draw"; color = Color.gray; break;
+                default: result = "Not chosen yet"; break;
+            }
+
+            if (isTarget)
+            {
+                result = $"Target {chance:0%}";
+                color = ThiefColor;
+            }
+            else if (isLast && thief.StashOutcomeOf(i) != StashOutcome.SkippedLast)
+            {
+                result += "\nLast used";
+                color = Color.gray;
+            }
+
+            DrawLabel(dropPoint.position, $"Stash {i + 1}\n{result}", color, stashLabelHeight);
         }
     }
 

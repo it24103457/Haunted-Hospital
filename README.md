@@ -201,7 +201,7 @@ Each member built one agent. The agent folders hold the full design, maths and t
 
 ### Resource Thief
 
-Chooses which supply to steal with **utility scoring**: how far the item is from the player (weight 0.5), how much the player needs it (0.3) and how close it is to the Thief (0.2). It plans routes with **A\*** over the shared waypoint graph. Routes past the Hunter's spawn points cost half, so the Thief is drawn through the Hunter's haunts and chasing it is risky. It opens doors itself, remembers barricades it runs into and goes round them, carries its item to the nearest stash and vanishes, returning later. Shot dead while carrying, it drops the item.
+Chooses which supply to steal with **utility scoring**: how far the item is from the player (weight 0.5), how much the player needs it (0.3) and how close it is to the Thief (0.2). It plans routes with **A\*** over the shared waypoint graph. Routes past the Hunter's spawn points cost half, so the Thief is drawn through the Hunter's haunts and chasing it is risky. It opens doors itself, remembers barricades it runs into and goes round them, and carries its item to a stash chosen by a weighted random draw (nearby stashes away from the player are likelier, and never the same one twice in a row) before vanishing and returning later. Shot dead while carrying, it drops the item.
 
 [Thief README](Assets/Agents/Thief/README.md)
 
