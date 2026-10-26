@@ -73,6 +73,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [Header("Stashes")]
     [Tooltip("Name of the drop point objects inside each Thief stash; each is matched to its nearest graph node.")]
     [SerializeField] private string dropPointName = "DropPoint";
+    [Tooltip("How strongly nearer stashes are preferred: each reachable stash is weighted by e^(-route length / this). Smaller = almost always the nearest, larger = closer to an even pick.")]
+    [SerializeField, Min(0.1f)] private float stashDistanceFalloff = 15f;
+    [Tooltip("Never deliver to the same stash twice in a row while another stash is reachable.")]
+    [SerializeField] private bool avoidLastStash = true;
 
     [Header("Travel")]
     [Tooltip("Horizontal distance to the last path point at which the Thief counts as arrived.")]
@@ -195,6 +199,18 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     private readonly List<Stash> stashes = new List<Stash>();
+
+    // A reachable stash during a stash choice: its index in stashes, the route to it and that route's length in metres.
+    private struct StashOption
+    {
+        public int Index;
+        public List<WaypointNode> Route;
+        public float Length;
+    }
+
+    // The stash the current trip heads for, and the stash of the last delivery (-1 for none). Only dying forgets the last one.
+    private int targetStashIndex = -1;
+    private int lastStashIndex = -1;
 
     // Graph nodes at the Hunter spawn points, whose edges get the discount.
     private readonly HashSet<WaypointNode> hunterSpawnNodes = new HashSet<WaypointNode>();
@@ -336,7 +352,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     /*
      * Killed: drops any carried item on the floor where the Thief fell, resting on the floor (collectable again through
-     * Release), forgets everything it learned (remembered barricades and locked doors), stops, disappears (model hidden, hitbox off) and comes
+     * Release), forgets everything it learned (remembered barricades, locked doors and the last stash used), stops, disappears (model hidden, hitbox off) and comes
      * back after a random time between deathRespawnDelayMin and deathRespawnDelayMax. Raises OnDied.
      */
     private void Die()
@@ -349,6 +365,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         carriedItem = null;
         targetItem = null;
         knownBlocked.Clear();
+        lastStashIndex = -1;
 
         ClearPath();
         SetVisible(false);
@@ -506,30 +523,32 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * Plans the trip to a stash: the nearest stash in a straight line first, then the others by distance if
-     * the nearer ones have no route. The trip ends on the stash's graph node. Returns false when none is reachable.
+     * Plans the trip to a stash. Every stash with a route is a candidate, except the stash of the last delivery
+     * while another one is reachable. One candidate is drawn at random by ChooseStash, so nearer stashes are
+     * likelier without the choice being fixed. The trip ends on the stash's graph node. Returns false when no
+     * stash is reachable.
      */
     private bool GoToStash()
     {
-        if (!ChooseStash(out Stash nearest)) return false;
-
-        var candidates = new List<Stash>(stashes);
-        candidates.Remove(nearest);
-        candidates.Sort((a, b) => FlatDistance(transform.position, a.DropPoint.position)
-                                  .CompareTo(FlatDistance(transform.position, b.DropPoint.position)));
-        candidates.Insert(0, nearest);
-
         WaypointNode start = graph.GetNearestNode(transform.position);
-        foreach (Stash stash in candidates)
+
+        var candidates = new List<StashOption>();
+        for (int i = 0; i < stashes.Count; i++)
         {
-            List<WaypointNode> stashRoute = PlanRoute(start, stash.Node);
+            List<WaypointNode> stashRoute = PlanRoute(start, stashes[i].Node);
             if (stashRoute.Count == 0) continue;
 
-            StartTrip(stashRoute, ThiefState.GoToStash);
-            return true;
+            candidates.Add(new StashOption { Index = i, Route = stashRoute, Length = RouteLength(stashRoute) });
         }
 
-        return false;
+        if (candidates.Count == 0) return false;
+
+        if (avoidLastStash && candidates.Count > 1) candidates.RemoveAll(c => c.Index == lastStashIndex);
+
+        StashOption chosen = ChooseStash(candidates);
+        targetStashIndex = chosen.Index;
+        StartTrip(chosen.Route, ThiefState.GoToStash);
+        return true;
     }
 
     /*
@@ -581,7 +600,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         if (!GoToStash()) Redecide(retryDelay);
     }
 
-    // Hands the carried item over at the stash (it counts as collected) and pauses there before vanishing.
+    /*
+     * Hands the carried item over at the stash (it counts as collected), remembers that stash as the last one used
+     * and pauses there before vanishing.
+     */
     private void Deliver()
     {
         if (carriedItem != null)
@@ -590,6 +612,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
             carriedItem.Remove();
         }
         carriedItem = null;
+        lastStashIndex = targetStashIndex;
 
         ClearPath();
         nextDecisionTime = Time.time + stashPause;
@@ -970,24 +993,41 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     }
 
     /*
-     * The stash whose drop point is nearest the Thief in a straight line, measured flat. Distance from the
-     * player and the player's stats play no part here. Returns false when the scene has no stashes.
+     * Draws one stash from the candidates (roulette-wheel selection), each with a chance proportional to its weight
+     *   e^(-L / stashDistanceFalloff)
+     * where L = the length of the route to it in metres. A nearer stash is likelier but never certain.
      */
-    private bool ChooseStash(out Stash nearest)
+    private StashOption ChooseStash(List<StashOption> candidates)
     {
-        nearest = default;
-        float bestDistance = float.MaxValue;
-
-        foreach (Stash stash in stashes)
+        var weights = new float[candidates.Count];
+        float total = 0f;
+        for (int i = 0; i < candidates.Count; i++)
         {
-            float distance = FlatDistance(transform.position, stash.DropPoint.position);
-            if (distance >= bestDistance) continue;
-
-            bestDistance = distance;
-            nearest = stash;
+            weights[i] = Mathf.Exp(-candidates[i].Length / stashDistanceFalloff);
+            total += weights[i];
         }
 
-        return stashes.Count > 0;
+        // Weights too small to compare (very long routes) leave every candidate equally likely.
+        if (total <= 0f) return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+
+        float pick = UnityEngine.Random.value * total;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            pick -= weights[i];
+            if (pick <= 0f) return candidates[i];
+        }
+
+        return candidates[candidates.Count - 1];
+    }
+
+    // Length of a node route in metres, along its edges.
+    private static float RouteLength(List<WaypointNode> nodes)
+    {
+        float length = 0f;
+        for (int i = 1; i < nodes.Count; i++)
+            length += Vector3.Distance(nodes[i - 1].Position, nodes[i].Position);
+
+        return length;
     }
 
     // Barricade and locked door memory
