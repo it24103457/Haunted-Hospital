@@ -29,6 +29,15 @@ public enum ThiefState
     Vanished
 }
 
+// How one stash fared in the Thief's most recent stash choice, published for debugging.
+public enum StashOutcome
+{
+    NotChosenYet,
+    Candidate,
+    NoRoute,
+    SkippedLast
+}
+
 /*
  * Resource Thief agent: steals the supplies the player needs and delivers them to a stash.
  * It decides on a target, plans routes over the shared waypoint graph and publishes them through the
@@ -187,6 +196,26 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // Raised once per sighting, when the player catches sight of the Thief and loses sanity.
     public event Action OnSeenByPlayer;
 
+    // Stash state for debugging: read-only, and nothing in the Thief's decisions depends on who reads it.
+
+    // How many stashes the Thief found in the scene.
+    public int StashCount => stashes.Count;
+
+    // The drop point of the stash at the given index.
+    public Transform StashDropPoint(int index) => stashes[index].DropPoint;
+
+    // How the stash at the given index fared in the most recent stash choice.
+    public StashOutcome StashOutcomeOf(int index) => stashOutcomes[index];
+
+    // The stash's chance of being drawn in the most recent stash choice, from 0 to 1 (0 unless it was a candidate).
+    public float StashChance(int index) => stashChances[index];
+
+    // The stash the current or most recent trip heads for, or -1 before the first stash choice.
+    public int TargetStashIndex => targetStashIndex;
+
+    // The stash of the last delivery, or -1 for none (and after dying).
+    public int LastStashIndex => lastStashIndex;
+
     private readonly List<Vector3> currentPath = new List<Vector3>();
     private PickupInteractable carriedItem = null;
     private NavMeshAgent agent;
@@ -214,6 +243,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // The stash the current trip heads for, and the stash of the last delivery (-1 for none). Only dying forgets the last one.
     private int targetStashIndex = -1;
     private int lastStashIndex = -1;
+
+    // Each stash's outcome and chance in the most recent stash choice, one entry per stash.
+    private StashOutcome[] stashOutcomes = new StashOutcome[0];
+    private float[] stashChances = new float[0];
 
     // Graph nodes at the Hunter spawn points, whose edges get the discount.
     private readonly HashSet<WaypointNode> hunterSpawnNodes = new HashSet<WaypointNode>();
@@ -539,15 +572,23 @@ public class ThiefAgent : MonoBehaviour, IDamageable
         var candidates = new List<StashOption>();
         for (int i = 0; i < stashes.Count; i++)
         {
-            List<WaypointNode> stashRoute = PlanRoute(start, stashes[i].Node);
-            if (stashRoute.Count == 0) continue;
+            stashChances[i] = 0f;
 
+            List<WaypointNode> stashRoute = PlanRoute(start, stashes[i].Node);
+            if (stashRoute.Count == 0)
+            {
+                stashOutcomes[i] = StashOutcome.NoRoute;
+                continue;
+            }
+
+            stashOutcomes[i] = StashOutcome.Candidate;
             candidates.Add(new StashOption { Index = i, Route = stashRoute, Length = RouteLength(stashRoute) });
         }
 
         if (candidates.Count == 0) return false;
 
-        if (avoidLastStash && candidates.Count > 1) candidates.RemoveAll(c => c.Index == lastStashIndex);
+        if (avoidLastStash && candidates.Count > 1 && candidates.RemoveAll(c => c.Index == lastStashIndex) > 0)
+            stashOutcomes[lastStashIndex] = StashOutcome.SkippedLast;
 
         StashOption chosen = ChooseStash(candidates);
         targetStashIndex = chosen.Index;
@@ -993,6 +1034,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
             if (node != null) stashes.Add(new Stash { DropPoint = t, Node = node });
         }
 
+        stashOutcomes = new StashOutcome[stashes.Count];
+        stashChances = new float[stashes.Count];
+
         if (stashes.Count == 0) Debug.LogWarning($"ThiefAgent '{name}' found no '{dropPointName}' stash drop points.", this);
     }
 
@@ -1023,6 +1067,10 @@ public class ThiefAgent : MonoBehaviour, IDamageable
             weights[i] = Mathf.Exp(-candidates[i].Length / stashDistanceFalloff) * (1f - stashPlayerAvoidance * nearPlayer);
             total += weights[i];
         }
+
+        // Each candidate's chance in this draw, published for debugging.
+        for (int i = 0; i < candidates.Count; i++)
+            stashChances[candidates[i].Index] = total > 0f ? weights[i] / total : 1f / candidates.Count;
 
         // Weights too small to compare (very long routes) leave every candidate equally likely.
         if (total <= 0f) return candidates[UnityEngine.Random.Range(0, candidates.Count)];
