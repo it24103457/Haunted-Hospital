@@ -77,6 +77,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [SerializeField, Min(0.1f)] private float stashDistanceFalloff = 15f;
     [Tooltip("Never deliver to the same stash twice in a row while another stash is reachable.")]
     [SerializeField] private bool avoidLastStash = true;
+    [Tooltip("How much a stash near the player is avoided: a stash's weight is cut by up to this fraction the closer it is to the player, while the stash furthest from the player keeps all of it. 0 = the player plays no part.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float stashPlayerAvoidance = 0.5f;
 
     [Header("Travel")]
     [Tooltip("Horizontal distance to the last path point at which the Thief counts as arrived.")]
@@ -994,16 +997,29 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     /*
      * Draws one stash from the candidates (roulette-wheel selection), each with a chance proportional to its weight
-     *   e^(-L / stashDistanceFalloff)
-     * where L = the length of the route to it in metres. A nearer stash is likelier but never certain.
+     *   e^(-L / stashDistanceFalloff) * (1 - stashPlayerAvoidance * Q)
+     * where L = the length of the route to it in metres,
+     *       Q = 1 - its distance from the player / the largest such distance among the candidates
+     *           (0 for the stash furthest from the player, nearing 1 for a stash right beside them).
+     * The player is the one seen at the most recent decision, so the choice takes no new look at the player.
+     * Distances to the player are measured flat. A stash near the Thief and away from the player is likeliest but never certain.
      */
     private StashOption ChooseStash(List<StashOption> candidates)
     {
+        Vector3 playerPosition = LastPlayerSample.Position;
+
+        float maxPlayerDistance = 0f;
+        foreach (StashOption candidate in candidates)
+            maxPlayerDistance = Mathf.Max(maxPlayerDistance, FlatDistance(playerPosition, stashes[candidate.Index].DropPoint.position));
+
         var weights = new float[candidates.Count];
         float total = 0f;
         for (int i = 0; i < candidates.Count; i++)
         {
-            weights[i] = Mathf.Exp(-candidates[i].Length / stashDistanceFalloff);
+            float playerDistance = FlatDistance(playerPosition, stashes[candidates[i].Index].DropPoint.position);
+            float nearPlayer = maxPlayerDistance > 0f ? 1f - playerDistance / maxPlayerDistance : 0f;
+
+            weights[i] = Mathf.Exp(-candidates[i].Length / stashDistanceFalloff) * (1f - stashPlayerAvoidance * nearPlayer);
             total += weights[i];
         }
 
