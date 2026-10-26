@@ -11,7 +11,8 @@ using UnityEngine;
  * added once someone has taken them, and Dropped once a Thief has let go of a stolen item until it is taken
  * again. Items come and go, so their list is refreshed a few times a second.
  * Each Thief stash is labelled with its number and how it fared in the Thief's most recent stash choice: its chance
- * of being drawn, No route, or Skipped (last used). The stash the Thief is carrying an item to shows Target in the
+ * of being drawn, No route, or Skipped (Skipped (last used) while it is still the last stash used, Skipped in last
+ * draw once another delivery has replaced it). The stash the Thief is carrying an item to shows Target in the
  * Thief's magenta, and the stash of its last delivery shows Last used.
  */
 [RequireComponent(typeof(Camera))]
@@ -159,7 +160,8 @@ public class ThiefTestWorldLabels : MonoBehaviour
             {
                 case StashOutcome.Candidate: result = $"{chance:0%}"; break;
                 case StashOutcome.NoRoute: result = "No route"; color = new Color(1f, 0.3f, 0.3f); break;
-                case StashOutcome.SkippedLast: result = "Skipped (last used)"; color = Color.gray; break;
+                // Draw results stay until the next choice, so a stash skipped then may no longer be the last one used.
+                case StashOutcome.SkippedLast: result = isLast ? "Skipped (last used)" : "Skipped in last draw"; color = Color.gray; break;
                 default: result = "Not chosen yet"; break;
             }
 
