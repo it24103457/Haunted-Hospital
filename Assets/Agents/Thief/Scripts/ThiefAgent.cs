@@ -355,8 +355,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     /*
      * Killed: drops any carried item on the floor where the Thief fell, resting on the floor (collectable again through
-     * Release), forgets everything it learned (remembered barricades, locked doors and the last stash used), stops, disappears (model hidden, hitbox off) and comes
-     * back after a random time between deathRespawnDelayMin and deathRespawnDelayMax. Raises OnDied.
+     * Release), forgets everything it learned (remembered barricades, locked doors and the last stash used), stops,
+     * disappears (model hidden, hitbox off) and comes back after a random time between deathRespawnDelayMin and
+     * deathRespawnDelayMax. Raises OnDied.
      */
     private void Die()
     {
@@ -527,9 +528,9 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
     /*
      * Plans the trip to a stash. Every stash with a route is a candidate, except the stash of the last delivery
-     * while another one is reachable. One candidate is drawn at random by ChooseStash, so nearer stashes are
-     * likelier without the choice being fixed. The trip ends on the stash's graph node. Returns false when no
-     * stash is reachable.
+     * while another one is reachable. One candidate is drawn at random by ChooseStash, so stashes near the Thief
+     * and away from the player are likelier without the choice being fixed. The trip ends on the stash's graph
+     * node. Returns false when no stash is reachable.
      */
     private bool GoToStash()
     {
