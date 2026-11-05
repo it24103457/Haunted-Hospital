@@ -4,7 +4,7 @@
 
 The Resource Thief is an autonomous agent that competes with the player for supplies. It looks for the Medkits, Sanity Bottles and Ammo Boxes the player needs, steals one, carries it back to a stash and disappears with it. Once an item reaches a stash it is gone for good, and the Item Spawn Director replaces it more slowly than an item the player picked up.
 
-The Thief turns supply management into a contest. Supplies left lying around are at risk, so the player is pushed to collect what they find. Supplies far from the player are the ones most likely to vanish. Chasing the Thief to win an item back is risky, because its routes favour the Hunter's haunts. Simply catching sight of it costs the player sanity, so it is a threat even when it is not stealing.
+The Thief turns supply management into a contest. Supplies left lying around are at risk, so the player is pushed to collect what they find. The supplies the player is short of, and those far from the player, are the ones most likely to vanish. Chasing the Thief to win an item back is risky, because its routes favour the Hunter's haunts. Simply catching sight of it costs the player sanity, so it is a threat even when it is not stealing.
 
 The Thief makes its own decisions: what to steal, which stash to use, which route to take and how to deal with closed doors and barricades it meets on the way. It does not move itself. It publishes the route it wants to walk and its current state, and the Agent Controller's code walks and animates it from that. It never steals the exit key or code notes, so it cannot block the escape.
 
@@ -15,7 +15,7 @@ There is only ever one Thief. It reuses the same object every time it comes back
 | Behaviour | Detail |
 | --- | --- |
 | Appears | Arrives at one of three Thief spawn points 20–30 seconds into the game, and again after each disappearance or death. |
-| Steals | Picks the most valuable supply it can reach, walks to it and takes it. |
+| Steals | Goes for a supply the player is short of and is away from, walks to it and takes it. |
 | Carries to a stash | Takes the item to one of four stashes, usually a nearby one away from the player and never the same one twice in a row, hands it over and pauses for 3 seconds. |
 | Vanishes | Disappears with the item, then returns 24–45 seconds later to steal again. |
 | Opens doors | Opens closed doors itself and waits for them to swing fully open before walking through. |
@@ -52,7 +52,7 @@ Any state while in play ──(health reaches 0)──► Dead ──(30–45 s)
 
 Each decision follows the same steps:
 
-1. **Observe:** take one snapshot of the player: position, health, sanity and reserve ammo.
+1. **Observe:** take one snapshot of the player: position, health, sanity and ammo (reserve and loaded rounds).
 2. **List targets:** find every supply in the level that is free to steal.
 3. **Score:** rate every item with the utility function below.
 4. **Plan:** try to plan a route to the best item. If it cannot be reached, drop it from this decision, score the remaining items again and try the new best.
@@ -65,15 +65,17 @@ If nothing can be reached, it looks again one second later.
 
 The Thief reads the player **once per decision**: before choosing an item. It does not track the player as it moves.
 
-From `PlayerStats` it works out how much the player needs each supply, from 0 (stat full) to 1 (stat empty):
+From the player's stats and weapon it works out how much the player needs each supply, from 0 (not needed) to 1 (empty):
 
 ```text
 HealthNeed = 1 − health / maximum health
 SanityNeed = 1 − sanity / maximum sanity
-AmmoNeed   = 1 − reserve ammo / maximum reserve ammo
+AmmoNeed   = 1 − (reserve + loaded rounds) / 46,   never below 0
 ```
 
-For example, a player on 20 of 100 health has a health need of 0.8. With 40 of 120 reserve rounds, their ammo need is 0.67.
+Health and sanity are the player's defence: they are what stands between the player and losing the run, so any shortfall counts, all the way up to full. Ammo is the player's offence: it only matters once the player is running low. It is measured against a comfortable amount of 46 rounds, the 40 reserve and 6 loaded the player starts with, and anything at or above that counts as not needed at all. The loaded rounds come from the player's weapon (`PlayerWeapon`), so a full magazine counts as ammo the player has.
+
+For example, a player on 20 of 100 health has a health need of 0.8. A player with the starting 40 + 6 rounds, or more, has an ammo need of 0. With 10 + 2 rounds left, the ammo need is 0.74.
 
 The single snapshot is deliberate. The Hunter is the agent that hunts the player in real time. The Thief is an opportunist: it notes where the player was and what they were short of, commits to a plan and carries it out. That keeps the two agents distinct, makes the Thief's choices readable to the player, and avoids the Thief constantly retargeting as the player walks around.
 
@@ -84,47 +86,42 @@ Every free supply gets a score from three factors, each scaled from 0 to 1:
 | Factor | Meaning | Calculation |
 | --- | --- | --- |
 | **P**: far from the player | Items the player is far from are safer to steal. | item's distance from the player ÷ the largest such distance among all items |
-| **N**: player need | Items the player is short of hurt the most to lose. | the player's need for that supply type |
+| **N**: player need | Items the player is short of hurt the most to lose. | the player's need for that supply ÷ the player's highest need of the three |
 | **T**: close to the Thief | Nearby items mean short, less exposed trips. | 1 − item's distance from the Thief ÷ the largest such distance among all items |
 
 ```text
 score = 0.5 × P + 0.3 × N + 0.2 × T
 ```
 
-The highest score wins. Distances are measured flat, ignoring height, because items sit on beds, shelves and trolleys at different heights. Each factor is divided by the largest value among the current items, so the three factors stay on the same scale wherever the items are.
+The highest score wins. Distances are measured flat, ignoring height, because items sit on beds, shelves and trolleys at different heights.
 
-Because of that scaling, a score only means something next to the other items being scored with it. When the best item turns out to be unreachable, the Thief removes it and scores the remaining items again from scratch. The largest distances can change once an item is gone, so the new best is not always the runner-up from the first pass.
+Each factor is relative. P and T are divided by the largest distance among the current items, so they stay on the same scale wherever the items are. N is divided by the player's highest need, so whatever the player is shortest of counts as 1 however short it is, and any other supply counts in proportion to it. A player on half health with everything else full gives Medkits the full need score, the same as a player on almost no health. If the player needs nothing at all, every N is 0 and distance alone decides.
+
+Because of that scaling, a score only means something next to the other items being scored with it. When the best item turns out to be unreachable, the Thief removes it and scores the remaining items again from scratch. If the removed item was the one furthest from the player or the Thief, the largest distances change, so the new best is not always the runner-up from the first pass.
 
 ### Why these weights
 
 - **Far from the player (0.5)** is strongest. The Thief steals where the player isn't. This keeps it out of the player's way most of the time and makes losses feel like the hospital working against the player, rather than the Thief walking into their line of fire.
-- **Player need (0.3)** is the threat. When the player is low on something, the Thief visibly goes for that supply, which is what makes it feel like it is targeting the player. It is not the largest weight, because a Thief that always heads straight for the item the player wants most would walk into the player constantly.
+- **Player need (0.3)** is the threat. When the player is low on something, the Thief visibly goes for that supply, which is what makes it feel like it is targeting the player. Because need is relative, the most-needed supply always gets the full 0.3. It is not the largest weight, because a Thief that always heads straight for the item the player wants most would walk into the player constantly: a needed item right beside the player can still lose to a safer one.
 - **Close to the Thief (0.2)** is the tie-breaker. It stops long trips across the map for a slightly better item and keeps each theft short.
 
 Each weight is a 0–1 slider in the Inspector, and setting one to 0 turns that factor off. This made it quick to see the effect of each factor while tuning.
 
 ### Worked example
 
-The player has 20/100 health, full sanity and 40/120 reserve ammo. Three items are in the level:
+The player has 20/100 health, full sanity and the 40 + 6 rounds they started with. Only health is needed (0.8), so the Medkit's N is 1 and the others are 0. Three items are in the level:
 
 | Item | From player | From Thief | P | N | T | Score |
 | --- | --- | --- | --- | --- | --- | --- |
-| Medkit | 10 m | 6 m | 0.50 | 0.80 | 0.60 | 0.25 + 0.24 + 0.12 = **0.61** |
-| Ammo Box | 20 m | 15 m | 1.00 | 0.67 | 0.00 | 0.50 + 0.20 + 0.00 = **0.70** |
+| Medkit | 10 m | 6 m | 0.50 | 1.00 | 0.60 | 0.25 + 0.30 + 0.12 = **0.67** |
+| Ammo Box | 20 m | 15 m | 1.00 | 0.00 | 0.00 | 0.50 + 0.00 + 0.00 = **0.50** |
 | Sanity Bottle | 16 m | 3 m | 0.80 | 0.00 | 0.80 | 0.40 + 0.00 + 0.16 = **0.56** |
 
-The Ammo Box wins. The Medkit is what the player needs most, but it is close to them. The Ammo Box is still needed and is as far from the player as any item can be. If the player moved away from the Medkit, it would become the target.
+The Medkit wins. It is the closest item to the player, but the player is short of health, so it gets the full need score. If the player were standing right beside the Medkit, its P would fall far enough for the Ammo Box to win instead (0.50 against 0.47): the Thief still plays it safe when the needed item is in the player's hands.
 
-#### If the Ammo Box cannot be reached
+#### If the Medkit cannot be reached
 
-The Thief drops the Ammo Box and scores the other two again on their own:
-
-| Item | From player | From Thief | P | N | T | Score |
-| --- | --- | --- | --- | --- | --- | --- |
-| Medkit | 10 m | 6 m | 0.63 | 0.80 | 0.00 | 0.31 + 0.24 + 0.00 = **0.55** |
-| Sanity Bottle | 16 m | 3 m | 1.00 | 0.00 | 0.50 | 0.50 + 0.00 + 0.10 = **0.60** |
-
-The Sanity Bottle comes next, even though the Medkit scored higher in the first pass. With the Ammo Box gone, the Sanity Bottle is now the item furthest from the player, so its P rises to 1.00. The Medkit is now the item furthest from the Thief, so its T drops to 0. If the Sanity Bottle cannot be reached either, the Medkit is the only item left.
+The Thief drops the Medkit and scores the other two again on their own. The largest distances from the player and from the Thief both belong to the Ammo Box, which is still in the list, so the scaling does not change and the scores stay as they were: the Sanity Bottle comes next (0.56 against 0.50), then the Ammo Box.
 
 ### Why utility scoring
 
@@ -160,7 +157,7 @@ The nearest stash is the most likely, but it sits close to the player, which low
 
 ### Why a weighted random choice
 
-Always taking the nearest stash made the Thief predictable and kept every carry as short as possible, which left the player little chance to catch it. A weighted draw keeps the choice sensible (near stashes, away from the player) without being fixed, and skipping the last stash spreads deliveries across the hospital.
+A draw weighted towards near stashes keeps each carry sensible, while leaving every reachable stash possible, so the player cannot predict where the item will go. Weighting against stashes near the player keeps the Thief from carrying its loot past them, and skipping the last stash spreads deliveries across the hospital.
 
 The last stash used is remembered through vanishing and forgotten when the Thief is killed, like its memory of barricades and locked doors.
 
@@ -238,8 +235,10 @@ When a new sighting starts, the player loses **5 sanity** once. Staying in view 
 | Situation | What the Thief does |
 | --- | --- |
 | The target is taken (by the player) while the Thief is on its way | Notices it is no longer stealable and decides again. |
-| The best item cannot be reached | Removes it from this decision and tries the next best item. |
+| The best item cannot be reached | Removes it from this decision, scores the remaining items again and tries the new best. |
 | No item can be reached | Waits one second and looks again. |
+| The player needs nothing | Every supply has a need of 0, so the choice rests on distance alone. |
+| The player has more ammo than the comfortable amount | Ammo counts as not needed, the same as at the comfortable amount. |
 | A stash cannot be reached | Leaves it out of the draw and chooses among the stashes it can reach. |
 | Only the last stash used can be reached | Uses it anyway rather than holding on to the item. |
 | A door is found locked, or a barricade intact | Remembers it, replans and goes round. |
@@ -255,9 +254,15 @@ When a new sighting starts, the player loses **5 sanity** once. Staying in view 
 
 **Need instead of scarcity.** The original plan scored items by how scarce each supply type was in the level. The final version scores by how much the player needs it, worked out from their stats. The Item Spawn Director already controls scarcity, with fewer replacements while the player is very low. Measuring need directly makes the Thief react to the player's situation, which is what the player notices.
 
+**Ammo counted against a comfortable amount.** Health and sanity are the player's defence: losing either ends the run, so every point missing counts as need, measured against the maximum. Ammo is the player's offence: it is what lets them fight the Thief and the Hunter, and it only becomes a problem once they are running low. Extra rounds beyond a working amount do not make the player any safer, so they should not make ammo less needed either. Ammo is therefore measured against the 46 rounds the player starts with, counting loaded rounds as well as reserve, and anything at or above that is not needed. Measured against the 120-round maximum instead, the starting ammo already looked two-thirds needed, and the Thief went for ammo even when the player was clearly short of health.
+
+**Need relative to the most-needed supply.** The need score is divided by the player's highest need, so whatever the player is shortest of always gets the full need weight. With raw needs, a stat that was only partly low gave away most of its need score, and distance decided the choice far more often than it should. Relative need makes the Thief go for what the player is shortest of, however short that is, while a second low stat still counts in proportion and a full stat counts for nothing.
+
 **Distance from the player instead of risk-aware routes.** Rather than recalculating routes around the player's live position, the Thief chooses items the player is far from, and routes past the Hunter's spawn points. Keeping the player out of route planning keeps the Thief distinct from the Hunter, which tracks the player, and the snapshot rule above keeps its choices stable.
 
 **Committing to a target.** Once it has chosen an item, the Thief keeps it until it steals it or the item is gone. It does not switch whenever another item scores slightly higher. Because it only scores items when it decides, it cannot flip between targets mid-trip, so no switching threshold is needed.
+
+**A weighted stash draw instead of the nearest stash.** Always taking the nearest stash made the Thief predictable and kept every carry as short as possible, which left the player little chance to catch it. A weighted random draw keeps the choice sensible, favouring stashes near the Thief and away from the player, without being fixed. Skipping the last stash used spreads deliveries across the hospital, so the player cannot simply wait at one stash.
 
 **How it differs from the Hunter.** The Hunter hears noises and hunts the player, tracking them as they move. The Thief ignores noise and hunts the player's supplies. It reads the player only when it decides, prices routes towards danger rather than away from it, and learns the building's barricades as it goes.
 
@@ -267,40 +272,42 @@ When a new sighting starts, the player loses **5 sanity** once. Staying in view 
 | --- | --- |
 | Item Spawn Director | Marks each item it takes as stolen. The Director sees that flag when the item is delivered and waits 20 seconds before replacing it, instead of the usual 10. A dropped item keeps its spot, so nothing is duplicated. |
 | Sound Hunter | Shares the same waypoint graph, each with its own costs, and favours routes past the Hunter's spawn points. The two never call each other: the Thief only knows where the Hunter's spawn points are. |
-| Player stats | Reads health, sanity and ammo for its decisions, and drains sanity when seen. |
+| Player stats and weapon | Reads health, sanity and reserve ammo from `PlayerStats` and loaded rounds from `PlayerWeapon` for its decisions, and drains sanity when seen. It only reads them; it never changes the player's ammo or weapon. |
 | Agent Controller and HUD | Read the Thief's published route, state and events (stolen, delivered, dropped, appeared, vanished, died). Nothing ever calls back into the Thief, so it stays independent of how it is shown. |
 
 ## Testing
 
-The Thief was tested in `Thief_Test`, a copy of the hospital with test tools, by recording its own events during Play:
+The Thief was tested in `Thief_Test`, a copy of the hospital with test tools, both by playing it and with editor checks that test its decisions directly. Every test passed. The full figures for each test are in [Thief_Testing.md](Thief_Testing.md).
+
+### Play tests
+
+The play tests record the Thief's own events during Play. The stash tests ran at 4× speed, with pass or fail checked automatically against the stash state the Thief publishes.
 
 | Test | Result |
 | --- | --- |
-| Full steal loop | 6 complete cycles in a row with different item types and spawn points, and no stuck states. |
-| Timings | First appearance about 23 s; vanish times 26–45 s; 3 s stash pause, all within their settings. |
-| Sanity drain | 100 → 70 over 6 sightings, 5 each, counted again only after being out of view. |
-| Closed and open doors | 1 second wait at closed doors; walked straight through doors already open. |
+| Full steal loop | Completed repeated cycles with different item types and spawn points, with no stuck states. |
+| Timings | First appearance, vanish times and the stash pause all stayed within their settings. |
+| Sanity drain | Drained 5 sanity once per sighting, counted again only after the Thief had been out of view. |
+| Closed and open doors | Waited for closed doors to open and walked straight through doors already open. |
 | Door shut during the wait | Did not walk into the closing door, opened it again and continued once it was fully open. |
-| Killed while carrying | Dropped the item on the floor, collectable; reappeared 44.7 s later at full health. |
-| Locked door | Found it locked, replanned through two other doors, and avoided it on the next route as well. |
+| Killed while carrying | Dropped the item on the floor, collectable, and reappeared later at full health. |
+| Locked door | Found it locked, replanned through other doors, and avoided it on later routes. |
 | Hit while vanished | Damage ignored. |
-| Stash chances | Added up to 100% in all 9 stash choices. |
-| No repeated stash | Never chose the stash it had just used while another was reachable (8 choices), and marked that stash as skipped each time. |
-| Delivers where it aimed | All 6 deliveries happened at the chosen stash; the Agent Controller stopped the Thief 0.2–0.5 m from its drop point. |
-| Stash memory through vanishing | Still remembered its last stash after each of 5 vanishes and respawns. |
-| Stash memory on death | Killed while it remembered a stash: the memory was cleared at once, and its next choice skipped nothing. |
-| Stash variety | Used all four stashes. When a route turned out blocked mid-trip, it chose again and still avoided the stash it had just used. |
-
-The stash tests ran at 4× speed, with pass or fail checked automatically against the stash state the Thief publishes.
+| Stash chances | Added up to 100% in every stash choice. |
+| No repeated stash | Never chose the stash it had just used while another was reachable. |
+| Delivers where it aimed | Every delivery happened at the chosen stash. |
+| Stash memory through vanishing | Remembered its last stash after every vanish and respawn. |
+| Stash memory on death | Forgot its last stash when killed, and its next choice skipped nothing. |
+| Stash variety | Used all four stashes, and still avoided the last one when a blocked route made it choose again. |
+| Finds the player's weapon | Found the player's weapon at startup, so loaded rounds count towards the player's ammo. |
 
 ### Editor checks
 
-Two checks test the Thief's decisions directly, without playing the game. Both run from **Tools > Thief Test** in the editor: they open `Thief_Test`, call the Thief's real choice code and reopen the scene that was open before, without saving anything.
+Three checks test the Thief's decisions without playing the game. They run from **Tools > Thief Test** in the editor: each opens `Thief_Test`, calls the Thief's real decision code and reopens the scene that was open before, without saving anything.
 
-- **Check Stash Draw:** from 6 different starting spots, draws a stash 5,000 times each and compares how often each stash won with the chance the Thief gave it. Every stash's share matched its chance to within about 1.7 percentage points, and every chi-square value was under 7.81, the 5% threshold for four stashes. The low-chance picks seen while playing are the draw working as designed.
-- **Check Item Choice:** sets up fixed scenarios with known answers. All 8 checks passed, covering the worked example above, the rescored fallback order, the effect of each of the three factors and ties.
-
-The full results are in the [appendix](#appendix-editor-checks).
+- **Check Stash Draw:** draws a stash thousands of times from several starting spots and compares how often each stash wins with the chance the Thief gives it. The wins matched the chances, and repeated runs confirmed the draw is fair.
+- **Check Item Choice:** sets up fixed scenarios with known answers, including the worked example, the rescored fallback order, a needed item beside the player, a stat at only half, the effect of each factor, ties and no need at all. All passed.
+- **Check Need:** sets the player's stats and ammo to known values and checks the needs the Thief reads, then runs thousands of random layouts per situation to see how often the Thief goes for what the player needs. All passed: the needs matched the rules above, the most-needed supply won the large majority of picks, and with nothing needed the picks spread evenly.
 
 ## How the implementation is organized
 
@@ -310,40 +317,7 @@ The full results are in the [appendix](#appendix-editor-checks).
 | A* search, independent of any agent's rules | `Scripts/ThiefPathfinder.cs` |
 | Shared waypoint graph | `Assets/Scripts/Navigation/WaypointGraph.cs`, `WaypointNode.cs`, `PF_WaypointGraph` |
 | Theft support on pickups (stolen flag, carrying, dropping) | `PickupInteractable` (`MarkStolen`, `Release`, `WasStolen`) |
-| Test tools | `Assets/Scripts/ThiefTest/` (used only in `Thief_Test`): stats panel, world labels including each stash's chance, target and last use, and the two editor checks in `Editor/` |
+| Test tools | `Assets/Scripts/ThiefTest/` (used only in `Thief_Test`): stats panel, world labels including each stash's chance, target and last use, and the three editor checks in `Editor/` |
+| Test results | [Thief_Testing.md](Thief_Testing.md) |
 
-Every number above is an Inspector setting on `ThiefAgent`, so it can be tuned without changing code. The result is an agent with its own observations, a utility-based decision, cost-aware A* planning and a memory of the building that it builds up and loses. It reacts to what the player does, and pulls the player towards the Hunter.
-
-## Appendix: editor checks
-
-Full results of the two editor checks summarised under [Testing](#testing).
-
-### Check Stash Draw
-
-5,000 draws from each starting spot. Expected is the chance the Thief gave each stash; Got is the share of draws it won. A chi-square under 7.81 (3 degrees of freedom, 5% level) means the wins match the chances.
-
-| Starting spot | S1 expected / got | S2 expected / got | S3 expected / got | S4 expected / got | Chi-square |
-| --- | --- | --- | --- | --- | --- |
-| Post-op recovery | 29.9% / 29.0% | 49.6% / 50.7% | 11.8% / 11.3% | 8.6% / 8.9% | 3.92 |
-| Nurse office | 44.1% / 45.3% | 28.8% / 28.8% | 15.7% / 14.9% | 11.5% / 11.1% | 4.30 |
-| Diagnostics and tests | 9.0% / 9.4% | 5.9% / 6.1% | 41.5% / 39.8% | 43.6% / 44.7% | 6.22 |
-| Pre-op boards | 33.5% / 32.8% | 21.9% / 21.3% | 25.8% / 26.0% | 18.9% / 19.9% | 4.43 |
-| Office north door | 44.1% / 43.8% | 28.8% / 28.8% | 15.7% / 16.3% | 11.5% / 11.2% | 1.57 |
-| WC door | 10.3% / 10.5% | 6.7% / 6.7% | 22.6% / 22.2% | 60.4% / 60.6% | 0.44 |
-
-The skip of the last stash used happens before the draw, so it is covered by the play tests rather than this check.
-
-### Check Item Choice
-
-The Thief stands 14 m from the player, and each item is placed at the exact distances given. Weights in the scene: 0.5 far from the player, 0.3 player need, 0.2 close to the Thief.
-
-| Check | Chosen | Expected | Result |
-| --- | --- | --- | --- |
-| Worked example (20/100 health, full sanity, 40/120 ammo) | Ammo Box | Ammo Box | Pass |
-| Fallback order, rescored after each removal | Ammo Box, Sanity Bottle, Medkit | Ammo Box, Sanity Bottle, Medkit | Pass |
-| Same items, player moved away from the Medkit | Medkit | Medkit | Pass |
-| Sanity Bottle and Ammo Box at equal distances, low sanity | Sanity Bottle | Sanity Bottle | Pass |
-| The same two items, low ammo | Ammo Box | Ammo Box | Pass |
-| Two Medkits equally far from the Thief | The one further from the player | The one further from the player | Pass |
-| Two identical Medkits, A listed first | Medkit A | Medkit A | Pass |
-| Two identical Medkits, B listed first | Medkit B | Medkit B | Pass |
+Every number above is an Inspector setting on `ThiefAgent`, so it can be tuned without changing code. The result is an agent with its own observations, a utility-based decision, cost-aware A* planning and a memory of the building that it builds up and loses. It reacts to what the player needs and where they are, and pulls the player towards the Hunter.
