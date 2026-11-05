@@ -58,6 +58,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [SerializeField] private WaypointGraph graph;
     [Tooltip("The player's stats, read at each decision. Found in the scene when left empty.")]
     [SerializeField] private PlayerStats player;
+    [Tooltip("The player's weapon, whose loaded rounds count towards the player's ammo. Found on the player when left empty.")]
+    [SerializeField] private PlayerWeapon playerWeapon;
 
     [Header("Path costs")]
     [Tooltip("Extra cost for entering a doorway node, for the wait while the door swings open.")]
@@ -78,6 +80,8 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     [Tooltip("Weight of the item being close to the Thief.")]
     [Range(0f, 1f)]
     [SerializeField] private float thiefDistanceWeight = 0.2f;
+    [Tooltip("Rounds (reserve plus loaded) at which the player counts as having enough ammo: the 40 reserve and 6 loaded the player starts with. Below it ammo becomes a need; at or above it ammo is not needed at all.")]
+    [SerializeField, Min(1)] private int comfortableAmmo = 46;
 
     [Header("Stashes")]
     [Tooltip("Name of the drop point objects inside each Thief stash; each is matched to its nearest graph node.")]
@@ -300,6 +304,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
         if (graph == null) graph = FindAnyObjectByType<WaypointGraph>();
         if (player == null) player = FindAnyObjectByType<PlayerStats>();
+        if (playerWeapon == null && player != null) playerWeapon = player.GetComponent<PlayerWeapon>();
         if (playerCamera == null && player != null) playerCamera = player.GetComponentInChildren<Camera>();
         if (playerCamera == null) playerCamera = Camera.main;
 
@@ -905,24 +910,28 @@ public class ThiefAgent : MonoBehaviour, IDamageable
     // Player stat tracking
 
     /*
-     * Reads the player's position and stats once and turns each stat into a need:
-     * need = 1 - current / max, so an empty stat is a need of 1 and a full one a need of 0.
+     * Reads the player's position and stats once and turns each stat into a need from 0 (not needed) to 1 (empty).
+     * Health and sanity are the player's defence, so any shortfall counts: need = 1 - current / max.
+     * Ammo is the player's offence, so it only counts once the player runs low: its rounds (reserve plus loaded)
+     * are measured against comfortableAmmo, and having that many or more is a need of 0.
      */
     private PlayerSnapshot SamplePlayer()
     {
         var sample = new PlayerSnapshot();
         if (player == null) return sample;
 
+        int loaded = playerWeapon != null ? playerWeapon.Magazine : 0;
+
         sample.Position = player.transform.position;
         sample.HealthNeed = Need(player.Health, player.MaxHealth);
         sample.SanityNeed = Need(player.Sanity, player.MaxSanity);
-        sample.AmmoNeed = Need(player.ReserveAmmo, player.MaxReserveAmmo);
+        sample.AmmoNeed = Need(player.ReserveAmmo + loaded, comfortableAmmo);
 
         LastPlayerSample = sample;
         return sample;
     }
 
-    // How much the player lacks a stat, from 0 (full) to 1 (empty), so stats with different maximums compare on one scale.
+    // How much the player lacks a stat against a full amount, from 0 (full or more) to 1 (empty), so stats with different scales compare on one scale.
     private static float Need(float current, float max)
     {
         if (max <= 0f) return 0f;
