@@ -980,14 +980,18 @@ public class ThiefAgent : MonoBehaviour, IDamageable
      * The best item to steal for this decision, or null when there are none. Each item scores
      *   playerDistanceWeight * P + needWeight * N + thiefDistanceWeight * T
      * where P = its distance from the player / the largest such distance among the items (far = 1),
-     *       N = the player's need for its supply (empty stat = 1),
+     *       N = the player's need for its supply / the player's highest need of the three (most-needed supply = 1),
      *       T = 1 - its distance from the Thief / the largest such distance among the items (near = 1).
+     * N is relative, so whatever the player is shortest of pulls as hard as an empty stat, however short it is.
+     * With no need at all, every N is 0 and the choice rests on distance alone.
      * Distances are measured flat, since items sit on furniture at different heights. The highest score wins;
      * on a tie the first item found keeps it.
      */
     private PickupInteractable ChooseItem(List<PickupInteractable> items, PlayerSnapshot sample)
     {
         if (items.Count == 0) return null;
+
+        float highestNeed = Mathf.Max(sample.HealthNeed, Mathf.Max(sample.SanityNeed, sample.AmmoNeed));
 
         float maxPlayerDistance = 0f;
         float maxThiefDistance = 0f;
@@ -1007,7 +1011,7 @@ public class ThiefAgent : MonoBehaviour, IDamageable
 
             float farFromPlayer = maxPlayerDistance > 0f ? playerDistance / maxPlayerDistance : 1f;
             float closeToThief = maxThiefDistance > 0f ? 1f - thiefDistance / maxThiefDistance : 1f;
-            float need = NeedFor(item.Type, sample);
+            float need = highestNeed > 0f ? NeedFor(item.Type, sample) / highestNeed : 0f;
 
             float score = playerDistanceWeight * farFromPlayer + needWeight * need + thiefDistanceWeight * closeToThief;
             if (score <= bestScore) continue;
