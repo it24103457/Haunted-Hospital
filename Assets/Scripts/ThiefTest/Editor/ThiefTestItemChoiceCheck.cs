@@ -14,13 +14,20 @@ using UnityEngine;
  * differ from the order of the first pass's scores.
  * The Thief stands at the origin and the player 14 m away along X. Each item is placed where its distance from the
  * player and its distance from the Thief meet, so the distances are exact.
+ * Needs are given to ChooseItem directly, so this covers how need is weighed (relative to the player's highest need),
+ * not how the needs are read from the player; the need check covers that.
  * Scenarios:
- *   1. The README's worked example: the Ammo Box wins (0.70 against 0.61 and 0.56). With the Ammo Box out of reach,
- *      the other two are rescored on their own and the Sanity Bottle comes next (0.60 against 0.55), then the Medkit.
- *   2. The same items with the player moved away from the Medkit: the Medkit becomes the target (0.74 against 0.70).
+ *   1. The README's worked example (20/100 health, sanity full, starting ammo, so only health is needed): the Medkit
+ *      wins (0.67 against 0.56 and 0.50). With the Medkit out of reach, the other two are rescored on their own and
+ *      the Sanity Bottle comes next, then the Ammo Box.
+ *   2. The same items with the player 1.3 m from the Medkit: being close to the player outweighs the need, and the
+ *      Ammo Box wins (0.50 against 0.47).
  *   3. Need decides between two items at mirrored, equal distances: the one whose stat is low wins, both ways round.
+ *      With health at only 50% and nothing else needed, a Medkit nearer the player still beats an unneeded Sanity
+ *      Bottle further away (0.63 against 0.50), because the most-needed supply counts in full however short it is.
  *   4. Two Medkits the same distance from the Thief: the one further from the player wins.
  *   5. Two identical Medkits at mirrored positions: the first found keeps the tie, whichever order they are listed in.
+ *   6. No need at all: distance alone decides, and the Sanity Bottle of the worked example wins (0.56).
  * Expected answers assume the weights 0.5 / 0.3 / 0.2; the weights in the scene are read and reported first.
  * The Thief's item choice is private, so this reaches it through reflection and changes nothing in ThiefAgent.
  * The Thief is moved and the items are temporary, the test scene is never saved, and the scene that was open is
@@ -63,28 +70,28 @@ public static class ThiefTestItemChoiceCheck
         }
     }
 
-    // Runs the five scenarios against the given Thief and returns one PASS or FAIL line per check.
+    // Runs the six scenarios against the given Thief and returns one PASS or FAIL line per check.
     public static string Run(ThiefAgent thief, List<GameObject> created)
     {
         var report = new StringBuilder();
         report.AppendLine($"Weights in the scene: far from player {Weight(thief, "playerDistanceWeight")}, " +
                           $"need {Weight(thief, "needWeight")}, close to Thief {Weight(thief, "thiefDistanceWeight")} (expected 0.5 / 0.3 / 0.2)");
 
-        // 1. The README's worked example: 20/100 health, full sanity, 40/120 ammo.
-        PlayerSnapshot readme = Sample(PlayerPosition, 0.8f, 0f, 1f - 40f / 120f);
+        // 1. The README's worked example: 20/100 health, full sanity and the starting 40 + 6 rounds, so only health is needed.
+        PlayerSnapshot readme = Sample(PlayerPosition, 0.8f, 0f, 0f);
         PickupInteractable medkit = Item(created, "Medkit", PickupType.Health, 10f, 6f, 1f);
         PickupInteractable ammo = Item(created, "Ammo Box", PickupType.Ammo, 20f, 15f, 1f);
         PickupInteractable sanity = Item(created, "Sanity Bottle", PickupType.Sanity, 16f, 3f, 1f);
         var exampleItems = new List<PickupInteractable> { medkit, ammo, sanity };
-        Check(report, "1a. README worked example picks the Ammo Box",
-              Name(Choose(thief, exampleItems, readme)), "Ammo Box");
+        Check(report, "1a. README worked example picks the Medkit",
+              Name(Choose(thief, exampleItems, readme)), "Medkit");
         Check(report, "1b. Fallback order, rescored after each removal",
-              Ranking(thief, exampleItems, readme), "Ammo Box, Sanity Bottle, Medkit");
+              Ranking(thief, exampleItems, readme), "Medkit, Sanity Bottle, Ammo Box");
 
-        // 2. The player moves away from the Medkit, which then becomes the target.
-        PlayerSnapshot movedAway = Sample(new Vector3(-10f, 0f, -5f), 0.8f, 0f, 1f - 40f / 120f);
-        Check(report, "2. Player moved away from the Medkit makes it the target",
-              Ranking(thief, exampleItems, movedAway).Split(',')[0], "Medkit");
+        // 2. The player stands 1.3 m from the Medkit, so its closeness to the player outweighs the need for it.
+        PlayerSnapshot besideMedkit = Sample(new Vector3(6f, 0f, 3.5f), 0.8f, 0f, 0f);
+        Check(report, "2. Player beside the Medkit makes the Thief take the Ammo Box",
+              Name(Choose(thief, exampleItems, besideMedkit)), "Ammo Box");
 
         // 3. Need decides between a Sanity Bottle and an Ammo Box at mirrored, equal distances.
         PickupInteractable sanityA = Item(created, "Sanity Bottle", PickupType.Sanity, 12f, 8f, 1f);
@@ -94,6 +101,13 @@ public static class ThiefTestItemChoiceCheck
               Name(Choose(thief, needItems, Sample(PlayerPosition, 0f, 0.9f, 0f))), "Sanity Bottle");
         Check(report, "3b. Low ammo picks the Ammo Box",
               Name(Choose(thief, needItems, Sample(PlayerPosition, 0f, 0f, 0.9f))), "Ammo Box");
+
+        // 3c. Health at 50%, nothing else needed: a Medkit 8 m from the player beats an unneeded Sanity Bottle 12 m away.
+        PickupInteractable halfMedkit = Item(created, "Medkit nearer player", PickupType.Health, 8f, 8f, 1f);
+        PickupInteractable farSanity = Item(created, "Sanity Bottle further away", PickupType.Sanity, 12f, 8f, -1f);
+        Check(report, "3c. Health at 50% counts in full against an unneeded item further away",
+              Name(Choose(thief, new List<PickupInteractable> { farSanity, halfMedkit }, Sample(PlayerPosition, 0.5f, 0f, 0f))),
+              "Medkit nearer player");
 
         // 4. Two Medkits 8 m from the Thief, one 18 m and one 10 m from the player: the further one wins.
         PickupInteractable farMedkit = Item(created, "Medkit far from player", PickupType.Health, 18f, 8f, 1f);
@@ -110,6 +124,10 @@ public static class ThiefTestItemChoiceCheck
               Name(Choose(thief, new List<PickupInteractable> { twinA, twinB }, even)), "Medkit A");
         Check(report, "5b. Tie keeps the first item listed (B first)",
               Name(Choose(thief, new List<PickupInteractable> { twinB, twinA }, even)), "Medkit B");
+
+        // 6. No need at all: every need is 0 and the worked example's items are decided by distance alone.
+        Check(report, "6. No need at all leaves the choice to distance",
+              Name(Choose(thief, exampleItems, Sample(PlayerPosition, 0f, 0f, 0f))), "Sanity Bottle");
 
         return report.ToString();
     }
