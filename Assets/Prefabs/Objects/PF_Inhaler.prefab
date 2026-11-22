@@ -41,6 +41,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2038699417436983558}
+  - component: {fileID: 5611565071045469472}
+  - component: {fileID: 3432693541498006180}
   m_Layer: 0
   m_Name: PF_Inhaler
   m_TagString: Untagged
@@ -64,6 +66,64 @@ Transform:
   - {fileID: 6005052890898380804}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &5611565071045469472
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2040720951337010160}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &3432693541498006180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2040720951337010160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d6fdacd34e6268498cdc5083db33715, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThrowableItem
+  displayName: Inhaler
+  noiseLoudness: 8
+  minNoiseImpactSpeed: 1.5
+  fullNoiseImpactSpeed: 6
+  maxNoisesPerThrow: 3
+  noiseCountsAsPlayer: 0
+  dropNoiseScale: 0.3
+  impactClips:
+  - {fileID: 8300000, guid: beb4e2faeba82f44783d835693b11580, type: 3}
+  bodyHitClips:
+  - {fileID: 8300000, guid: 2d20ac107c5c63147858de47a4f0cb71, type: 3}
+  impactVolume: 0.8
+  pitchRange: {x: 0.95, y: 1.05}
+  soundMaxDistance: 30
+  damage: 5
+  minDamageImpactSpeed: 4
+  damageRevealsPlayer: 0
+  despawnSeconds: 30
+  heldLocalEuler: {x: 0, y: 0, z: 0}
 --- !u!1001 &2347006595493575360
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -131,10 +191,39 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 19456daac3b8c4c4ca4eb120d19dc5a6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7411248492119301881}
   m_SourcePrefab: {fileID: 100100000, guid: 19456daac3b8c4c4ca4eb120d19dc5a6, type: 3}
 --- !u!4 &2817150470070066475 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 19456daac3b8c4c4ca4eb120d19dc5a6, type: 3}
   m_PrefabInstance: {fileID: 2347006595493575360}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &3193993050093881233 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 19456daac3b8c4c4ca4eb120d19dc5a6, type: 3}
+  m_PrefabInstance: {fileID: 2347006595493575360}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &7411248492119301881
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3193993050093881233}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.0060271695, y: 0.014897162, z: 0.01803548}
+  m_Center: {x: -0.0000019386644, y: 0.00006742659, z: 0.00901774}
