@@ -156,6 +156,7 @@ GameObject:
   - component: {fileID: 6671535720121805456}
   - component: {fileID: 2403969138491378414}
   - component: {fileID: 3256512973424920835}
+  - component: {fileID: -3168282852902571800}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -366,6 +367,25 @@ MonoBehaviour:
   crouchStride: 1
   walkStride: 1.6
   sprintStride: 2.2
+--- !u!114 &-3168282852902571800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4871408159299711671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 576a8aad4f6e37d4f8bcc73473ce2096, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerThrower
+  playerCamera: {fileID: 0}
+  holdAnchor: {fileID: 0}
+  throwSpeed: 14
+  upwardBias: 0.12
+  throwBinding: <Mouse>/rightButton
+  dropBinding: <Keyboard>/g
+  holdOffset: {x: -0.2, y: -0.15, z: 0.5}
 --- !u!1 &5548678712820400776
 GameObject:
   m_ObjectHideFlags: 0
