@@ -381,11 +381,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerThrower
   playerCamera: {fileID: 0}
   holdAnchor: {fileID: 0}
-  throwSpeed: 14
+  throwSpeed: 15
   upwardBias: 0.12
   throwBinding: <Mouse>/rightButton
   dropBinding: <Keyboard>/g
-  holdOffset: {x: -0.2, y: -0.15, z: 0.5}
+  holdOffset: {x: -0.26, y: -0.28, z: 0.5}
+  playerController: {fileID: 0}
+  bobAmplitude: 0.018
+  bobFrequency: 8
+  swayAmount: 0.025
+  swaySmooth: 8
 --- !u!1 &5548678712820400776
 GameObject:
   m_ObjectHideFlags: 0
