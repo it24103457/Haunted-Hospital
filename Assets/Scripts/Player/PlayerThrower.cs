@@ -16,26 +16,40 @@ public class PlayerThrower : MonoBehaviour
     [SerializeField] private Transform holdAnchor;
 
     [Header("Throw")]
-    [SerializeField, Min(1f)] private float throwSpeed = 9f;
+    [SerializeField, Min(1f)] private float throwSpeed = 15f;
     [Tooltip("Aims the throw slightly upward so it arcs instead of dropping at once.")]
     [SerializeField, Range(0f, 0.5f)] private float upwardBias = 0.12f;
     [SerializeField] private string throwBinding = "<Mouse>/rightButton";
     [SerializeField] private string dropBinding = "<Keyboard>/g";
 
     [Header("Hold position (relative to the camera)")]
-    [Tooltip("The gun is at the lower right of the view, so the item is held at the lower left.")]
-    [SerializeField] private Vector3 holdOffset = new Vector3(-0.30f, -0.25f, 0.60f);
+    [Tooltip("Lower Y pushes the item further down so only part of it shows, like the gun. " +
+             "At the default 60 degree FOV the bottom screen edge is about -0.29 at Z 0.5, so about -0.30 puts the item centre just past the edge and shows about half.")]
+    [SerializeField] private Vector3 holdOffset = new Vector3(-0.26f, -0.28f, 0.50f);
+
+    [Header("Hold animation (same feel as the gun)")]
+    [Tooltip("Used to read walking speed. Found automatically if left empty.")]
+    [SerializeField] private CharacterController playerController;
+    [SerializeField] private float bobAmplitude = 0.018f;
+    [SerializeField] private float bobFrequency = 8f;
+    [SerializeField] private float swayAmount = 0.025f;
+    [SerializeField] private float swaySmooth = 8f;
 
     private InputAction throwAction;
     private InputAction dropAction;
     private ThrowableItem held;
     private GUIStyle hudStyle;
+    private Vector3 anchorBasePosition;
+    private bool anchorWasCreatedHere;
+    private float bobTimer;
 
     public bool IsHolding => held != null;
 
     private void Awake()
     {
         if (playerCamera == null) playerCamera = GetComponentInChildren<Camera>();
+        if (playerController == null) playerController = GetComponentInParent<CharacterController>();
+        if (playerController == null) playerController = GetComponentInChildren<CharacterController>();
 
         if (holdAnchor == null && playerCamera != null)
         {
@@ -43,7 +57,11 @@ public class PlayerThrower : MonoBehaviour
             anchor.transform.SetParent(playerCamera.transform, false);
             anchor.transform.localPosition = holdOffset;
             holdAnchor = anchor.transform;
+            anchorWasCreatedHere = true;
         }
+
+        // The animation moves the anchor around this resting position.
+        if (holdAnchor != null) anchorBasePosition = holdAnchor.localPosition;
 
         throwAction = new InputAction("Throw", InputActionType.Button, throwBinding);
         dropAction = new InputAction("Drop", InputActionType.Button, dropBinding);
@@ -78,6 +96,38 @@ public class PlayerThrower : MonoBehaviour
             ReleaseHeld(throwing: true);
         else if (dropAction.WasPressedThisFrame())
             ReleaseHeld(throwing: false);
+    }
+
+    // Walking bob and sideways sway for the held item, using the same maths as WeaponViewAnimation so the item
+    // moves together with the gun. The item is a child of the anchor, so moving the anchor moves the item.
+    private void LateUpdate()
+    {
+        if (holdAnchor == null) return;
+
+        // An anchor made by this script follows holdOffset live, so it can be tuned in the Inspector during play.
+        Vector3 target = anchorWasCreatedHere ? holdOffset : anchorBasePosition;
+
+        if (held != null && playerController != null)
+        {
+            Vector3 localVelocity = transform.InverseTransformDirection(playerController.velocity);
+            float movementAmount = Mathf.Clamp01(new Vector2(localVelocity.x, localVelocity.z).magnitude / 3f);
+
+            float bobY = 0f;
+            if (movementAmount > 0.05f)
+            {
+                bobTimer += Time.deltaTime * bobFrequency;
+                bobY = Mathf.Sin(bobTimer) * bobAmplitude * movementAmount;
+            }
+            else
+            {
+                bobTimer = 0f;
+            }
+
+            float swayX = -localVelocity.x * swayAmount * movementAmount;
+            target += new Vector3(swayX, bobY, 0f);
+        }
+
+        holdAnchor.localPosition = Vector3.Lerp(holdAnchor.localPosition, target, swaySmooth * Time.deltaTime);
     }
 
     // Called by ThrowableItem when the player interacts with it. False if the hands are full.
