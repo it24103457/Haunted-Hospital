@@ -80,7 +80,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: -1372625422
   m_Radius: 0.3
-  m_Speed: 6
+  m_Speed: 4.5
   m_Acceleration: 12
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -174,7 +174,7 @@ MonoBehaviour:
   grabPauseSeconds: 0.85
   faceItemTurnSpeed: 12
   faceStashTurnSpeed: 10
-  flinchStaggerSeconds: 0.4
+  flinchStaggerSeconds: 0.5
 --- !u!114 &1971315693549221161
 MonoBehaviour:
   m_ObjectHideFlags: 0

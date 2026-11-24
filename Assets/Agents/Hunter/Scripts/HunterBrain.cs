@@ -44,10 +44,16 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     // A point the Hunter should face instead of facing where it walks, or null for none.
     public Vector3? LookTarget { get; private set; }
 
+    // True while chasing. ChaseTarget is where the Hunter believes the player is: the last place it heard them,
+    // sensed them or was shot from. A mover walks toward this, never toward the player's live position,
+    // so a chase follows the trail and a player who goes quiet is not tracked.
+    public bool HasChaseTarget => State == HunterState.Chase;
+    public Vector3 ChaseTarget => lastKnownPlayerPos;
+
     // The tuning numbers, shared with HunterEars so they are only assigned once.
     public HunterSettings Settings => settings;
 
-    /// <summary>Walks routes (doors included). Used by Patrol, Investigate and Search, and by Chase later.</summary>
+    // Walks routes (doors included). Used by Patrol, Investigate and Search, and by Chase later.
     public HunterNavigator Navigator => navigator;
 
     public float Health { get; private set; }
@@ -106,6 +112,9 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private float nextChaseRepath;
     private float nextAttackTime;
     private readonly RaycastHit[] reachHits = new RaycastHit[8];
+
+    // After reaching the spot where the player was last heard, wait this long for a new sign before searching there.
+    private const float ArrivedSearchDelaySeconds = 1.5f;
 
     // The body: what gets switched off on death and back on at respawn.
     private Renderer[] renderers;
@@ -223,10 +232,10 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
 
     // Spawning
 
-    /// <summary>
-    /// Puts the Hunter in the level at full health and starts it patrolling.
-    /// Prefers a marker away from the player; if none qualifies (this is the first spawn), uses any marker.
-    /// </summary>
+
+    // Puts the Hunter in the level at full health and starts it patrolling.
+    // Prefers a marker away from the player; if none qualifies (this is the first spawn), uses any marker.
+
     public void Spawn()
     {
         if (!TrySpawn(true)) TrySpawn(false);
@@ -726,6 +735,21 @@ public class HunterBrain : MonoBehaviour, IDamageable, IHunterStatus
     private void FollowTrail()
     {
         if (navigator.Status == HunterNavStatus.OpeningDoor) return;   // never interrupt a door
+
+        // Reached the spot where the player was last heard and nothing new has come in: look around there
+        // instead of standing still until the chase times out. (Not while on shot alert.)
+        if (Time.time >= shotAlertUntil && Time.time - lastSignalTime > ArrivedSearchDelaySeconds)
+        {
+            Vector3 toSpot = lastKnownPlayerPos - transform.position;
+            toSpot.y = 0f;
+            if (toSpot.magnitude <= settings.ArrivalRadius * 1.5f)
+            {
+                if (settings.EnableDebugLogging)
+                    Debug.Log("[Hunter] Reached the last known spot with nothing new; searching here.", this);
+                BeginSearch(lastKnownPlayerPos);
+                return;
+            }
+        }
 
         bool moved = !hasChaseDestination ||
                      Vector3.Distance(chaseDestination, lastKnownPlayerPos) > settings.ArrivalRadius;

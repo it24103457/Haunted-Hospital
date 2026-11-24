@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,10 +15,10 @@ using UnityEngine.AI;
  * Speed tuning rationale:
  *   NavMeshAgent base speed = 1.4 m/s (set on PF_Hunter prefab).
  *   Walk authored speed     = 1.15 m/s (Zombie walking-2.fbx forward displacement).
- *   Run authored speed      = 4.25 m/s (Zombie Run.fbx forward displacement).
+ *   Run authored speed      = 2.60 m/s (Zombie Run.fbx forward displacement).
  *   HunterSettings multipliers: patrol=0.70->0.98 m/s, search=0.80->1.12 m/s,
- *                               investigate=1.00->1.40 m/s, chase=1.35->1.89 m/s.
- *   Chase ratio: 1.89/4.25 = 0.44x (clamped [0.35, 1.5]) -- realistic menacing shambling run, zero foot sliding.
+ *                               investigate=1.00->1.40 m/s, chase=1.29->1.80 m/s.
+ *   Chase ratio: 1.80/2.60 = 0.69x, clamped to a 0.85x minimum so the run never looks like slow motion.
  */
 [RequireComponent(typeof(HunterBrain), typeof(NavMeshAgent))]
 public class HunterAnimationDriver : MonoBehaviour
@@ -37,8 +38,16 @@ public class HunterAnimationDriver : MonoBehaviour
     [SerializeField] private float runAuthoredSpeed = 2.6f;
 
     [Header("Hit & Facing Tuning")]
-    [Tooltip("Minimum seconds between successive flinch animations.")]
-    [SerializeField] private float flinchCooldown = 0.5f;
+    [Tooltip("Minimum seconds between successive flinch animations. " +
+             "Keep this below the weapon cadence (0.5 s) so every shot produces a reaction.")]
+    [SerializeField] private float flinchCooldown = 0.2f;
+
+    [Tooltip("Seconds the Hunter is locked in the flinch state. " +
+             "Keep this in sync with the Flinch state's exit time (0.8 of the 0.5 s trimmed clip).")]
+    [SerializeField] private float flinchDuration = 0.4f;
+
+    [Tooltip("Crossfade duration into the flinch. Short and aggressive so the hit reads immediately.")]
+    [SerializeField] private float flinchFadeSeconds = 0.06f;
 
     [Header("Layer Overlays")]
     [Tooltip("Whether to enable subtle head-look overlay while walking in Patrol/Investigate.")]
@@ -60,10 +69,16 @@ public class HunterAnimationDriver : MonoBehaviour
     [Tooltip("Rate at which the model recovers from banking.")]
     [SerializeField] private float bankRecoverSpeed = 8f;
 
+    /// <summary>Raised only when a damage event actually starts a flinch (cooldown passed).</summary>
+    public event Action FlinchStarted;
+
+    /// <summary>How long the movement lock should last, matching the Flinch state's exit window.</summary>
+    public float FlinchDuration => flinchDuration;
+
     // Animator parameter hashes
     private static readonly int SpeedParam      = Animator.StringToHash("Speed");
     private static readonly int AttackTrigger   = Animator.StringToHash("Attack");
-    private static readonly int FlinchTrigger   = Animator.StringToHash("Flinch");
+    private static readonly int FlinchStateHash = Animator.StringToHash("Flinch");
     private static readonly int DoorPushTrigger = Animator.StringToHash("DoorPush");
     private static readonly int DieTrigger      = Animator.StringToHash("Die");
     private static readonly int IsChasingParam  = Animator.StringToHash("IsChasing");
@@ -140,6 +155,7 @@ public class HunterAnimationDriver : MonoBehaviour
         HunterState state = hunter.State;
         bool isInactive   = state == HunterState.Inactive;
         bool isChasing    = state == HunterState.Chase;
+        bool flinching    = IsFlinchActive();
         float speed       = agent.velocity.magnitude;
 
         // Angular velocity calculation for banking and pivot footwork
@@ -193,6 +209,11 @@ public class HunterAnimationDriver : MonoBehaviour
             animator.SetFloat(SpeedParam, 0f);
             animator.speed = 1f;
         }
+
+        // One-shots play at authored speed. Without this guard the stride matching below
+        // overwrites the 1x speed set on damage and the hit reaction crawls at 0.5-0.85x.
+        if (flinching)
+            animator.speed = 1f;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -271,13 +292,37 @@ public class HunterAnimationDriver : MonoBehaviour
     private void HandleDamaged(DamageInfo info)
     {
         if (animator == null || !hunter.IsAlive) return;
+        if (Time.time < nextFlinchTime) return;
 
-        if (Time.time >= nextFlinchTime)
+        nextFlinchTime = Time.time + flinchCooldown;
+        animator.speed = 1f;
+
+        // Drive the state directly instead of using the AnyState trigger. A trigger is
+        // queued behind any transition that is already running; CrossFade interrupts it.
+        if (IsFlinchActive())
         {
-            nextFlinchTime = Time.time + flinchCooldown;
-            animator.speed = 1f;
-            animator.SetTrigger(FlinchTrigger);
+            // CrossFade does not restart a state that is already current. Play does.
+            animator.Play(FlinchStateHash, BaseLayerIndex, 0f);
         }
+        else
+        {
+            animator.CrossFadeInFixedTime(FlinchStateHash, flinchFadeSeconds, BaseLayerIndex);
+        }
+
+        // The mover listens to this instead of OnDamaged so a hit suppressed by the
+        // cooldown cannot pause movement without a matching animation.
+        FlinchStarted?.Invoke();
+    }
+
+    private bool IsFlinchActive()
+    {
+        if (animator == null) return false;
+
+        if (animator.GetCurrentAnimatorStateInfo(BaseLayerIndex).shortNameHash == FlinchStateHash)
+            return true;
+
+        return animator.IsInTransition(BaseLayerIndex) &&
+               animator.GetNextAnimatorStateInfo(BaseLayerIndex).shortNameHash == FlinchStateHash;
     }
 
     private void HandleDied()
@@ -300,6 +345,7 @@ public class HunterAnimationDriver : MonoBehaviour
     {
         if (animator == null) return;
 
+        nextFlinchTime = 0f;
         animator.speed = 1f;
         animator.Rebind();
         animator.Update(0f);

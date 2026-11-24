@@ -2,7 +2,7 @@
 #
 # "title:" sets the heading at the top of the screen.
 # Every other line is "Control: Label". The control names are fixed, because each one is a spot in the picture:
-#   Esc, WASD, E, R, Shift, C, Space, LeftMouse, Mouse
+#   Esc, WASD, E, R, G, Shift, C, Space, LeftMouse, RightMouse, Mouse
 # A label can have a smaller second line after " / ", for example "Interact / doors, items, notes, keypad".
 # A control with no line here keeps its label empty.
 # Lines starting with # are notes like these and are never shown in the game.
@@ -13,8 +13,10 @@ Esc: Pause
 WASD: Move
 E: Interact / doors, items, notes, keypad
 R: Reload
+G: Drop / held item
 Shift: Hold to sprint
 C: Hold to crouch
 Space: Jump
 LeftMouse: Shoot
+RightMouse: Throw / held item
 Mouse: Look around

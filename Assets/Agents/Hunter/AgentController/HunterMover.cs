@@ -17,7 +17,9 @@ using UnityEngine.AI;
  *   - On each FollowPath, picks the best forward waypoint using a simple
  *     closest-ahead algorithm rather than sequential pruning.
  *   - isDirectPursuing flag suppresses all waypoint dispatching during Chase
- *     with direct LOS to the player, preventing replan events from jerking the agent.
+ *     when the Hunter's remembered chase target is straight ahead on the NavMesh,
+ *     preventing replan events from jerking the agent. The target is HunterBrain.ChaseTarget
+ *     (a position the Hunter heard or sensed), never the player's live position.
  *   - Smooth turning via exponential-damped Slerp (updateRotation permanently off).
  */
 [RequireComponent(typeof(HunterBrain), typeof(NavMeshAgent))]
@@ -35,20 +37,16 @@ public class HunterMover : MonoBehaviour
              "1.1 = allow 10% overshoot so the agent doesn't lag behind the NavMesh simulation.")]
     [SerializeField] private float speedHeadroomMultiplier = 1.15f;
 
-    [Header("Flinch Stagger")]
-    [Tooltip("Seconds the Hunter pauses movement after taking non-lethal damage.")]
-    [SerializeField] private float flinchStaggerSeconds = 0.35f;
-
     private HunterBrain hunter;
+    private HunterAnimationDriver animationDriver;
     private NavMeshAgent agent;
-    private PlayerStats player;
     private float baseSpeed;
     private readonly List<Vector3> path = new List<Vector3>();
     private int index;
     private Coroutine staggerRoutine;
     private bool isStaggered;
 
-    // True when we are actively pursuing the player directly (no waypoint path needed).
+    // True when we are walking straight to the brain's chase target (no waypoint path needed).
     private bool isDirectPursuing;
 
     // True when we have a valid destination dispatched to the NavMeshAgent.
@@ -57,8 +55,8 @@ public class HunterMover : MonoBehaviour
     private void Awake()
     {
         hunter = GetComponent<HunterBrain>();
+        animationDriver = GetComponent<HunterAnimationDriver>();
         agent = GetComponent<NavMeshAgent>();
-        player = FindAnyObjectByType<PlayerStats>();
         baseSpeed = agent.speed;
 
         // We control both rotation and position manually:
@@ -84,10 +82,12 @@ public class HunterMover : MonoBehaviour
         if (hunter != null)
         {
             hunter.OnPathChanged += FollowPath;
-            hunter.OnDamaged += HandleDamaged;
             hunter.OnDied += HandleDied;
             hunter.OnSpawned += HandleSpawned;
         }
+
+        if (animationDriver != null)
+            animationDriver.FlinchStarted += HandleFlinchStarted;
     }
 
     private void OnDisable()
@@ -95,10 +95,12 @@ public class HunterMover : MonoBehaviour
         if (hunter != null)
         {
             hunter.OnPathChanged -= FollowPath;
-            hunter.OnDamaged -= HandleDamaged;
             hunter.OnDied -= HandleDied;
             hunter.OnSpawned -= HandleSpawned;
         }
+
+        if (animationDriver != null)
+            animationDriver.FlinchStarted -= HandleFlinchStarted;
 
         if (staggerRoutine != null)
         {
@@ -110,14 +112,16 @@ public class HunterMover : MonoBehaviour
 
     private void FollowPath(IReadOnlyList<Vector3> newPath)
     {
-        // During Chase with a clear NavMesh line to the player, the direct-pursuit loop in
-        // Update() already drives the agent. Ignore every path replan from HunterNavigator so
-        // the agent is never yanked back to an old waypoint mid-chase.
-        if (isDirectPursuing) return;
-
+        // Always keep the newest route, even during a straight-line chase, so an old one is never resumed
+        // when the chase ends (an empty route clears it).
         path.Clear();
         if (newPath != null) path.AddRange(newPath);
         index = 0;
+
+        // During Chase with a clear NavMesh line to the chase target, the direct-pursuit loop in
+        // Update() already drives the agent. The route is stored above but not dispatched, so the
+        // agent is never yanked back to a waypoint mid-chase.
+        if (isDirectPursuing) return;
 
         if (!agent.isOnNavMesh) return;
 
@@ -190,18 +194,20 @@ public class HunterMover : MonoBehaviour
         hasActiveDestination = true;
     }
 
-    private void HandleDamaged(DamageInfo info)
+    private void HandleFlinchStarted()
     {
         if (!hunter.IsAlive) return;
 
         if (staggerRoutine != null) StopCoroutine(staggerRoutine);
-        staggerRoutine = StartCoroutine(StaggerPause());
+        staggerRoutine = StartCoroutine(StaggerPause(animationDriver != null
+            ? animationDriver.FlinchDuration
+            : 0.4f));
     }
 
-    private IEnumerator StaggerPause()
+    private IEnumerator StaggerPause(float duration)
     {
         isStaggered = true;
-        yield return new WaitForSeconds(flinchStaggerSeconds);
+        yield return new WaitForSeconds(duration);
         isStaggered = false;
         staggerRoutine = null;
     }
@@ -269,27 +275,33 @@ public class HunterMover : MonoBehaviour
 
         if (!isDoorWaiting && !shouldStop)
         {
-            // During Chase, if we have a direct clear line to the player on the NavMesh,
-            // pursue the player directly rather than oscillating between static waypoint nodes.
-            if (hunter.State == HunterState.Chase && player != null && player.gameObject.activeInHierarchy)
+            // During Chase, if the spot the Hunter last heard or sensed the player at is straight ahead on the
+            // NavMesh, walk straight to it rather than oscillating between static waypoint nodes. The spot comes
+            // from HunterBrain, so a player who goes quiet is not tracked. This is a walkability check, not a
+            // sight check.
+            if (hunter.HasChaseTarget)
             {
-                Vector3 playerPos = player.transform.position;
-                if (!NavMesh.Raycast(transform.position, playerPos, out _, NavMesh.AllAreas))
+                Vector3 chaseTarget = hunter.ChaseTarget;
+                if (!NavMesh.Raycast(transform.position, chaseTarget, out _, NavMesh.AllAreas))
                 {
                     if (!isDirectPursuing) isDirectPursuing = true;
                     agent.isStopped = false;
-                    agent.SetDestination(playerPos);
+                    agent.SetDestination(chaseTarget);
                     hasActiveDestination = true;
                     return;
                 }
             }
 
-            // Lost LOS or left Chase — stop suppressing path-follow
+            // No clear line to the chase target, or left Chase — stop suppressing path-follow
             if (isDirectPursuing)
             {
                 isDirectPursuing = false;
-                if (path.Count > 0 && index < path.Count)
+                if (path.Count > 0)
+                {
+                    // The stored route may be well behind us by now: start from the best point ahead.
+                    index = FindBestStartIndex();
                     DispatchCurrentWaypoint();
+                }
             }
 
             AdvancePath();
@@ -370,10 +382,10 @@ public class HunterMover : MonoBehaviour
         {
             targetDirection = hunter.LookTarget.Value - transform.position;
         }
-        else if (hunter.State == HunterState.Chase && player != null &&
-                 Vector3.Distance(transform.position, player.transform.position) < 3.5f)
+        else if (hunter.HasChaseTarget &&
+                 Vector3.Distance(transform.position, hunter.ChaseTarget) < 3.5f)
         {
-            targetDirection = player.transform.position - transform.position;
+            targetDirection = hunter.ChaseTarget - transform.position;
         }
         else if (agent.desiredVelocity.sqrMagnitude > 0.05f)
         {

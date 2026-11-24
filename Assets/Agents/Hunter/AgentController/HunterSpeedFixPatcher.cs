@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -132,9 +133,10 @@ public static class HunterSpeedFixPatcher
             }
             if (flinchState != null)
             {
-                AddChaseAndSpeedTransition(flinchState, runState, true, true, 0.15f);
-                if (walkState != null) AddChaseAndSpeedTransition(flinchState, walkState, false, true, 0.2f);
-                Debug.Log("[HunterSpeedFix] Wired Flinch -> Run/Walk transitions.");
+                ConfigureFlinchExit(flinchState, runState, true, 0.15f);
+                if (walkState != null) ConfigureFlinchExit(flinchState, walkState, false, 0.15f);
+                if (idleState != null) ConfigureFlinchIdleExit(flinchState, idleState);
+                Debug.Log("[HunterSpeedFix] Wired gated Flinch -> Idle/Run/Walk transitions.");
             }
             if (doorPushState != null)
             {
@@ -150,7 +152,9 @@ public static class HunterSpeedFixPatcher
         if (runState != null)      runState.iKOnFeet      = true;
         if (inactiveState != null) inactiveState.iKOnFeet = true;
         if (attackState != null)   { attackState.speed = 0.80f;   attackState.iKOnFeet = true; }
-        if (flinchState != null)   { flinchState.speed = 0.85f;   flinchState.iKOnFeet = true; }
+        // Flinch is a 0.5 s trimmed hit reaction. Play it at authored speed and gate its
+        // exits so the 0.4 s movement lock and the animation end together.
+        if (flinchState != null)   { flinchState.speed = 1.00f;   flinchState.iKOnFeet = true; }
         if (doorPushState != null) { doorPushState.speed = 0.75f; doorPushState.iKOnFeet = true; }
         var deathState = FindState(sm, "Death");
         if (deathState != null)    { deathState.speed = 0.80f;    deathState.iKOnFeet = true; }
@@ -208,10 +212,16 @@ public static class HunterSpeedFixPatcher
             var so = new SerializedObject(animDriver);
             var walkProp = so.FindProperty("walkAuthoredSpeed");
             var runProp  = so.FindProperty("runAuthoredSpeed");
+            var cooldownProp = so.FindProperty("flinchCooldown");
+            var durationProp = so.FindProperty("flinchDuration");
+            var fadeProp     = so.FindProperty("flinchFadeSeconds");
             if (walkProp != null) walkProp.floatValue = 1.15f;
             if (runProp  != null) runProp.floatValue  = 2.60f;
+            if (cooldownProp != null) cooldownProp.floatValue = 0.20f;
+            if (durationProp != null) durationProp.floatValue = 0.40f;
+            if (fadeProp     != null) fadeProp.floatValue     = 0.06f;
             so.ApplyModifiedPropertiesWithoutUndo();
-            Debug.Log("[HunterSpeedFix] HunterAnimationDriver authored speeds updated to walk=1.15, run=2.60.");
+            Debug.Log("[HunterSpeedFix] HunterAnimationDriver authored speeds and flinch timing updated.");
         }
 
         var audioDriver = go.GetComponent<HunterAudioDriver>();
@@ -355,6 +365,48 @@ public static class HunterSpeedFixPatcher
         t.AddCondition(speedGreater ? AnimatorConditionMode.Greater : AnimatorConditionMode.Less, 0.1f, "Speed");
         t.hasExitTime = false;
         t.duration = duration;
+    }
+
+    private static void ConfigureFlinchExit(AnimatorState flinch, AnimatorState destination,
+        bool isChasing, float duration)
+    {
+        var t = EnsureTransition(flinch, destination, duration);
+        EnsureCondition(t, isChasing ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot, 0f, "IsChasing");
+        EnsureCondition(t, AnimatorConditionMode.Greater, 0.1f, "Speed");
+        // 0.8 of the 0.5 s trimmed clip = 0.4 s, matching HunterAnimationDriver.FlinchDuration.
+        t.hasExitTime = true;
+        t.exitTime = 0.8f;
+        t.duration = duration;
+    }
+
+    private static void ConfigureFlinchIdleExit(AnimatorState flinch, AnimatorState idle)
+    {
+        var t = EnsureTransition(flinch, idle, 0.15f);
+        // Without this, the unconditional Idle exit competes with the Run/Walk exits at the same time.
+        EnsureCondition(t, AnimatorConditionMode.Less, 0.1f, "Speed");
+        t.hasExitTime = true;
+        t.exitTime = 0.85f;
+        t.duration = 0.15f;
+    }
+
+    private static AnimatorStateTransition EnsureTransition(AnimatorState from, AnimatorState to, float duration)
+    {
+        foreach (var existing in from.transitions)
+            if (existing.destinationState == to) return existing;
+
+        var t = from.AddTransition(to);
+        t.hasExitTime = false;
+        t.duration = duration;
+        return t;
+    }
+
+    private static void EnsureCondition(AnimatorStateTransition transition, AnimatorConditionMode mode,
+        float threshold, string parameter)
+    {
+        foreach (var c in transition.conditions)
+            if (c.mode == mode && c.parameter == parameter) return;
+
+        transition.AddCondition(mode, threshold, parameter);
     }
 
     private static void FixIdleToWalkTransition(AnimatorState idle, AnimatorState walk)

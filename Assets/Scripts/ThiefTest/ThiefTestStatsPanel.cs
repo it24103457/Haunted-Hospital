@@ -23,6 +23,8 @@ public class ThiefTestStatsPanel : MonoBehaviour
     [SerializeField] private float sanityStep = 10f;
     [SerializeField] private int ammoStep = 10;
     [SerializeField] private float thiefHealthStep = 25f;
+    [Tooltip("Height the panel is lifted off the bottom of a 1080-pixel-tall screen, scaled with the screen like the HUD, so it sits above the HUD's bars and key.")]
+    [SerializeField] private float hudClearance = 280f;
 
     // Same magenta as the Thief's path line and state label, so its row reads as the Thief's.
     private static readonly Color ThiefColor = new Color(1f, 0.2f, 1f);
@@ -73,7 +75,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
         Cursor.visible = true;
     }
 
-    // Draws the panel in the bottom-left corner: a title, then one row for the Thief and one per player stat.
+    // Draws the panel in the bottom-left corner, above the HUD: a title, then one row for the Thief and one per player stat.
     private void OnGUI()
     {
         if (valueStyle == null) valueStyle = new GUIStyle();
@@ -87,7 +89,7 @@ public class ThiefTestStatsPanel : MonoBehaviour
         buttonStyle.fontStyle = FontStyle.Bold;
 
         const float x = 20f, rowHeight = 40f, buttonWidth = 56f, valueWidth = 230f;
-        float y = Screen.height - 4 * rowHeight - 30f;
+        float y = Screen.height - 4 * rowHeight - 30f - hudClearance * Screen.height / 1080f;
 
         GUI.Box(new Rect(x - 10f, y - 40f, valueWidth + 2 * buttonWidth + 40f, 4 * rowHeight + 50f), GUIContent.none);
         GUI.Label(new Rect(x, y - 36f, valueWidth + 2 * buttonWidth + 20f, 28f),
