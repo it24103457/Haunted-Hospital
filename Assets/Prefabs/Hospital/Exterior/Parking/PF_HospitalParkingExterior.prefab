@@ -1329,7 +1329,7 @@ Light:
   serializedVersion: 13
   m_Type: 1
   m_Color: {r: 0.53, g: 0.66, b: 1, a: 1}
-  m_Intensity: 0.18
+  m_Intensity: 0.04666667
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1456,7 +1456,7 @@ Light:
   serializedVersion: 13
   m_Type: 1
   m_Color: {r: 0.48, g: 0.58, b: 0.75, a: 1}
-  m_Intensity: 0.025
+  m_Intensity: 0.007466667
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -3652,7 +3652,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_Intensity
-      value: 4
+      value: 0.84
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_CullingMask.m_Bits
@@ -3779,7 +3779,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_Intensity
-      value: 4
+      value: 0.84
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_CullingMask.m_Bits
@@ -3918,7 +3918,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_Intensity
-      value: 4
+      value: 0.84
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_CullingMask.m_Bits
@@ -4045,7 +4045,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_Intensity
-      value: 4
+      value: 0.84
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_CullingMask.m_Bits
@@ -4184,7 +4184,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_Intensity
-      value: 4
+      value: 0.84
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_CullingMask.m_Bits
@@ -4311,7 +4311,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_Intensity
-      value: 4
+      value: 0.84
       objectReference: {fileID: 0}
     - target: {fileID: 5717458780393011015, guid: cb813a5b3906da34ba62c33a4f176e29, type: 3}
       propertyPath: m_CullingMask.m_Bits
