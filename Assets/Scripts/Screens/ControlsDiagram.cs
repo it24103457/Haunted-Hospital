@@ -5,10 +5,11 @@ using UnityEngine.UI;
 /*
  * Draws the controls as a picture for the Controls screen: a keyboard cluster on the left and a mouse on the right,
  * with a label beside each control and a thin line running from the label to it.
- * The labels are passed in by control name (Esc, WASD, E, R, Shift, C, Space, LeftMouse, Mouse); a control without one
- * gets no label or line. A label's " / " starts a smaller second line.
+ * The labels are passed in by control name (Esc, WASD, E, R, G, Shift, C, Space, LeftMouse, RightMouse, Mouse); a control
+ * without one gets no label or line. A label's " / " starts a smaller second line.
  * The keyboard is laid out like a real one: Esc in the corner, W A S D in their usual shape with E and R beside W,
- * a wide Shift with C next to it, and a long Space bar along the bottom. The mouse is a rounded oval.
+ * G further along the A S D row, a wide Shift with C next to it, and a long Space bar along the bottom. The mouse is a
+ * rounded oval, with the left button's label above it and the right button's label beside it.
  * The movement keys and the mouse's left button have a darker face than the other keys, so they stand out.
  * Keys are dark boxes with a light border and a darker edge below, so they read as raised keys.
  * Everything is placed in a fixed 1600 x 560 layout centred in the given area, matching the page area of the
@@ -56,6 +57,8 @@ public static class ControlsDiagram
         Key(stage, font, "A", new Vector2(-338f, 42f), Unit, 38f, Highlight);
         Key(stage, font, "S", new Vector2(-230f, 42f), Unit, 38f, Highlight);
         Key(stage, font, "D", new Vector2(-122f, 42f), Unit, 38f, Highlight);
+        // G's left edge lines up with the middle of R above it, the way the rows of a real keyboard are staggered.
+        Key(stage, font, "G", new Vector2(64f, 42f), Unit, 38f);
         Key(stage, font, "Shift", new Vector2(-400f, -96f), 168f, 26f);
         Key(stage, font, "C", new Vector2(-92f, -96f), Unit, 38f);
         Key(stage, font, "Space", new Vector2(-200f, -228f), 420f, 26f);
@@ -68,12 +71,15 @@ public static class ControlsDiagram
 
         // Labels on the right point left, to their key.
         Callout(stage, font, textColor, textSize, lineColor, "R", new Vector2(110f, 180f), new Vector2(64f, 180f), TextAlignmentOptions.MidlineLeft);
+        Callout(stage, font, textColor, textSize, lineColor, "G", new Vector2(158f, 42f), new Vector2(112f, 42f), TextAlignmentOptions.MidlineLeft);
         Callout(stage, font, textColor, textSize, lineColor, "C", new Vector2(110f, -96f), new Vector2(-44f, -96f), TextAlignmentOptions.MidlineLeft);
         Callout(stage, font, textColor, textSize, lineColor, "E", new Vector2(90f, 280f), new Vector2(-92f, 228f), TextAlignmentOptions.MidlineLeft);
 
         // Mouse, with its left button picked out.
         Mouse(stage, new Vector2(520f, -20f));
         Callout(stage, font, textColor, textSize, lineColor, "LeftMouse", new Vector2(467f, 232f), new Vector2(467f, 112f), TextAlignmentOptions.Bottom);
+        // The right button's label sits to the right of the mouse, so it stays clear of the left button's label above.
+        Callout(stage, font, textColor, textSize, lineColor, "RightMouse", new Vector2(680f, 70f), new Vector2(604f, 70f), TextAlignmentOptions.MidlineLeft);
         Callout(stage, font, textColor, textSize, lineColor, "Mouse", new Vector2(520f, -250f), new Vector2(520f, -170f), TextAlignmentOptions.Top);
 
         return root;

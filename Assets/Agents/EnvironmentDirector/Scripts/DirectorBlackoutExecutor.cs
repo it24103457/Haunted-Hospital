@@ -15,6 +15,15 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private DirectorObservation observation;
         [SerializeField] private Transform directorLightsRoot;
         [SerializeField] private Transform essentialLightsRoot;
+        [Tooltip("Remaining emergency light strength during blackout; normal strength is restored afterward.")]
+        [SerializeField, Min(.01f)] private float essentialBlackoutMultiplier = 1f;
+        [Tooltip("Extra brightness for selected hallway emergency lights during blackout only.")]
+        [SerializeField, Min(1f)] private float hallwayBlackoutMultiplier = 1f;
+        [Tooltip("Minimum intensity for selected hallway emergency lights during blackout; normal intensity is restored afterward.")]
+        [SerializeField, Min(0f)] private float hallwayBlackoutMinimumIntensity;
+        [SerializeField] private Light[] hallwayEmergencyLights = new Light[0];
+        [Tooltip("Background ambient light strength during blackout; restored when the event ends.")]
+        [SerializeField, Range(.05f, 1f)] private float ambientBlackoutMultiplier = 1f;
         [SerializeField] private AudioSource sound;
         [SerializeField] private AudioClip blackoutSound;
         [SerializeField, Min(0f)] private float blackoutSoundStartSeconds;
@@ -23,10 +32,15 @@ namespace HauntedHospital.EnvironmentAI
         [SerializeField] private bool running;
         private readonly List<Light> lights = new List<Light>();
         private readonly List<float> intensities = new List<float>();
+        private readonly List<Light> essentialLights = new List<Light>();
+        private readonly List<float> essentialIntensities = new List<float>();
         private DirectorPlanningAction action;
         private string token;
         private float startedAt;
         private bool ownsMemory;
+        private bool controlsAmbient;
+        private Color originalAmbientLight;
+        private UnityEngine.Rendering.SphericalHarmonicsL2 originalAmbientProbe;
 
         public bool Supports(DirectorEventDefinition definition) =>
             isActiveAndEnabled && definition != null && definition.EventType == DirectorEventType.LocalBlackout &&
@@ -43,6 +57,7 @@ namespace HauntedHospital.EnvironmentAI
             var check = eligibility.Evaluate(candidate.definition,candidate.anchor,token);
             if (!check.eligible) { reservations.Release(token); token = null; status = check.reason; return false; }
             lights.Clear(); intensities.Clear();
+            essentialLights.Clear(); essentialIntensities.Clear();
             foreach (var light in directorLightsRoot.GetComponentsInChildren<Light>(true))
             {
                 if (light == null || !light.transform.IsChildOf(directorLightsRoot) ||
@@ -51,9 +66,17 @@ namespace HauntedHospital.EnvironmentAI
                 { lights.Add(light); intensities.Add(light.intensity); }
             }
             if (lights.Count == 0) { status = "No illuminated Director lights"; Release(); return false; }
+            foreach (var light in essentialLightsRoot.GetComponentsInChildren<Light>(true))
+            {
+                if (light != null && light.isActiveAndEnabled && light.intensity > 0)
+                { essentialLights.Add(light); essentialIntensities.Add(light.intensity); }
+            }
             if (!memory.BeginEvent(candidate.definition.EventId,candidate.definition.EventType,
                 candidate.anchorId,candidate.roomId)) { Release(); return false; }
             ownsMemory = true; action = candidate; running = true; startedAt = Time.time;
+            controlsAmbient = ambientBlackoutMultiplier < 1f;
+            originalAmbientLight = RenderSettings.ambientLight;
+            originalAmbientProbe = RenderSettings.ambientProbe;
             reservations.Renew(token,candidate.definition.Duration+1);
             sound.transform.position = lights[0].transform.position;
             sound.Stop(); sound.clip = blackoutSound; sound.volume = volume; sound.loop = false; sound.pitch = 1f;
@@ -103,10 +126,34 @@ namespace HauntedHospital.EnvironmentAI
         private void ApplyBrightness(float multiplier)
         {
             for(int i=0;i<lights.Count;i++) if(lights[i]!=null) lights[i].intensity=intensities[i]*multiplier;
+            float emergencyMultiplier = Mathf.Lerp(essentialBlackoutMultiplier, 1f, Mathf.Clamp01(multiplier));
+            for (int i = 0; i < essentialLights.Count; i++)
+                if (essentialLights[i] != null)
+                {
+                    bool hallway = hallwayEmergencyLights != null &&
+                        System.Array.IndexOf(hallwayEmergencyLights, essentialLights[i]) >= 0;
+                    if (hallway)
+                    {
+                        float blackoutIntensity = Mathf.Max(hallwayBlackoutMinimumIntensity,
+                            essentialIntensities[i] * essentialBlackoutMultiplier * hallwayBlackoutMultiplier);
+                        essentialLights[i].intensity = Mathf.Lerp(blackoutIntensity,
+                            essentialIntensities[i], Mathf.Clamp01(multiplier));
+                    }
+                    else essentialLights[i].intensity = essentialIntensities[i] * emergencyMultiplier;
+                }
+            if (controlsAmbient)
+            {
+                float ambientMultiplier = Mathf.Lerp(ambientBlackoutMultiplier, 1f, Mathf.Clamp01(multiplier));
+                Color ambient = originalAmbientLight.linear * ambientMultiplier;
+                ambient.a = originalAmbientLight.a;
+                RenderSettings.ambientLight = multiplier >= 1f ? originalAmbientLight : ambient.gamma;
+                RenderSettings.ambientProbe = originalAmbientProbe * ambientMultiplier;
+            }
         }
         private void Finish(DirectorEventOutcome outcome)
         {
             ApplyBrightness(1);
+            controlsAmbient = false;
             if(sound!=null) {sound.Stop();sound.volume=volume;}
             running=false;
             if(ownsMemory && memory!=null) memory.FinishEvent(outcome);
@@ -117,6 +164,7 @@ namespace HauntedHospital.EnvironmentAI
         {
             if(reservations!=null && token!=null)reservations.Release(token);
             token=null;lights.Clear();intensities.Clear();
+            essentialLights.Clear(); essentialIntensities.Clear();
         }
         private void OnDisable() { if(running || ownsMemory)Finish(DirectorEventOutcome.Cancelled); }
     }

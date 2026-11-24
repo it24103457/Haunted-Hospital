@@ -41,6 +41,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8883763807262905691}
+  - component: {fileID: 611851529325736391}
+  - component: {fileID: 5726196198105307975}
   m_Layer: 0
   m_Name: PF_Glove_Box
   m_TagString: Untagged
@@ -64,6 +66,64 @@ Transform:
   - {fileID: 7371327207040531669}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &611851529325736391
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3151723040643870996}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &5726196198105307975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3151723040643870996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d6fdacd34e6268498cdc5083db33715, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThrowableItem
+  displayName: Glove_Box
+  noiseLoudness: 12
+  minNoiseImpactSpeed: 1.5
+  fullNoiseImpactSpeed: 6
+  maxNoisesPerThrow: 3
+  noiseCountsAsPlayer: 0
+  dropNoiseScale: 0.3
+  impactClips:
+  - {fileID: 8300000, guid: 0a72e1899ccb2614f8f50f30e8fff59b, type: 3}
+  bodyHitClips:
+  - {fileID: 8300000, guid: 2d20ac107c5c63147858de47a4f0cb71, type: 3}
+  impactVolume: 0.8
+  pitchRange: {x: 0.95, y: 1.05}
+  soundMaxDistance: 30
+  damage: 10
+  minDamageImpactSpeed: 4
+  damageRevealsPlayer: 0
+  despawnSeconds: 30
+  heldLocalEuler: {x: 0, y: 0, z: 0}
 --- !u!1001 &9132906529535558842
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -131,8 +191,37 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d27281d83e9efe94fb3eea1d11c696ac, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1394007600547879709}
   m_SourcePrefab: {fileID: 100100000, guid: d27281d83e9efe94fb3eea1d11c696ac, type: 3}
+--- !u!1 &8250581084159162859 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d27281d83e9efe94fb3eea1d11c696ac, type: 3}
+  m_PrefabInstance: {fileID: 9132906529535558842}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1394007600547879709
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8250581084159162859}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.0178614, y: 0.010798143, z: 0.008823899}
+  m_Center: {x: -0.0000049867667, y: 0.000040537223, z: 0.0044119493}
 --- !u!4 &8733644493228434257 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d27281d83e9efe94fb3eea1d11c696ac, type: 3}

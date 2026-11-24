@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MAT_Barricade_RitualSealed_Washroom
+  m_Shader: {fileID: 4800000, guid: c97a220069e75e14b9090ac0e53e7131, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 2a45e07a0a450974f9eaf6e1c1961e32, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: c21742529d0774f4cae97c36f96d5bb3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RitualMap:
+        m_Texture: {fileID: 2800000, guid: b30ad072442da114f8736a15f88d305e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BumpScale: 0.6
+    - _RitualSize: 1.3782144
+    - _RitualStrength: 0.86
+    - _Smoothness: 0.13
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _RitualAxis: {r: 1, g: 0, b: 0, a: 0}
+    - _RitualOrigin: {r: -5.705312, g: 1.0834159, b: 24.60651, a: 0}
+    - _RitualTint: {r: 0.8, g: 0.74, b: 0.68, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

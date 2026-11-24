@@ -9,6 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7490784323878224653}
+  - component: {fileID: 1139057043573636032}
+  - component: {fileID: 8717018002721230670}
   m_Layer: 0
   m_Name: PF_Pill_Bottle
   m_TagString: Untagged
@@ -32,6 +34,64 @@ Transform:
   - {fileID: 8702088448033040552}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &1139057043573636032
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4923563541834258311}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &8717018002721230670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4923563541834258311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d6fdacd34e6268498cdc5083db33715, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThrowableItem
+  displayName: Pill_Bottle
+  noiseLoudness: 10
+  minNoiseImpactSpeed: 1.5
+  fullNoiseImpactSpeed: 6
+  maxNoisesPerThrow: 3
+  noiseCountsAsPlayer: 0
+  dropNoiseScale: 0.3
+  impactClips:
+  - {fileID: 8300000, guid: 4dd70ab7db22b6647b95613361aeb874, type: 3}
+  bodyHitClips:
+  - {fileID: 8300000, guid: 2d20ac107c5c63147858de47a4f0cb71, type: 3}
+  impactVolume: 0.8
+  pitchRange: {x: 0.95, y: 1.05}
+  soundMaxDistance: 30
+  damage: 5
+  minDamageImpactSpeed: 4
+  damageRevealsPlayer: 0
+  despawnSeconds: 30
+  heldLocalEuler: {x: 0, y: 0, z: 0}
 --- !u!1 &9039975014464927015
 GameObject:
   m_ObjectHideFlags: 0
@@ -132,8 +192,37 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: -4253225735085039100, guid: 4eec7a965501117469e347908dab89e8, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4eec7a965501117469e347908dab89e8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1820603700386226207}
   m_SourcePrefab: {fileID: 100100000, guid: 4eec7a965501117469e347908dab89e8, type: 3}
+--- !u!1 &77185920069772580 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4eec7a965501117469e347908dab89e8, type: 3}
+  m_PrefabInstance: {fileID: 996230096482637941}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1820603700386226207
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 77185920069772580}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &745882866568396702 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4eec7a965501117469e347908dab89e8, type: 3}

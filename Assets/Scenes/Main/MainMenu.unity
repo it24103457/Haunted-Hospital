@@ -27958,6 +27958,21 @@ MonoBehaviour:
   - name: Desk
     prefab: {fileID: 919132149155446097, guid: 2b1f3859a4e55254ebc27ba8cafb93d5, type: 3}
     rotation: {x: 0, y: 0, z: 0}
+  - name: Bedpan
+    prefab: {fileID: 1877690169683939415, guid: a3750ad178108234db7abce8704a2db9, type: 3}
+    rotation: {x: -30, y: 0, z: 0}
+  - name: Tray
+    prefab: {fileID: 8210009477667686803, guid: ccefe14bb25778d4e82904c40ebdabc2, type: 3}
+    rotation: {x: -30, y: 0, z: 0}
+  - name: PillBottle
+    prefab: {fileID: 4923563541834258311, guid: b8b7a0b39bbd78842b269cdbfdf6fc96, type: 3}
+    rotation: {x: 0, y: 0, z: 0}
+  - name: GloveBox
+    prefab: {fileID: 3151723040643870996, guid: 1eed794f5cb7bc54294b9496fad414b8, type: 3}
+    rotation: {x: -30, y: 0, z: 0}
+  - name: Inhaler
+    prefab: {fileID: 2040720951337010160, guid: c17828e907e3474408a18cee0a1d3bf5, type: 3}
+    rotation: {x: 0, y: 0, z: 0}
   images:
   - name: Corridor
     texture: {fileID: 2800000, guid: dd04ffae3df40b74b808594578a63271, type: 3}

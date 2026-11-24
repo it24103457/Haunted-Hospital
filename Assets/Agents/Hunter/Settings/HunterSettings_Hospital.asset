@@ -34,16 +34,16 @@ MonoBehaviour:
   arrivalRadius: 1
   patrolMinLegDistance: 6
   patrolLegTimeoutSeconds: 45
-  searchSeconds: 10
-  searchRadius: 8
-  searchPauseSeconds: 1.5
-  chaseLoudness: 12
-  chaseProximity: 8
-  chaseLoseSeconds: 6
-  attackRange: 1.5
+  searchSeconds: 14
+  searchRadius: 10
+  searchPauseSeconds: 1
+  chaseLoudness: 9
+  chaseProximity: 5
+  chaseLoseSeconds: 8
+  attackRange: 1.6
   attackExitMargin: 1
   attackDamage: 20
-  attackCooldownSeconds: 1.6
+  attackCooldownSeconds: 1.5
   attackWindupSeconds: 0.55
   senseIntervalSeconds: 0.2
   freshReachSeconds: 0.5
@@ -64,5 +64,5 @@ MonoBehaviour:
   patrolSpeed: 0.7
   investigateSpeed: 1
   searchSpeed: 0.8
-  chaseSpeed: 1.29
+  chaseSpeed: 2.5
   enableDebugLogging: 0

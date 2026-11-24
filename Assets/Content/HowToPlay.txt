@@ -151,6 +151,28 @@ model: Barricade, Thief, Hunter
 
 Every gunshot is loud, and the Hunter hears it.
 
+[Throwables]
+
+=== Throwables
+model: Bedpan, Tray, PillBottle, GloveBox, Inhaler
+Bedpans, trays, pill bottles and other odds and ends lie around the hospital. Press E to pick one up.
+
+You can carry one at a time, and your gun still works while you hold it.
+
+Click the right mouse button to throw it, or press G to set it down quietly.
+
+Thrown items do not stay around for long.
+
+=== Distractions
+model: Tray, Hunter
+A thrown item makes a noise where it lands. Unless the Hunter is already chasing you, it goes to check that spot instead, so throw away from where you are heading.
+
+Bedpans and trays clatter loudly and carry far. Small bottles are quieter.
+
+A hard throw hurts the Thief or the Hunter, but not as much as a bullet.
+
+The Thief pays no attention to the noise.
+
 [Item Locations]
 
 === First Aid Shelf

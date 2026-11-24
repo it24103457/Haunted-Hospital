@@ -89,6 +89,8 @@ Shader "Hospital/World Height Wall"
             #pragma vertex WallVert
             #pragma fragment WallFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options renderinglayer
+            #pragma multi_compile_fragment _ _LIGHT_LAYERS
             #pragma multi_compile_fog
             #pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
