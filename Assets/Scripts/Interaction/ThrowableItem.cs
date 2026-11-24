@@ -89,6 +89,11 @@ public class ThrowableItem : MonoBehaviour, IInteractable
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
+
+        // Placed items stay exactly where the level designer put them. They only become live physics objects
+        // when thrown or dropped (Release), and freeze again when they stop (Settle). Without this, every item
+        // in the scene falls off furniture and gets pushed around by overlapping props from the first frame.
+        body.isKinematic = true;
         colliders = GetComponentsInChildren<Collider>();
         colliderWasEnabled = new bool[colliders.Length];
 
