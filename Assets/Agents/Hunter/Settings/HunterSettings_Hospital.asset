@@ -38,7 +38,7 @@ MonoBehaviour:
   searchRadius: 10
   searchPauseSeconds: 1
   chaseLoudness: 9
-  chaseProximity: 9
+  chaseProximity: 5
   chaseLoseSeconds: 8
   attackRange: 1.6
   attackExitMargin: 1
