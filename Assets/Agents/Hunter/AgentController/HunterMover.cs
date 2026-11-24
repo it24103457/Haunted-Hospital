@@ -37,11 +37,8 @@ public class HunterMover : MonoBehaviour
              "1.1 = allow 10% overshoot so the agent doesn't lag behind the NavMesh simulation.")]
     [SerializeField] private float speedHeadroomMultiplier = 1.15f;
 
-    [Header("Flinch Stagger")]
-    [Tooltip("Seconds the Hunter pauses movement after taking non-lethal damage.")]
-    [SerializeField] private float flinchStaggerSeconds = 0.35f;
-
     private HunterBrain hunter;
+    private HunterAnimationDriver animationDriver;
     private NavMeshAgent agent;
     private float baseSpeed;
     private readonly List<Vector3> path = new List<Vector3>();
@@ -58,6 +55,7 @@ public class HunterMover : MonoBehaviour
     private void Awake()
     {
         hunter = GetComponent<HunterBrain>();
+        animationDriver = GetComponent<HunterAnimationDriver>();
         agent = GetComponent<NavMeshAgent>();
         baseSpeed = agent.speed;
 
@@ -84,10 +82,12 @@ public class HunterMover : MonoBehaviour
         if (hunter != null)
         {
             hunter.OnPathChanged += FollowPath;
-            hunter.OnDamaged += HandleDamaged;
             hunter.OnDied += HandleDied;
             hunter.OnSpawned += HandleSpawned;
         }
+
+        if (animationDriver != null)
+            animationDriver.FlinchStarted += HandleFlinchStarted;
     }
 
     private void OnDisable()
@@ -95,10 +95,12 @@ public class HunterMover : MonoBehaviour
         if (hunter != null)
         {
             hunter.OnPathChanged -= FollowPath;
-            hunter.OnDamaged -= HandleDamaged;
             hunter.OnDied -= HandleDied;
             hunter.OnSpawned -= HandleSpawned;
         }
+
+        if (animationDriver != null)
+            animationDriver.FlinchStarted -= HandleFlinchStarted;
 
         if (staggerRoutine != null)
         {
@@ -192,18 +194,20 @@ public class HunterMover : MonoBehaviour
         hasActiveDestination = true;
     }
 
-    private void HandleDamaged(DamageInfo info)
+    private void HandleFlinchStarted()
     {
         if (!hunter.IsAlive) return;
 
         if (staggerRoutine != null) StopCoroutine(staggerRoutine);
-        staggerRoutine = StartCoroutine(StaggerPause());
+        staggerRoutine = StartCoroutine(StaggerPause(animationDriver != null
+            ? animationDriver.FlinchDuration
+            : 0.4f));
     }
 
-    private IEnumerator StaggerPause()
+    private IEnumerator StaggerPause(float duration)
     {
         isStaggered = true;
-        yield return new WaitForSeconds(flinchStaggerSeconds);
+        yield return new WaitForSeconds(duration);
         isStaggered = false;
         staggerRoutine = null;
     }
