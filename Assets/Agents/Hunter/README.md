@@ -121,7 +121,7 @@ A closed door decides whether the player is noticed, which is why shutting a doo
 - **During a chase** the last known position of the player is refreshed by any noise the player makes, by coming within 8 m by path, and by shooting the Hunter. After 6 s with none of these (unless it was shot in the last 4 s) it searches the last known spot.
 - **Reach** is checked every 0.2 s and has to be fresh (within 0.5 s). The player must be within 1.5 m, at about the same height, and the nearest thing on the line to them must be the player, so it cannot hit through a wall or a vent grille. Once attacking, the player has to get beyond 2.5 m to break it off, so it does not flick between Attack and Chase.
 - **Attack.** After a 0.55 s wind-up it hits for 20 damage every 1.6 s through the player's `TakeDamage`. The player has 100 health, so five hits kill them, about 7 seconds after the first contact.
-- **Taking damage.** Each shot does 25 and the Hunter has 100 health, so four shots kill it. A hit also makes it flinch for 0.35 s.
+- **Taking damage.** Each shot does 25 and the Hunter has 100 health, so four shots kill it. A hit locks it in place for 0.4 s while a 0.5 s hit-reaction clip plays, then it blends back into the chase.
 
 ## Life cycle
 
@@ -185,7 +185,7 @@ A closed door decides whether the player is noticed, which is why shutting a doo
 | `Scripts/HunterState.cs`, `Scripts/IHunterStatus.cs` | The state enum, and the read-only status for other systems |
 | `Scripts/HunterDebugView.cs` | Test tool: draws memory, route and state in the Scene view |
 | `Scripts/HunterTestMover.cs` | Test mover. Disabled on the prefab, which uses `HunterMover` |
-| `AgentController/HunterMover.cs` | Walks `CurrentPath` with the `NavMeshAgent`, holds still at doors, pauses 0.35 s on a hit |
+| `AgentController/HunterMover.cs` | Walks `CurrentPath` with the `NavMeshAgent`, holds still at doors, pauses 0.4 s on a hit |
 | `AgentController/HunterAnimationDriver.cs`, `HunterAudioDriver.cs` | Animation and audio, driven by the brain's state and events |
 | `AgentController/HunterSpeedFixPatcher.cs` | Editor tool that sets the animation and tuning values (Haunted Hospital menu) |
 | `Prefabs/PF_Hunter.prefab`, `Settings/HunterSettings_Hospital.asset` | The Hunter with all components, and the tuned settings for the hospital |
