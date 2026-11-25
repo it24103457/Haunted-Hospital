@@ -17,8 +17,15 @@ using UnityEngine.AI;
  *   Walk authored speed     = 1.15 m/s (Zombie walking-2.fbx forward displacement).
  *   Run authored speed      = 2.60 m/s (Zombie Run.fbx forward displacement).
  *   HunterSettings multipliers: patrol=0.70->0.98 m/s, search=0.80->1.12 m/s,
- *                               investigate=1.00->1.40 m/s, chase=1.29->1.80 m/s.
- *   Chase ratio: 1.80/2.60 = 0.69x, clamped to a 0.85x minimum so the run never looks like slow motion.
+ *                               investigate=1.00->1.40 m/s, chase=2.5->3.5 m/s.
+ *   Chase ratio: clamped to a 0.85x minimum so the run never looks like slow motion.
+ *
+ * Attack:
+ *   The brain hits once per attack cooldown for as long as it stays in Attack. A swing starts on entering Attack,
+ *   and a new one starts each time the previous swing has finished while the Hunter is still attacking, so it keeps
+ *   swinging for the whole attack instead of standing idle after the first swing. While in Attack the Speed parameter
+ *   is held at 0, because the Hunter is still braking from its run (and turning to face the player) when the attack
+ *   starts, and a Speed above 0.1 would fire the Attack -> Walk/Run transitions and cut the swing off.
  */
 [RequireComponent(typeof(HunterBrain), typeof(NavMeshAgent))]
 public class HunterAnimationDriver : MonoBehaviour
@@ -36,6 +43,10 @@ public class HunterAnimationDriver : MonoBehaviour
 
     [Tooltip("Authored forward speed (m/s) of the Hunter_Run clip (Zombie Run.fbx). Used for stride matching during Chase.")]
     [SerializeField] private float runAuthoredSpeed = 2.6f;
+
+    [Header("Attack Tuning")]
+    [Tooltip("Crossfade duration into each attack swing.")]
+    [SerializeField] private float attackFadeSeconds = 0.1f;
 
     [Header("Hit & Facing Tuning")]
     [Tooltip("Minimum seconds between successive flinch animations. " +
@@ -78,6 +89,7 @@ public class HunterAnimationDriver : MonoBehaviour
     // Animator parameter hashes
     private static readonly int SpeedParam      = Animator.StringToHash("Speed");
     private static readonly int AttackTrigger   = Animator.StringToHash("Attack");
+    private static readonly int AttackStateHash = Animator.StringToHash("Attack");
     private static readonly int FlinchStateHash = Animator.StringToHash("Flinch");
     private static readonly int DoorPushTrigger = Animator.StringToHash("DoorPush");
     private static readonly int DieTrigger      = Animator.StringToHash("Die");
@@ -142,6 +154,7 @@ public class HunterAnimationDriver : MonoBehaviour
         if (animator == null || !hunter.IsAlive) return;
 
         UpdateLocomotion();
+        UpdateAttackSwings();
         UpdateDoorPush();
         UpdateLayers();
     }
@@ -155,6 +168,7 @@ public class HunterAnimationDriver : MonoBehaviour
         HunterState state = hunter.State;
         bool isInactive   = state == HunterState.Inactive;
         bool isChasing    = state == HunterState.Chase;
+        bool isAttacking  = state == HunterState.Attack;
         bool flinching    = IsFlinchActive();
         float speed       = agent.velocity.magnitude;
 
@@ -165,7 +179,7 @@ public class HunterAnimationDriver : MonoBehaviour
 
         // Dynamic turn banking: smoothly roll torso into the turn
         float targetBank = Mathf.Clamp(-angularVelocity * 0.035f, -maxBankAngle, maxBankAngle);
-        if (speed < 0.2f || isInactive || state == HunterState.Dead) targetBank = 0f;
+        if (speed < 0.2f || isInactive || isAttacking || state == HunterState.Dead) targetBank = 0f;
         currentBankAngle = Mathf.MoveTowards(
             currentBankAngle,
             targetBank,
@@ -179,8 +193,10 @@ public class HunterAnimationDriver : MonoBehaviour
         animator.SetBool(IsInactiveParam, isInactive);
 
         // Stride matching & Pivot shuffling:
-        if (isInactive || state == HunterState.Dead)
+        if (isInactive || isAttacking || state == HunterState.Dead)
         {
+            // Attacking: the agent is still braking from its run and turning to face the player. Speed stays 0 so
+            // the Attack -> Walk/Run transitions cannot cut the swing short, and the swing plays at authored speed.
             animator.SetFloat(SpeedParam, 0f);
             animator.speed = 1f;
         }
@@ -214,6 +230,43 @@ public class HunterAnimationDriver : MonoBehaviour
         // overwrites the 1x speed set on damage and the hit reaction crawls at 0.5-0.85x.
         if (flinching)
             animator.speed = 1f;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Attack
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void UpdateAttackSwings()
+    {
+        // The swing clip is longer than the brain's attack cooldown, so each swing plays to the end and the next one
+        // starts once it has finished, keeping the Hunter swinging for as long as it stays in Attack.
+        if (hunter.State != HunterState.Attack) return;
+        if (IsAttackActive() || IsFlinchActive()) return;
+
+        StartSwing();
+    }
+
+    private void StartSwing()
+    {
+        animator.speed = 1f;
+        animator.ResetTrigger(AttackTrigger);
+
+        // A shot landing as the attack starts plays the flinch; the swing starts once the flinch has finished.
+        if (IsFlinchActive()) return;
+
+        // Drive the state directly, like the flinch, so a swing is never queued behind a running transition.
+        animator.CrossFadeInFixedTime(AttackStateHash, attackFadeSeconds, BaseLayerIndex);
+    }
+
+    private bool IsAttackActive()
+    {
+        if (animator == null) return false;
+
+        if (animator.GetCurrentAnimatorStateInfo(BaseLayerIndex).shortNameHash == AttackStateHash)
+            return true;
+
+        return animator.IsInTransition(BaseLayerIndex) &&
+               animator.GetNextAnimatorStateInfo(BaseLayerIndex).shortNameHash == AttackStateHash;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -284,8 +337,8 @@ public class HunterAnimationDriver : MonoBehaviour
 
         if (state == HunterState.Attack)
         {
-            animator.speed = 1f;
-            animator.SetTrigger(AttackTrigger);
+            // The first swing starts as soon as the Hunter enters Attack; its first hit lands one wind-up later.
+            StartSwing();
         }
     }
 
@@ -330,6 +383,7 @@ public class HunterAnimationDriver : MonoBehaviour
         if (animator == null) return;
 
         animator.speed = 1f;
+        animator.ResetTrigger(AttackTrigger);
         animator.SetTrigger(DieTrigger);
 
         currentUpperBodyWeight = 0f;
